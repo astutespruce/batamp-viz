@@ -58,7 +58,10 @@ ENV/
 env.bak/
 venv.bak/
 
-node_modules/*
+node_modules/
 
-/data/src/*
-/data/derived/*
+/data/src/
+/data/derived/
+
+/ui/build/
+/ui/public/

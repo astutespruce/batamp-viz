@@ -19,7 +19,7 @@
     "import/resolver": {
       "node": {
         "extensions": [".js", ".jsx"],
-        "paths": ["./src"]
+        "moduleDirectory": ["src", "node_modules"]
       }
     }
   },
