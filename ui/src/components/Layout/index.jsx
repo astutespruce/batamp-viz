@@ -17,6 +17,8 @@ const Content = styled.div`
 `
 
 const Layout = ({ children, title, headerImage }) => {
+  const { img, url, author } = headerImage
+
   return (
     <ThemeProvider theme={theme}>
       <Wrapper>
@@ -24,16 +26,14 @@ const Layout = ({ children, title, headerImage }) => {
         <Header siteTitle={config.siteTitle} />
         {headerImage && (
           <FluidImage
-            image={headerImage.img.childImageSharp.fluid}
+            image={img.childImageSharp.fluid}
             height="20vh"
             minHeight="30rem"
             position="bottom"
-            // credits={{
-            //   url:
-            //     'https://www.flickr.com/photos/mypubliclands/46056678782/in/album-72157699760909522/',
-            //   author:
-            //     'Michael Durham/Minden Pictures, Bat Conservation International',
-            // }}
+            credits={{
+              url,
+              author,
+            }}
           />
         )}
         <Content>{children}</Content>
@@ -55,7 +55,7 @@ Layout.propTypes = {
 }
 
 Layout.defaultProps = {
-  headerImage: null,
+  headerImage: {},
   title: '',
 }
 
