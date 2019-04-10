@@ -24,7 +24,7 @@ const Layout = ({ children, title, headerImage }) => {
       <Wrapper>
         <SEO title={title || config.siteTitle} />
         <Header siteTitle={config.siteTitle} />
-        {headerImage && (
+        {img && (
           <FluidImage
             image={img.childImageSharp.fluid}
             height="20vh"

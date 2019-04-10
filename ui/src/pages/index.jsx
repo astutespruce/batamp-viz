@@ -5,8 +5,6 @@ import { graphql, navigate } from 'gatsby'
 import { OutboundLink } from 'components/Link'
 import { Button } from 'components/Button'
 import Layout from 'components/Layout'
-import SEO from 'components/SEO'
-import { FluidImage } from 'components/Image'
 import { Container } from 'components/Grid'
 import styled from 'util/style'
 
@@ -14,21 +12,16 @@ const BodyText = styled.p`
   font-size: larger;
 `
 
-const IndexPage = ({ data: { headerImage } }) => (
-  <Layout>
-    <SEO title="Home" />
-    <FluidImage
-      image={headerImage.childImageSharp.fluid}
-      height="20vh"
-      minHeight="30rem"
-      position="bottom"
-      credits={{
-        url:
-          'https://www.flickr.com/photos/mypubliclands/46056678782/in/album-72157699760909522/',
-        author:
-          'Michael Durham/Minden Pictures, Bat Conservation International',
-      }}
-    />
+const IndexPage = ({ data: { headerImage: img } }) => (
+  <Layout
+    title="Home"
+    headerImage={{
+      img,
+      author: 'Michael Durham/Minden Pictures, Bat Conservation International',
+      url:
+        'https://www.flickr.com/photos/mypubliclands/46056678782/in/album-72157699760909522/',
+    }}
+  >
     <Container paddingBottom="3rem">
       TODO
       {/* <h2>
