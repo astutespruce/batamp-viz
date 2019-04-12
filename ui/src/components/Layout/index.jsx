@@ -6,7 +6,11 @@ import Header from 'components/Header'
 import { Flex } from 'components/Grid'
 import { FluidImage } from 'components/Image'
 import styled, { ThemeProvider, theme } from 'util/style'
+import {inUnsupported} from 'util/dom'
+import UnsupportedBrowser from './UnsupportedBrowser'
+
 import config from '../../../config/meta'
+import { isUnsupported } from '../../util/dom';
 
 const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
   height: 100%;
@@ -21,6 +25,7 @@ const Layout = ({ children, title, headerImage }) => {
 
   return (
     <ThemeProvider theme={theme}>
+    {isUnsupported ? <UnsupportedBrowser /> : (
       <Wrapper>
         <SEO title={title || config.siteTitle} />
         <Header siteTitle={config.siteTitle} />
@@ -38,6 +43,7 @@ const Layout = ({ children, title, headerImage }) => {
         )}
         <Content>{children}</Content>
       </Wrapper>
+      )}
     </ThemeProvider>
   )
 }
