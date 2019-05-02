@@ -47,3 +47,21 @@ SPECIES = {
     "pesu": {"SNAME": "Perimyotis subflavus", "CNAME": "Tricolored Bat"},
     "tabr": {"SNAME": "Tadarida brasiliensis", "CNAME": "Mexican Free-tailed Bat"},
 }
+
+# metadata fields of detector - take the first value for each site / mic_ht
+DETECTOR_FIELDS = [
+    "det_mfg",
+    "det_model",
+    "mic_type",
+    "refl_type",
+    "call_id_1",
+    "call_id_2",
+    "orig_site_id",
+    "orig_det_id",
+    "contributor",
+]
+
+
+# TODO: limited to areas where we have data that are close to / offshore
+COASTAL_ADMIN_UNITS = ["CA-BC", "CA-NS", "US-AK", "US-CA", "US-WA", "US-OR"]
+

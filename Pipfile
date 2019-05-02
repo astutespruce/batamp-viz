@@ -10,12 +10,15 @@ name = "pypi"
 pandas = "*"
 geopandas = "*"
 feather-format = "*"
+python-databasin = {git = "https://github.com/consbio/python-databasin.git", editable = true, ref = "master"}
+python-dotenv = "*"
+rtree = "*"
 
 
 [dev-packages]
 
 pylint = "*"
-black = "*"
+black = "==19.3b0"
 
 
 [requires]
