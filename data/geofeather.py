@@ -7,7 +7,7 @@ from feather import read_dataframe
 from geopandas import GeoDataFrame
 
 
-def serialize_gdf(df, path, index=True):
+def to_geofeather(df, path, index=True):
     """Serializes a geopandas GeoDataFrame to a feather file on disk.
     If the data frame has a non-default index, that is added back as a column before writing out.
     Internally, the geometry data are converted to WKB format.
@@ -44,7 +44,7 @@ def serialize_gdf(df, path, index=True):
     df.to_feather(path)
 
 
-def deserialize_gdf(path):
+def read_geofeather(path):
     """Deserialize a geopandas.GeoDataFrame stored in a feather file.
     This converts the internal WKB representation back into geometry.
     If the corresponding .crs file is found, it is used to set the CRS of
@@ -69,5 +69,5 @@ def deserialize_gdf(path):
             crs = crs["proj4"]
 
     df = read_dataframe(path)
-    df["geometry"] = df.wkb.apply(lambda wkb: wkb.loads(wkb))
+    df["geometry"] = df.wkb.apply(lambda data: wkb.loads(data))
     return GeoDataFrame(df.drop(columns=["wkb"]), geometry="geometry", crs=crs)
