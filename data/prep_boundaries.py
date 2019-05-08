@@ -25,7 +25,7 @@ admin_df = gp.read_file(src_dir / "ne_10m_admin_1_states_provinces.shp")
 admin_df = admin_df.loc[admin_df.iso_a2.isin(("CA", "US", "MX"))][
     ["iso_a2", "iso_3166_2", "name", "geometry"]
 ].rename(columns={"iso_a2": "country", "iso_3166_2": "id"})
-admin_df["buffer"] = False
+admin_df["is_buffer"] = False
 
 print("Buffering coastal units...")
 # buffer coastal units to capture detectors just offshore
@@ -34,7 +34,7 @@ coastal_df = admin_df.loc[admin_df.id.isin(COASTAL_ADMIN_UNITS)]
 buffered = gp.GeoDataFrame(
     coastal_df[["id", "country", "name"]], geometry=coastal_df.buffer(0.1)
 )
-buffered["buffer"] = True
+buffered["is_buffer"] = True
 
 admin_df = admin_df.append(buffered, ignore_index=True, sort=False)
 to_geofeather(admin_df, boundaries_dir / "na_admin1.geofeather")
@@ -63,7 +63,7 @@ to_geofeather(range_df, boundaries_dir / "species_ranges.geofeather")
 
 ### Process grids
 print("Processing GRTS grid...")
-grts_df = gp.read_file(src_dir / "na_grts_wgs84.shp")[
-    ["id", "na50k", "na100k", "geometry"]
+grts_df = gp.read_file(src_dir / "na_grts_wgs84.shp").rename(columns={"id": "grts"})[
+    ["grts", "na50k", "na100k", "geometry"]
 ]
 to_geofeather(grts_df, boundaries_dir / "na_grts.geofeather")

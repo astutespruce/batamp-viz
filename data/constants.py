@@ -48,6 +48,25 @@ SPECIES = {
     "tabr": {"SNAME": "Tadarida brasiliensis", "CNAME": "Mexican Free-tailed Bat"},
 }
 
+
+# Activity colum
+ACTIVITY_COLUMNS = list(SPECIES.keys())
+
+# these are dropped right now
+GROUP_ACTIVITY_COLUMNS = [
+    "bat",
+    "hif",
+    "lof",
+    "q40k",
+    "q50k",
+    "q25k",
+    "lacitabr",
+    "mycamyyu",
+    "my50",
+    "my40",
+]
+
+
 # metadata fields of detector - take the first value for each site / mic_ht
 DETECTOR_FIELDS = [
     "det_mfg",

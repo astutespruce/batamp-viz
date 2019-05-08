@@ -1,5 +1,7 @@
+from pathlib import Path
 from datetime import datetime
 from dateutil.parser import parse
+
 from databasin.client import Client
 
 # API key stored in .env.
@@ -9,10 +11,9 @@ from settings import DATABASIN_KEY, DATABASIN_USER
 client = Client()
 client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
 
-# TODO: add is_aggregate filter as boolean
-# datasets = c.list_datasets(
-#     filters={"owner_id": "tedweller", "title__icontains": "aggregate"}
-# )
+
+out_dir = Path("data/src")
+
 
 # TODO: store known aggregate IDs in database and register them manually
 # The following are known aggregates that we want
@@ -38,12 +39,11 @@ last_fetch = parse("2010-01-01T01:00:00+08:00")  # FIXME
 
 # datasets = list(client.list_datasets(filters={"id__in": ",".join(dataset_ids)}))
 
-for id in dataset_ids[:1]:  # FIXME:
+for id in dataset_ids:
     dataset = client.get_dataset(id)
 
-    # for dataset in datasets[:1]:  # FIXME
     print("Processing {}".format(dataset.title))
-    if not dataset.can_download:
+    if not dataset.user_can_download:
         print(
             "ERROR: cannot download data for {} - no download permissions".format(
                 dataset.id
@@ -54,3 +54,8 @@ for id in dataset_ids[:1]:  # FIXME:
     mod_date = parse(dataset.modify_date)
     if mod_date > last_fetch:
         data = dataset.data
+
+        # TODO: revisit storing individual files
+        with open(out_dir / "{}.csv".format(id), "w") as outfile:
+            outfile.write(data)
+

@@ -1,42 +1,27 @@
+from pathlib import Path
 from datetime import datetime
 import csv
 
 import pandas as pd
 from feather import read_dataframe
 
-from domains import SPECIES
+from constants import SPECIES, ACTIVITY_COLUMNS, GROUP_ACTIVITY_COLUMNS
 
-
-# Activity colum
-ACTIVITY_COLUMNS = list(SPECIES.keys())
-
-# these are dropped right now
-GROUP_ACTIVITY_COLUMNS = [
-    "bat",
-    "hif",
-    "lof",
-    "q40k",
-    "q50k",
-    "q25k",
-    "lacitabr",
-    "mycamyyu",
-    "my50",
-    "my40",
-]
+src_dir = Path("data/src")
 
 
 print("Reading data...")
 
-df = None
-years = range(2006, 2019)
-for year in years:
-    year_df = pd.read_csv(
-        "data/src/Echolocation Records - {} - Aggregate.csv".format(year)
-    )
-    if df is None:
-        df = year_df
+merged = None
+for filename in src_dir.glob("*.csv"):
+    df = pd.read_csv(filename)
+
+    if merged is None:
+        merged = df
     else:
-        df = df.append(year_df, sort=False, ignore_index=True)
+        merged = merged.append(df, ignore_index=True, sort=False)
+
+df = merged.reindex()
 
 # drop group activity columns and raw coordinate columns
 df = df.drop(columns=["x_coord", "y_coord"] + GROUP_ACTIVITY_COLUMNS).rename(
@@ -48,7 +33,7 @@ df = df.drop(columns=["x_coord", "y_coord"] + GROUP_ACTIVITY_COLUMNS).rename(
     }
 )
 
-# drop columns with missing data
+# drop columns with completely missing data
 df = df.dropna(axis=1, how="all")
 
 # Convert height units to meters
@@ -99,21 +84,8 @@ df["week"] = df.tempdate.dt.week.astype("uint8")
 df["dayofyear"] = df.tempdate.dt.dayofyear.astype("uint16")
 
 
-# TEMPORARY: fix records that have incrementally increasing mic_ht
-df.loc[df.source_dataset == "1b61d1d6d69e4be9ab127409d78a174e", "mic_ht"] = 1.5
-df.loc[df.source_dataset == "851c5da4a7ea45b6a09442a4bafdc736", "mic_ht"] = 1
-df.loc[df.source_dataset == "9515f562096647438361110457dc59df", "mic_ht"] = 3.5
-
-
-# NOT USED: calculate season
-# df["season"] = df.night.dt.month.map(
-#     {1: 0, 2: 0, 3: 1, 4: 1, 5: 1, 6: 2, 7: 2, 8: 2, 9: 3, 10: 3, 11: 3, 12: 0}
-# ).astype("uint8")
-# Seasons are defined as: winter (0): Dec, Jan, Feb; spring (1): Mar, Apr, May; summer (2): Jun, Jul, Aug; fall (3): Sep, Oct, Nov
-
-
 # drop unneeded columns
-# df = df.drop(columns=["mic_ht_units", "first_name", "last_name"])
+df = df.drop(columns=["mic_ht_units", "first_name", "last_name"])
 
 
 # each x, y, mic_ht is a unique detector
@@ -126,17 +98,6 @@ df.loc[df.source_dataset == "9515f562096647438361110457dc59df", "mic_ht"] = 3.5
 print("writing output files...")
 df.reset_index().to_feather("data/derived/merged.feather")
 df.to_csv("data/derived/merged.csv", index=False, quoting=csv.QUOTE_NONNUMERIC)
-
-
-# FIXME: hack for ted - all on same time axis with valid looking times - 1900 in this case
-# Have to remove leap year days
-# df = df.rename(columns={"night": "night_orig"})
-# df["night"] = df.night_orig.apply(
-#     lambda dt: dt.replace(day=28, year=1900)
-#     if dt.month == 2 and dt.day == 29
-#     else dt.replace(year=1900)
-# )
-# df = df.groupby(["night", "latitude", "longitude"]).sum().reset_index()  # fills with 0!
 
 
 # # create a summary spreadsheet for each species
