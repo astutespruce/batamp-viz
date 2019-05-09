@@ -6,7 +6,7 @@ import Map from 'components/Map'
 import Sidebar from 'components/Sidebar'
 import { Flex } from 'components/Grid'
 
-import styled from 'util/style'
+import styled from 'style'
 
 const Wrapper = styled(Flex)`
   height: 100%;

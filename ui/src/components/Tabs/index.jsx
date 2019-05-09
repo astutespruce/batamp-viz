@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 
 import { Flex } from 'components/Grid'
-import styled from 'util/style'
+import styled from 'style'
 
 import TabBar from './TabBar'
 import TabContainer from './TabContainer'

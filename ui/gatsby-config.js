@@ -1,8 +1,13 @@
-const config = require('./config/meta')
-
 module.exports = {
   siteMetadata: {
-    siteUrl: config.siteUrl,
+    siteUrl: `https://explorer.batamp.databasin.org`,
+    title: `North American Bat Acoustic Monitoring Explorer`,
+    shortTitle: `Bat Monitoring Explorer`,
+    description: `Data exploration tool for bat acoustic monitoring data across North America.`,
+    author: `Brendan C. Ward, Conservation Biology Institute`,
+    googleAnalyticsId: process.env.GOOGLE_ANALYTICS_ID,
+    sentryDSN: process.env.SENTRY_DSN,
+    mapboxToken: process.env.MAPBOX_API_TOKEN,
   },
   plugins: [
     `gatsby-plugin-react-helmet`,
@@ -40,50 +45,65 @@ module.exports = {
     {
       resolve: `gatsby-plugin-google-analytics`,
       options: {
-        trackingId: config.googleAnalyticsId,
+        trackingId: process.env.GOOGLE_ANALYTICS_ID,
         anonymize: true,
       },
     },
+
     {
-      resolve: `gatsby-mdx`,
+      resolve: `@gatsby-contrib/gatsby-plugin-elasticlunr-search`,
       options: {
-        // defaultLayouts: {
-        //   default: require.resolve('./src/templates/MDXTemplate.jsx'),
-        // },
-        gatsbyRemarkPlugins: [
-          {
-            resolve: `gatsby-remark-images`,
-            options: {
-              showCaptions: true,
-              linkImagesToOriginal: false,
-              quality: 95,
-              maxWidth: 960,
-              withWebp: true,
-            },
+        // Fields to index
+        fields: [`title`, `path`],
+        resolvers: {
+          // Json: {
+          //   title: // TODO
+          //   path: node => node.path,
+          // },
+          SitePage: {
+            title: node =>
+              node.isCreatedByStatefulCreatePages && node.fields
+                ? node.fields.title
+                : null,
+            path: node =>
+              node.isCreatedByStatefulCreatePages && node.fields
+                ? node.path
+                : null,
           },
-        ],
+        },
+        // only include nodes that have a path defined
+        filter: node => !!node.path,
       },
     },
-    {
-      resolve: `gatsby-source-filesystem`,
-      options: {
-        name: `mdxpages`,
-        path: `${__dirname}/src/mdx`,
-      },
-    },
+
+    // TODO: hook up MDX pages?
     // {
-    //   resolve: `gatsby-plugin-manifest`,
+    //   resolve: `gatsby-mdx`,
     //   options: {
-    //     name: config.siteTitle,
-    //     short_name: config.siteTitleShort,
-    //     description: config.siteDescription,
-    //     start_url: `/?utm_source=a2hs`,
-    //     background_color: config.manifest.backgroundColor,
-    //     theme_color: config.manifest.themeColor,
-    //     display: `standalone`,
-    //     icon: `src/images/favicon.png`,
+    //     // defaultLayouts: {
+    //     //   default: require.resolve('./src/templates/MDXTemplate.jsx'),
+    //     // },
+    //     gatsbyRemarkPlugins: [
+    //       {
+    //         resolve: `gatsby-remark-images`,
+    //         options: {
+    //           showCaptions: true,
+    //           linkImagesToOriginal: false,
+    //           quality: 95,
+    //           maxWidth: 960,
+    //           withWebp: true,
+    //         },
+    //       },
+    //     ],
     //   },
     // },
-    // `gatsby-plugin-offline`,
+    // {
+    //   resolve: `gatsby-source-filesystem`,
+    //   options: {
+    //     name: `mdxpages`,
+    //     path: `${__dirname}/src/mdx`,
+    //   },
+    // },
+    //
   ],
 }

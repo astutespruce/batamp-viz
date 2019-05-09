@@ -1,14 +1,18 @@
-/**
- * Implement Gatsby's Browser APIs in this file.
- *
- * See: https://www.gatsbyjs.org/docs/browser-apis/
- */
-const GoogleAnalytics = require('react-ga')
-const config = require('./config/meta')
+import GoogleAnalytics from 'react-ga'
+import Sentry from '@sentry/browser'
+
+import { siteMetadata } from './gatsby-config'
 
 /**
- * Initialize Google Analytics
+ * Initialize Google Analytics and Sentry
  */
-exports.onClientEntry = () => {
-  GoogleAnalytics.initialize(config.googleAnalyticsId)
+export const onClientEntry = () => {
+  if (process.env.NODE_ENV === 'production') {
+    GoogleAnalytics.initialize(siteMetadata.googleAnalyticsId)
+
+    Sentry.init({
+      dsn: siteMetadata.sentryDSN,
+    })
+    window.Sentry = Sentry
+  }
 }

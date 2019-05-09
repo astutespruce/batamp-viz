@@ -1,7 +1,7 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 
-import styled, { themeGet } from 'util/style'
+import styled, { themeGet } from 'style'
 
 const InactiveButton = styled.div`
   text-align: center;

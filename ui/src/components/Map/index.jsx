@@ -6,9 +6,10 @@ import { fromJS } from 'immutable'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
-import styled from 'util/style'
+import styled from 'style'
 import { hasWindow } from 'util/dom'
-import { getCenterAndZoom } from 'util/map'
+
+import { getCenterAndZoom } from './util'
 import config from './config'
 
 const TRANSPARENT = 'rgba(0,0,0,0)'

@@ -2,7 +2,7 @@ import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 
 import { Flex, Columns, Column } from 'components/Grid'
-import styled, { themeGet } from 'util/style'
+import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
 
 const Wrapper = styled.div`

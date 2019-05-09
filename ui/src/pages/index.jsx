@@ -6,7 +6,7 @@ import { OutboundLink } from 'components/Link'
 import { Button } from 'components/Button'
 import Layout from 'components/Layout'
 import { Container } from 'components/Grid'
-import styled from 'util/style'
+import styled from 'style'
 
 const BodyText = styled.p`
   font-size: larger;

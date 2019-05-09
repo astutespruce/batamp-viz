@@ -5,7 +5,7 @@ import { Text } from 'rebass'
 import { Context as Crossfilter, RESET_FILTERS } from 'components/Crossfilter'
 import { Button } from 'components/Button'
 import { Flex, Box, Columns, Column } from 'components/Grid'
-import styled, { themeGet } from 'util/style'
+import styled, { themeGet } from 'style'
 import Filter from './Filter'
 import { filters as rawFilters } from '../../../config/filters'
 

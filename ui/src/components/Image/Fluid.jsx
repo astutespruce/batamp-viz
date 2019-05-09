@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import Img from 'gatsby-image'
 import { css } from 'styled-components'
 
-import styled from 'util/style'
+import styled from 'style'
 
 const Wrapper = styled.div`
   margin-top: 0;

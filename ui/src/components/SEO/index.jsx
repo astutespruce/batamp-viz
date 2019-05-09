@@ -1,25 +1,24 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Helmet from 'react-helmet'
+import { useStaticQuery, graphql } from 'gatsby'
 
-import config from '../../../config/meta'
+function SEO({ description, lang, meta, keywords, title }) {
+  const { site } = useStaticQuery(
+    graphql`
+      query {
+        site {
+          siteMetadata {
+            title
+            description
+            author
+          }
+        }
+      }
+    `
+  )
 
-function SEO({ description, lang, meta, title }) {
-  const metaDescription = description || config.siteDescription
-  const schemaOrg = [
-    {
-      '@context': `http://schema.org`,
-      '@type': `WebSite`,
-      url: config.siteUrl,
-      name: title,
-      description: config.siteDescription,
-      alternateName: '',
-      author: {
-        '@type': `Person`,
-        name: config.schema.author,
-      },
-    },
-  ]
+  const metaDescription = description || site.siteMetadata.description
 
   return (
     <Helmet
@@ -27,7 +26,7 @@ function SEO({ description, lang, meta, title }) {
         lang,
       }}
       title={title}
-      titleTemplate={`%s - ${config.siteTitle}`}
+      titleTemplate={`%s | ${site.siteMetadata.title}`}
       meta={[
         {
           name: `description`,
@@ -51,7 +50,7 @@ function SEO({ description, lang, meta, title }) {
         },
         {
           name: `twitter:creator`,
-          content: config.twitter,
+          content: site.siteMetadata.author,
         },
         {
           name: `twitter:title`,
@@ -61,24 +60,33 @@ function SEO({ description, lang, meta, title }) {
           name: `twitter:description`,
           content: metaDescription,
         },
-      ].concat(meta)}
-    >
-      <script type="application/ld+json">{JSON.stringify(schemaOrg)}</script>
-    </Helmet>
+      ]
+        .concat(
+          keywords.length > 0
+            ? {
+                name: `keywords`,
+                content: keywords.join(`, `),
+              }
+            : []
+        )
+        .concat(meta)}
+    />
   )
+}
+
+SEO.defaultProps = {
+  lang: `en`,
+  meta: [],
+  keywords: [],
+  description: ``,
 }
 
 SEO.propTypes = {
   description: PropTypes.string,
   lang: PropTypes.string,
-  meta: PropTypes.array,
+  meta: PropTypes.arrayOf(PropTypes.object),
+  keywords: PropTypes.arrayOf(PropTypes.string),
   title: PropTypes.string.isRequired,
-}
-
-SEO.defaultProps = {
-  description: config.siteDescription,
-  lang: `en`,
-  meta: [],
 }
 
 export default SEO

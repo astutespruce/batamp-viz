@@ -3,8 +3,8 @@ import PropTypes from 'prop-types'
 import { Text } from 'rebass'
 
 import { Flex } from 'components/Grid'
-import FaIcon from 'components/elements/FaIcon'
-import styled, { themeGet } from 'util/style'
+import FaIcon from 'components/Icon/FaIcon'
+import styled, { themeGet } from 'style'
 
 const Wrapper = styled(Flex).attrs({
   alignItems: 'center',

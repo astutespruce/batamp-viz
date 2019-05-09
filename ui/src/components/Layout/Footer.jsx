@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-import styled, { themeGet, themePx } from 'util/style'
+import styled, { themeGet, themePx } from 'style'
 
 import { Box } from 'components/Grid'
 

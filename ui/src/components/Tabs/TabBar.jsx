@@ -2,7 +2,7 @@ import React, { useState, memo } from 'react'
 import PropTypes from 'prop-types'
 
 import { Flex } from 'components/Grid'
-import styled, { themeGet } from 'util/style'
+import styled, { themeGet } from 'style'
 import Button from './Button'
 
 const Wrapper = styled(Flex).attrs({

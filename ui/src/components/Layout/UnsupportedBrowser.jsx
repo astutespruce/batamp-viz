@@ -2,7 +2,7 @@ import React from 'react'
 import { Container, Box, Flex } from 'components/Grid'
 import { FaExclamationTriangle } from 'react-icons/fa'
 
-import styled, { themeGet } from 'util/style'
+import styled, { themeGet } from 'style'
 
 const IconHeader = styled.h1`
   text-align: center;

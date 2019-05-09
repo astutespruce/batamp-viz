@@ -33,62 +33,77 @@ exports.onCreateWebpackConfig = ({ actions, stage, loaders }) => {
   actions.setWebpackConfig(config)
 }
 
-exports.onCreateNode = ({ node, actions: { createNodeField }, getNode }) => {
-  const {
-    internal: { type },
-  } = node
-
-  if (type === `Mdx`) {
-    createNodeField({
-      name: 'slug',
-      node,
-      value: createFilePath({ node, getNode }),
-    })
+exports.onCreateNode = ({ node, actions: { createNodeField } }) => {
+  // if the page originated from JSX, add a title based on the path
+  if (node.isCreatedByStatefulCreatePages) {
+    const pathParts = node.path.split('/')
+    let [title] = pathParts.slice(pathParts.length - 2, pathParts.length - 1)
+    if (title && title.length) {
+      title = `${title.slice(0, 1).toUpperCase()}${title.slice(1)}`
+    } else {
+      title = null
+    }
+    createNodeField({ node, name: 'title', value: title })
   }
 }
 
-exports.createPages = ({ graphql, actions: { createPage } }) => {
-  return new Promise((resolve, reject) => {
-    resolve(
-      graphql(
-        `
-          {
-            allMdx {
-              edges {
-                node {
-                  id
-                  fields {
-                    slug
-                  }
-                }
-              }
-            }
-          }
-        `
-      ).then(result => {
-        if (result.errors) {
-          console.error(result.errors)
-          reject(result.errors)
-          return
-        }
+// TODO: enable MDX?
+// exports.onCreateNode = ({ node, actions: { createNodeField }, getNode }) => {
+//   const {
+//     internal: { type },
+//   } = node
 
-        const template = path.resolve(`./src/templates/MDXTemplate.jsx`)
+//   if (type === `Mdx`) {
+//     createNodeField({
+//       name: 'slug',
+//       node,
+//       value: createFilePath({ node, getNode }),
+//     })
+//   }
+// }
 
-        result.data.allMdx.edges.forEach(
-          ({
-            node: {
-              id,
-              fields: { slug },
-            },
-          }) => {
-            createPage({
-              path: slug,
-              component: template,
-              context: { id },
-            })
-          }
-        )
-      })
-    )
-  })
-}
+// exports.createPages = ({ graphql, actions: { createPage } }) => {
+//   return new Promise((resolve, reject) => {
+//     resolve(
+//       graphql(
+//         `
+//           {
+//             allMdx {
+//               edges {
+//                 node {
+//                   id
+//                   fields {
+//                     slug
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         `
+//       ).then(result => {
+//         if (result.errors) {
+//           console.error(result.errors)
+//           reject(result.errors)
+//           return
+//         }
+
+//         const template = path.resolve(`./src/templates/MDXTemplate.jsx`)
+
+//         result.data.allMdx.edges.forEach(
+//           ({
+//             node: {
+//               id,
+//               fields: { slug },
+//             },
+//           }) => {
+//             createPage({
+//               path: slug,
+//               component: template,
+//               context: { id },
+//             })
+//           }
+//         )
+//       })
+//     )
+//   })
+// }

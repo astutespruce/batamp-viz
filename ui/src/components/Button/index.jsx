@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Button as BaseButton } from 'rebass'
 
 import { Flex } from 'components/Grid'
-import styled from 'util/style'
+import styled from 'style'
 
 export const DefaultButton = styled(BaseButton).attrs({
   variant: 'default',

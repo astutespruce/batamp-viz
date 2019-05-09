@@ -3,11 +3,11 @@ import PropTypes from 'prop-types'
 import { Map, Set } from 'immutable'
 import { FaRegTimesCircle, FaCaretDown, FaCaretRight } from 'react-icons/fa'
 
-import HelpText from 'components/elements/HelpText'
+import {HelpText} from 'components/Text'
 import { Context as Crossfilter, SET_FILTER } from 'components/Crossfilter'
 import { Flex } from 'components/Grid'
 
-import styled, { theme, themeGet } from 'util/style'
+import styled, { theme, themeGet } from 'style'
 import Bar from './Bar'
 
 const Wrapper = styled.div`

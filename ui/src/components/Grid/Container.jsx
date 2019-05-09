@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types'
-import styled from 'util/style'
+import styled from 'style'
 import { Box } from '@rebass/grid'
 
 const Container = styled(Box)`

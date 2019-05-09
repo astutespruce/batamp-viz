@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 
 import { OutboundLink } from 'components/Link'
-import styled, { themeGet } from 'util/style'
+import styled, { themeGet } from 'style'
 
 const Wrapper = styled.div`
   font-size: smaller;

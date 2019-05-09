@@ -2,15 +2,14 @@ import React from 'react'
 import PropTypes from 'prop-types'
 
 import SEO from 'components/SEO'
-import Header from 'components/Header'
+
 import { Flex } from 'components/Grid'
 import { FluidImage } from 'components/Image'
-import styled, { ThemeProvider, theme } from 'util/style'
-import { inUnsupported } from 'util/dom'
+import styled, { ThemeProvider, theme } from 'style'
+import { isUnsupported } from 'util/dom'
 import UnsupportedBrowser from './UnsupportedBrowser'
-
-import config from '../../../config/meta'
-import { isUnsupported } from '../../util/dom'
+import Header from './Header'
+import { siteMetadata } from '../../../gatsby-config'
 
 const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
   height: 100%;
@@ -29,8 +28,8 @@ const Layout = ({ children, title, headerImage }) => {
         <UnsupportedBrowser />
       ) : (
         <Wrapper>
-          <SEO title={title || config.siteTitle} />
-          <Header siteTitle={config.siteTitle} />
+          <SEO title={title} />
+          <Header />
           {img && (
             <FluidImage
               image={img.childImageSharp.fluid}
