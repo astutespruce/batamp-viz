@@ -23,3 +23,12 @@ Myotis melanorhinus was joined into Myotis ciliolabrum (synonyms, MYME not widel
 ### Processing
 
 All boundaries above were processed into geofeather (aka, serialized WKB geopandas data frames) files using `prep_boundaries.py`.
+
+Vector tiles were created with `tippecanoe`, from root directory:
+
+```
+tippecanoe -f -Z0 -z9 --no-tile-stats -l na_admin1 -o tiles/na_admin1.mbtiles data/boundaries/na_admin1.json
+tippecanoe -f -Z0 -z6 --no-tile-stats -l species_ranges -o tiles/species_ranges.mbtiles data/boundaries/species_ranges.json
+```
+
+The GRTS vector tile from the [BatAMP Grid Selection Tool](https://github.com/consbio/fuzzybat) was used here.

@@ -65,6 +65,7 @@ node_modules/
 /data/derived/
 /data/boundaries
 
+/tiles
 
 /ui/build/
 /ui/public/

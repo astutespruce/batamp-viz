@@ -8,10 +8,18 @@ Admin boundaries: select out Canada, US, Mexico, and buffer coastal states / pro
 Species: join to species 4-letter code, and merge together species that are effectively the same.
 """
 
+import os
 from pathlib import Path
 import geopandas as gp
 from geofeather import to_geofeather
 from constants import SPECIES, COASTAL_ADMIN_UNITS
+
+
+def to_geojson(df, filename):
+    # JSON cannot be overwritten, so delete it first
+    if os.path.exists(filename):
+        os.remove(filename)
+    df.to_file(filename, driver="GeoJSON")
 
 
 boundaries_dir = Path("data/boundaries")
@@ -25,9 +33,14 @@ admin_df = gp.read_file(src_dir / "ne_10m_admin_1_states_provinces.shp")
 admin_df = admin_df.loc[admin_df.iso_a2.isin(("CA", "US", "MX"))][
     ["iso_a2", "iso_3166_2", "name", "geometry"]
 ].rename(columns={"iso_a2": "country", "iso_3166_2": "id"})
-admin_df["is_buffer"] = False
+
+# Write out GeoJSON for vector tiles
+to_geojson(admin_df, boundaries_dir / "na_admin1.json")
+
 
 print("Buffering coastal units...")
+admin_df["is_buffer"] = False
+
 # buffer coastal units to capture detectors just offshore
 coastal_df = admin_df.loc[admin_df.id.isin(COASTAL_ADMIN_UNITS)]
 # add 0.1 degree buffer, roughly 5-10km depending on latitude
@@ -57,6 +70,7 @@ range_df["species"] = range_df.SCI_NAME.map(sci_name_lut)
 range_df = range_df.dissolve(by="species").reset_index()
 
 to_geofeather(range_df, boundaries_dir / "species_ranges.geofeather")
+to_geojson(range_df, boundaries_dir / "species_ranges.json")
 # for verification
 # range_df.to_file("data/boundaries/species_ranges.shp")
 
