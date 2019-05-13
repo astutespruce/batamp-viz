@@ -35,6 +35,19 @@ module.exports = {
       },
     },
     {
+      resolve: `gatsby-source-filesystem`,
+      options: {
+        name: `json`,
+        path: `${__dirname}/data`,
+      },
+    },
+    {
+      resolve: `gatsby-transformer-json`,
+      options: {
+        typeName: `Json`,
+      },
+    },
+    {
       resolve: `gatsby-plugin-typography`,
       options: {
         pathToConfigModule: `./config/typography.js`,

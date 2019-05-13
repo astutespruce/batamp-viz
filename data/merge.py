@@ -254,6 +254,7 @@ det_spp_stats.reset_index().to_feather(derived_dir / "detector_spp_stats.feather
 
 # species present at detector
 det_spps = det_spp_stats.groupby(level=0).species.unique()
+det_spps.name = 'species_present'
 
 # distill down to a time series of dicts
 det_ts = det_spp_stats.groupby(level=0).apply(
