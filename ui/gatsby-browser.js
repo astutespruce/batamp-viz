@@ -8,6 +8,7 @@ import { siteMetadata } from './gatsby-config'
  */
 export const onClientEntry = () => {
   console.log('siteMetadata', siteMetadata)
+  console.log('env on browser', process.env.GATSBY_MAPBOX_API_TOKEN)
   if (process.env.NODE_ENV === 'production') {
     GoogleAnalytics.initialize(siteMetadata.googleAnalyticsId)
 

@@ -5,9 +5,9 @@ module.exports = {
     shortTitle: `Bat Monitoring Explorer`,
     description: `Data exploration tool for bat acoustic monitoring data across North America.`,
     author: `Brendan C. Ward, Conservation Biology Institute`,
-    googleAnalyticsId: process.env.GOOGLE_ANALYTICS_ID,
-    sentryDSN: process.env.SENTRY_DSN,
-    mapboxToken: process.env.MAPBOX_API_TOKEN,
+    googleAnalyticsId: process.env.GATSBY_GOOGLE_ANALYTICS_ID,
+    sentryDSN: process.env.GATSBY_SENTRY_DSN,
+    mapboxToken: process.env.GATSBY_MAPBOX_API_TOKEN,
   },
   plugins: [
     `gatsby-plugin-react-helmet`,
@@ -58,7 +58,7 @@ module.exports = {
     {
       resolve: `gatsby-plugin-google-analytics`,
       options: {
-        trackingId: process.env.GOOGLE_ANALYTICS_ID,
+        trackingId: process.env.GATSBY_GOOGLE_ANALYTICS_ID,
         anonymize: true,
       },
     },
