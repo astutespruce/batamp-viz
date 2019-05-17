@@ -1,7 +1,9 @@
 import Typography from 'typography'
-import theme from 'typography-theme-noriega'
+import TypographyTheme from 'typography-theme-noriega'
 
-theme.overrideThemeStyles = () => ({
+import { theme } from 'style'
+
+TypographyTheme.overrideThemeStyles = () => ({
   html: {
     //   overflowY: 'scroll',
     height: '100%',
@@ -17,12 +19,16 @@ theme.overrideThemeStyles = () => ({
   '#___gatsby > *': {
     height: '100%',
   },
+  'a, a:visited, a:active': {
+    textDecoration: 'none',
+    color: theme.colors.link,
+  },
   button: {
     outline: 'none',
     cursor: 'pointer',
   },
 })
 
-const typography = new Typography(theme)
+const typography = new Typography(TypographyTheme)
 
 export default typography

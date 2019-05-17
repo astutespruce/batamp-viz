@@ -44,7 +44,8 @@ module.exports = {
     {
       resolve: `gatsby-transformer-json`,
       options: {
-        typeName: `Json`,
+        // name the top-level type after the filename
+        typeName: ({ node }) => `${node.name}Json`,
       },
     },
     {
@@ -67,22 +68,25 @@ module.exports = {
       resolve: `@gatsby-contrib/gatsby-plugin-elasticlunr-search`,
       options: {
         // Fields to index
-        fields: [`title`, `path`],
+        fields: [`path`, `commonName`, `sciName`, `species`],
         resolvers: {
-          // Json: {
-          //   title: // TODO
-          //   path: node => node.path,
-          // },
-          SitePage: {
-            title: node =>
-              node.isCreatedByStatefulCreatePages && node.fields
-                ? node.fields.title
-                : null,
-            path: node =>
-              node.isCreatedByStatefulCreatePages && node.fields
-                ? node.path
-                : null,
+          speciesJson: {
+            commonName: ({ commonName }) => commonName,
+            sciName: ({ sciName }) => sciName,
+            species: ({ species }) => species,
+            path: ({ species }) => `/species/${species}`,
           },
+          // Site pages deliberately not searchable
+          // SitePage: {
+          //   title: node =>
+          //     node.isCreatedByStatefulCreatePages && node.fields
+          //       ? node.fields.title
+          //       : null,
+          //   path: node =>
+          //     node.isCreatedByStatefulCreatePages && node.fields
+          //       ? node.path
+          //       : null,
+          // },
         },
         // only include nodes that have a path defined
         filter: node => !!node.path,

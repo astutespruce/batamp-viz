@@ -1,10 +1,5 @@
-/**
- * Implement Gatsby's Node APIs in this file.
- *
- * See: https://www.gatsbyjs.org/docs/node-apis/
- */
 const path = require('path')
-const { createFilePath } = require('gatsby-source-filesystem')
+// const { createFilePath } = require('gatsby-source-filesystem')
 
 /**
  * Enable absolute imports with `/src` as root.
@@ -62,48 +57,68 @@ exports.onCreateNode = ({ node, actions: { createNodeField } }) => {
 //   }
 // }
 
-// exports.createPages = ({ graphql, actions: { createPage } }) => {
-//   return new Promise((resolve, reject) => {
-//     resolve(
-//       graphql(
-//         `
-//           {
-//             allMdx {
-//               edges {
-//                 node {
-//                   id
-//                   fields {
-//                     slug
-//                   }
-//                 }
-//               }
-//             }
-//           }
-//         `
-//       ).then(result => {
-//         if (result.errors) {
-//           console.error(result.errors)
-//           reject(result.errors)
-//           return
-//         }
-
-//         const template = path.resolve(`./src/templates/MDXTemplate.jsx`)
-
-//         result.data.allMdx.edges.forEach(
-//           ({
-//             node: {
-//               id,
-//               fields: { slug },
-//             },
-//           }) => {
-//             createPage({
-//               path: slug,
-//               component: template,
-//               context: { id },
-//             })
-//           }
-//         )
-//       })
-//     )
-//   })
+// MDX query:
+// allMdx {
+//   edges {
+//     node {
+//       id
+//       fields {
+//         slug
+//       }
+//     }
+//   }
 // }
+
+exports.createPages = ({ graphql, actions: { createPage } }) => {
+  return new Promise((resolve, reject) => {
+    resolve(
+      graphql(
+        `
+          {
+            allSpeciesJson {
+              edges {
+                node {
+                  id
+                  species
+                }
+              }
+            }
+          }
+        `
+      ).then(result => {
+        if (result.errors) {
+          console.error(result.errors)
+          reject(result.errors)
+          return
+        }
+
+        const speciesTemplate = path.resolve(`./src/templates/Species.jsx`)
+        result.data.allSpeciesJson.edges.forEach(
+          ({ node: { id, species } }) => {
+            createPage({
+              path: `/species/${species}`,
+              component: speciesTemplate,
+              context: { id },
+            })
+          }
+        )
+
+        // const mdxTemplate = path.resolve(`./src/templates/MDXTemplate.jsx`)
+        // result.data.allMdx.edges.forEach(
+        //   ({
+        //     node: {
+        //       id,
+        //       fields: { slug },
+        //     },
+        //   }) => {
+        //     createPage({
+        //       path: slug,
+        //       component: mdxTemplate,
+        //       context: { id },
+        //     })
+        //   }
+        // )
+      })
+    )
+  })
+}

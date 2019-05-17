@@ -55,22 +55,31 @@ const Results = styled.ul`
   box-shadow: 2px 2px 6px ${themeGet('colors.grey.800')};
   overflow-y: auto;
   max-height: 50vh;
-  width: 300px;
+  width: 250px;
   border-radius: 0.25rem;
   border-bottom: 4px solid #fff;
 `
 
-const Result = styled.li`
-  padding: 0.25em 1em;
-  margin: 0;
+const ResultLink = styled(Link)`
+  padding: 0.5em 1em;
+  display: block;
+`
 
+const Result = styled.li`
+  padding: 0;
+  margin: 0;
+  line-height: 1.2;
   &:hover {
     background-color: ${themeGet('colors.grey.100')};
   }
-
   &:not(:first-child) {
     border-top: 1px solid ${themeGet('colors.grey.200')};
   }
+`
+
+const ScientificName = styled.span`
+  font-size: 0.8em;
+  color: ${themeGet('colors.grey.600')};
 `
 
 const NoResult = styled.li`
@@ -98,7 +107,10 @@ const SearchField = ({ rawIndex }) => {
     // only search against title field
     setResults(
       index
-        .search(value, { expand: true, fields: { title: {} } })
+        .search(value, {
+          expand: true,
+          fields: { commonName: {}, sciName: {}, species: {} },
+        })
         .map(({ ref }) => index.documentStore.getDoc(ref))
     )
   }
@@ -121,10 +133,14 @@ const SearchField = ({ rawIndex }) => {
       {query && (
         <Results>
           {results && results.length > 0 ? (
-            results.map(({ id, path, title }) => (
-              <Link key={id} to={path}>
-                <Result>{title}</Result>
-              </Link>
+            results.map(({ id, path, commonName, sciName }) => (
+              <Result key={id}>
+                <ResultLink to={path}>
+                  {commonName}
+                  <br />
+                  <ScientificName>({sciName})</ScientificName>
+                </ResultLink>
+              </Result>
             ))
           ) : (
             <NoResult>No pages match your query...</NoResult>

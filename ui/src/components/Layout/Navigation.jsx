@@ -17,7 +17,7 @@ const NavBar = styled(Flex).attrs({
 `
 
 const NavLink = styled(Link)`
-  color: #fff;
+  color: #fff !important;
   text-decoration: none;
   border: 1px solid #fff;
   border-radius: 0.5em;
