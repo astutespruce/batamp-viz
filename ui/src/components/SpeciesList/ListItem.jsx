@@ -4,7 +4,6 @@ import ImmutablePropTypes from 'react-immutable-proptypes'
 
 import { Columns, Column } from 'components/Grid'
 import { Link } from 'components/Link'
-import { Text } from 'components/Text'
 import styled, { themeGet, theme } from 'style'
 import { formatNumber } from 'util/format'
 

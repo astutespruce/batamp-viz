@@ -1,3 +1,9 @@
+// since we are searching on species names and codes that include common English
+// articles, we need to clear the stop words used by elasticlunr
+// or these prevent species from being found during autocomplete in search widgets
+const elasticlunr = require(`elasticlunr`)
+elasticlunr.clearStopWords()
+
 module.exports = {
   siteMetadata: {
     siteUrl: `https://explorer.batamp.databasin.org`,
