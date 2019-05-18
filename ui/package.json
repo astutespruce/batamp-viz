@@ -38,6 +38,7 @@
     "react-ga": "^2.5.7",
     "react-helmet": "^5.2.0",
     "react-icons": "^3.6.1",
+    "react-immutable-proptypes": "^2.1.0",
     "react-typography": "^0.16.19",
     "rebass": "^3.1.0",
     "styled-components": "^4.2.0",

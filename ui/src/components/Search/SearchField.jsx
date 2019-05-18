@@ -97,7 +97,6 @@ const SearchField = ({ rawIndex }) => {
 
   useEffect(() => {
     indexRef.current = Index.load(rawIndex)
-    window.index = indexRef.current
   }, [rawIndex])
 
   const handleChange = ({ target: { value } }) => {

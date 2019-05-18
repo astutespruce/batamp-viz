@@ -52,7 +52,7 @@ const Layout = ({ children, title, headerImage }) => {
 Layout.propTypes = {
   children: PropTypes.node.isRequired,
   headerImage: PropTypes.shape({
-    img: PropTypes.object.isRequired,
+    img: PropTypes.object,
     credits: PropTypes.shape({
       url: PropTypes.string,
       author: PropTypes.string,
