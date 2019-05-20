@@ -28,7 +28,9 @@ const Title = styled(ResponsiveText).attrs({
   as: 'h1',
   fontSize: ['1rem', '1rem', '1.5rem'],
   display: ['none', 'block'],
-})``
+})`
+  font-weight: normal;
+`
 
 const MobileTitle = styled(Title).attrs({ display: ['block', 'none'] })``
 

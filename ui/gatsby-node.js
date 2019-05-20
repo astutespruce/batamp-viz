@@ -93,15 +93,13 @@ exports.createPages = ({ graphql, actions: { createPage } }) => {
         }
 
         const speciesTemplate = path.resolve(`./src/templates/Species.jsx`)
-        result.data.allSpeciesJson.edges.forEach(
-          ({ node: { id, species } }) => {
-            createPage({
-              path: `/species/${species}`,
-              component: speciesTemplate,
-              context: { id },
-            })
-          }
-        )
+        result.data.allSpeciesJson.edges.forEach(({ node: { species } }) => {
+          createPage({
+            path: `/species/${species}`,
+            component: speciesTemplate,
+            context: { species },
+          })
+        })
 
         // const mdxTemplate = path.resolve(`./src/templates/MDXTemplate.jsx`)
         // result.data.allMdx.edges.forEach(

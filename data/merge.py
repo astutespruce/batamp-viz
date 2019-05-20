@@ -93,7 +93,15 @@ for col in [
 
 # TODO: beware, this is not filled out for all
 # TODO: fill with "Not provided" on frontend
-df["contributor"] = df.first_name + " " + df.last_name
+
+# Fix missing first name
+df.loc[
+    (df.source_dataset == "bc04c64da5c042da81098c88902a502a")
+    & (df.last_name == " Burger"),
+    "first_name",
+] = "Paul"
+
+df["contributor"] = (df.first_name + " " + df.last_name).str.strip()
 
 # Convert night into a datetime obj
 df["night"] = pd.to_datetime(df.night)
@@ -153,30 +161,14 @@ print("Assigning species ranges to sites...")
 range_df = read_geofeather(boundary_dir / "species_ranges.geofeather")
 
 # spatial join to multiple overlapping ranges
-# pack into a string separated by "|"
 site_spps = (
     gp.sjoin(sites, range_df, how="left")[location_fields + ["species"]]
     .dropna()
     .groupby(level=0)
     .species.unique()
-    # .apply(list)
-    # .apply(lambda x: "|".join(x).strip("|"))
+    .apply(sorted)
 )
 site_spps.name = "in_range"
-
-
-# unique list of species ranges per detector, dropping any that didn't intersect a species range
-# det_spp_ranges = (
-#     (
-#         detectors.set_index(["latitude", "longitude"])
-#         .join(site_spps.set_index(["latitude", "longitude"]))
-#         .dropna()
-#         .set_index("detector")[["species"]]
-#     )
-#     .groupby(level=0)
-#     .species.unique()
-#     .apply(lambda x: "|".join(x).strip("|"))
-# )
 
 
 # extract GRTS ID for a site
@@ -220,11 +212,50 @@ df.reset_index().to_feather(derived_dir / "merged.feather")
 # For debugging
 # df.to_csv(derived_dir / "merged.csv", index=False, quoting=csv.QUOTE_NONNUMERIC)
 
-# Extract list of unique datasets per detector
-detector_datasets = df.groupby("detector").source_dataset.unique().apply(list)
-detector_datasets.name = "dataset"
 
-### Calculate list of unique species present per detector
+#### Calculate summary statistics
+contributor_gb = df.groupby("contributor")
+contributor_detections = (
+    contributor_gb[ACTIVITY_COLUMNS]
+    .sum()
+    .sum(axis=1)
+    .astype("uint")
+    .rename("detections")
+)
+contributor_nights = contributor_gb.size().astype("uint").rename("nights")
+contributor_detectors = contributor_gb.detector.unique().apply(len).rename("detectors")
+
+# need to pivot species columns to rows and calculate unique list of species per contributor
+# then count them up
+contributor_species = (
+    df.set_index("contributor")[ACTIVITY_COLUMNS]
+    .stack()
+    .reset_index()
+    .groupby("contributor")
+    .level_1.unique()
+    .apply(sorted)
+    .rename("species")
+)
+
+contributor_stats = (
+    pd.DataFrame(contributor_detections)
+    .join(contributor_nights)
+    .join(contributor_detectors)
+    .join(contributor_species)
+    .reset_index()
+)
+# TODO: figure out flat data structure
+# contributor_stats.to_feather(derived_dir / "contributors.feather")
+contributor_stats.to_json(json_dir / "contributors.json", orient="records")
+
+
+### Calculate detector stats
+# Update detectors table with list of unique datasets, species, and contributors
+detector_datasets = (
+    df.groupby("detector").source_dataset.unique().apply(list).rename("datasets")
+)
+
+# Calculate list of unique species present per detector
 det_spps = (
     df[["detector"] + ACTIVITY_COLUMNS]
     .set_index("detector")
@@ -232,34 +263,56 @@ det_spps = (
     .reset_index()
     .groupby("detector")
     .level_1.unique()
-    # .apply(list)
+    .apply(sorted)
+    .rename("species_present")
 )
-det_spps.name = "species_present"
 
-detectors = detectors.join(detector_datasets).join(det_spps)
+# Calculate list of unique contributors per detector
+det_contributors = (
+    df.groupby("detector").contributor.unique().apply(sorted).rename("contributors")
+)
 
-# write detector info out to JSON under detectors field
+detectors = detectors.join(detector_datasets).join(det_spps).join(det_contributors)
 
-# TODO: figure out why round isn't working
 detectors[location_fields] = detectors[location_fields].round(5)
 detectors.to_json(json_dir / "detectors.json", orient="records")
 
-
+# TODO: figure out flat format for detectors
 # detectors.to_feather(derived_dir / "detectors.feather")
 
 #### Calculate species statistics
 # Total activity by species
-detections_by_spp = pd.DataFrame(
-    df[ACTIVITY_COLUMNS].sum().astype("uint"), columns=["detections"]
-)
+spp_detections = df[ACTIVITY_COLUMNS].sum().astype("uint").rename("detections")
 
 # Count of non-zero nights by species
-nights_by_spp = pd.DataFrame(
-    df[ACTIVITY_COLUMNS].fillna(0).astype("bool").sum(), columns=["nights"]
+spp_nights = df[ACTIVITY_COLUMNS].fillna(0).astype("bool").sum().rename("nights")
+
+# pivot species then tally up unique contributors for each
+spp_contributors = (
+    df.set_index("contributor")[ACTIVITY_COLUMNS]
+    .stack()
+    .reset_index()
+    .groupby("level_1")
+    .contributor.unique()
+    .apply(sorted)
+    .rename("contributors")
+)
+
+spp_detectors = (
+    df.set_index("detector")[ACTIVITY_COLUMNS]
+    .stack()
+    .reset_index()
+    .groupby("level_1")
+    .detector.unique()
+    .apply(len)
+    .rename("detectors")
 )
 
 spp_stats = (
-    detections_by_spp.join(nights_by_spp)
+    pd.DataFrame(spp_detections)
+    .join(spp_nights)
+    .join(spp_contributors)
+    .join(spp_detectors)
     .reset_index()
     .rename(columns={"index": "species"})
 )
@@ -308,7 +361,7 @@ det_info = (
     .join(det_ts)
 )
 
-det_info.to_json(json_dir / "detectors.json", orient="records")
+det_info.to_json(json_dir / "detectors.json", orient="records", double_precision=5)
 
 ########### In progress
 
@@ -386,6 +439,20 @@ det_info.to_json(json_dir / "detectors.json", orient="records")
 
 
 # ARCHIVE - old ideas below
+
+# unique list of species ranges per detector, dropping any that didn't intersect a species range
+# det_spp_ranges = (
+#     (
+#         detectors.set_index(["latitude", "longitude"])
+#         .join(site_spps.set_index(["latitude", "longitude"]))
+#         .dropna()
+#         .set_index("detector")[["species"]]
+#     )
+#     .groupby(level=0)
+#     .species.unique()
+#     .apply(lambda x: "|".join(x).strip("|"))
+# )
+
 
 # pivot from column format to row format and drop non-detections
 # pivot = df[["site_id"] + ACTIVITY_COLUMNS].melt(

@@ -14,7 +14,7 @@ const Wrapper = styled.div`
 `
 
 const Content = styled.div`
-  line-height: 1.2;
+  line-height: 1.4;
   padding: 1rem;
   color: ${themeGet('colors.grey.600')};
 
@@ -39,7 +39,14 @@ const Stats = styled.div`
 `
 
 const ListItem = ({ item }) => {
-  const { species, commonName, sciName, detections, nights } = item.toJS()
+  const {
+    species,
+    commonName,
+    sciName,
+    detections,
+    nights,
+    contributors,
+  } = item.toJS()
 
   return (
     <Wrapper>
@@ -55,6 +62,13 @@ const ListItem = ({ item }) => {
                 {formatNumber(detections, 0)} detections
                 <br />
                 on {formatNumber(nights, 0)} nights
+                {contributors ? (
+                  <>
+                    <br />
+                    by {contributors.length}{' '}
+                    {contributors.length === 1 ? 'contributor' : 'contributors'}
+                  </>
+                ) : null}
               </Stats>
             </Column>
           </Columns>
@@ -71,6 +85,7 @@ ListItem.propTypes = {
     sciName: PropTypes.string.isRequired,
     detections: PropTypes.number.isRequired,
     nights: PropTypes.number.isRequired,
+    contributors: ImmutablePropTypes.listOf(PropTypes.string).isRequired,
   }).isRequired,
 }
 

@@ -12,7 +12,7 @@ import ListItem from './ListItem'
 
 const sortOptions = [
   {
-    label: 'common name',
+    label: 'name',
     sortFunc: (a, b) => (a.get('commonName') > b.get('commonName') ? 1 : -1),
   },
   {
@@ -24,6 +24,10 @@ const sortOptions = [
     sortFunc: (a, b) => b.get('detections') - a.get('detections'),
   },
   { label: 'nights', sortFunc: (a, b) => b.get('nights') - a.get('nights') },
+  {
+    label: 'contributors',
+    sortFunc: (a, b) => b.get('contributors').size - a.get('contributors').size,
+  },
 ]
 
 export const Wrapper = styled(Flex).attrs({
@@ -51,10 +55,6 @@ export const NoResults = styled(Box)`
 `
 
 const SpeciesList = ({ species, index: rawIndex }) => {
-  console.log('render species list')
-
-  //   const { state, dispatch: filterDispatch } = useContext(CrossfilterContext)
-
   const indexRef = useRef(null)
   const initialState = Map({
     species: species.sort(sortOptions[0].sortFunc),

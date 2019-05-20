@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 
 import { Box, Flex } from 'components/Grid'
-import {HelpText} from 'components/Text'
 import styled, { themeGet } from 'style'
 import Header from './Header'
 

@@ -28,6 +28,10 @@ const colors = {
     800: '#550007',
     900: '#3c0005',
   },
+  highlight: {
+    100: '#eeeaf4', // lightest violet
+    500: '#84000b',
+  },
   grey: {
     100: '#f9f9f9',
     200: '#ededee',

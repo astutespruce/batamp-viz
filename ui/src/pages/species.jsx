@@ -41,6 +41,7 @@ SpeciesPage.propTypes = {
             sciName: PropTypes.string.isRequired,
             detections: PropTypes.number.isRequired,
             nights: PropTypes.number.isRequired,
+            contributors: PropTypes.arrayOf(PropTypes.string).isRequired,
           }).isRequired,
         })
       ).isRequired,
@@ -61,6 +62,7 @@ export const pageQuery = graphql`
           sciName
           detections
           nights
+          contributors
         }
       }
     }
