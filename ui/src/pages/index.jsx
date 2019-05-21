@@ -1,68 +1,73 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { graphql, navigate } from 'gatsby'
+import { graphql } from 'gatsby'
 
-import { OutboundLink } from 'components/Link'
-import { Button } from 'components/Button'
+import { HeaderImage } from 'components/Image'
 import Layout from 'components/Layout'
 import { Container } from 'components/Grid'
-import styled from 'style'
+import {
+  TopSection,
+  AboutSection,
+  BatAMPSection,
+  ContributorsSection,
+} from 'blocks/home'
 
-const BodyText = styled.p`
-  font-size: larger;
-`
+const IndexPage = ({
+  data: { headerImage: img, summaryJson, allContributorsJson },
+}) => {
+  const contributors = allContributorsJson.edges.map(({ node }) => node)
 
-const IndexPage = ({ data: { headerImage: img } }) => (
-  <Layout
-    title="Home"
-    headerImage={{
-      img,
-      author: 'Michael Durham/Minden Pictures, Bat Conservation International',
-      url:
-        'https://www.flickr.com/photos/mypubliclands/46056678782/in/album-72157699760909522/',
-    }}
-  >
-    <Container paddingBottom="3rem">
-      TODO
-      {/* <h2>
-        This tool helps you prepare information for bat monitoring efforts in
-        North America, including:
-      </h2>
-      <ul>
-        <li>
-          <OutboundLink from="/" to="https://batamp.databasin.org/">
-            Bat Acoustic Monitoring Portal
-          </OutboundLink>
-        </li>
-        <li>
-          <OutboundLink from="/" to="https://www.nabatmonitoring.org/">
-            North American Bat Monitoring Program
-          </OutboundLink>
-        </li>
-      </ul>
+  return (
+    <Layout title="Home">
+      <HeaderImage
+        image={img.childImageSharp.fluid}
+        height="100vh"
+        minHeight="40rem"
+        position="bottom"
+        credits={{
+          author:
+            'Michael Durham/Minden Pictures, Bat Conservation International',
+          url:
+            'https://www.flickr.com/photos/mypubliclands/46056678782/in/album-72157699760909522/',
+        }}
+        title="Monitoring Bat Species in North America"
+        subtitle="is critical for detecting impacts from climate, disease, and development."
+      />
 
-      <BodyText>
-        This tool will help you &quot;fuzz&quot; the coordinates of your bat
-        monitoring location, so that you can more easily share your data with
-        other monitoring efforts.
-        <br />
-        <br />
-        You can also use this tool to find the monitoring grid cell ID for your
-        location.
-      </BodyText>
+      <Container pb="3rem">
+        <TopSection {...summaryJson} />
 
-      <Container style={{ textAlign: 'center' }}>
-        <Button primary onClick={() => navigate('/map')}>
-          Get Started
-        </Button>
-      </Container> */}
-    </Container>
-  </Layout>
-)
+        <AboutSection />
+
+        <BatAMPSection />
+
+        <ContributorsSection contributors={contributors} />
+      </Container>
+    </Layout>
+  )
+}
 
 IndexPage.propTypes = {
   data: PropTypes.shape({
     headerImage: PropTypes.object.isRequired,
+    summaryJson: PropTypes.shape({
+      admin1: PropTypes.number.isRequired,
+      nights: PropTypes.number.isRequired,
+      years: PropTypes.number.isRequired,
+      contributors: PropTypes.number.isRequired,
+    }),
+    allContributorsJson: PropTypes.shape({
+      edges: PropTypes.arrayOf(
+        PropTypes.shape({
+          node: PropTypes.shape({
+            contributor: PropTypes.string.isRequired,
+            detections: PropTypes.number.isRequired,
+            nights: PropTypes.number.isRequired,
+            species: PropTypes.arrayOf(PropTypes.string),
+          }),
+        })
+      ).isRequired,
+    }),
   }).isRequired,
 }
 
@@ -72,6 +77,23 @@ export const pageQuery = graphql`
       childImageSharp {
         fluid(maxWidth: 3200) {
           ...GatsbyImageSharpFluid_withWebp
+        }
+      }
+    }
+    summaryJson {
+      admin1
+      contributors
+      nights
+      years
+    }
+    allContributorsJson(sort: { fields: [detections], order: DESC }) {
+      edges {
+        node {
+          contributor
+          detections
+          nights
+          detectors
+          species
         }
       }
     }

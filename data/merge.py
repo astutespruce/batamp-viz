@@ -213,7 +213,22 @@ df.reset_index().to_feather(derived_dir / "merged.feather")
 # df.to_csv(derived_dir / "merged.csv", index=False, quoting=csv.QUOTE_NONNUMERIC)
 
 
-#### Calculate summary statistics
+### Calculate high level summary statistics
+summary = {
+    "admin1": site_admin.admin_id.unique().size,
+    "species": len(ACTIVITY_COLUMNS),
+    "contributors": df.contributor.unique().size,
+    "detectors": len(detectors),
+    "detections": int(df[ACTIVITY_COLUMNS].sum().sum().astype("uint")),
+    "nights": len(df),
+    "years": df.year.unique().size
+}
+
+with open(json_dir / "summary.json", "w") as outfile:
+    outfile.write(json.dumps(summary))
+
+
+#### Calculate contributor summary statistics
 contributor_gb = df.groupby("contributor")
 contributor_detections = (
     contributor_gb[ACTIVITY_COLUMNS]

@@ -6,28 +6,22 @@ import { Link } from 'components/Link'
 import Layout from 'components/Layout'
 import SEO from 'components/SEO'
 import { Container } from 'components/Grid'
-import { FluidImage } from 'components/Image'
+import { HeaderImage } from 'components/Image'
 
 const NotFoundPage = ({ data: { headerImage } }) => (
   <Layout>
     <SEO title="404: Not found" />
-    <FluidImage
+    <HeaderImage
       image={headerImage.childImageSharp.fluid}
-      height="70vh"
+      height="100vh"
       position="bottom"
       credits={{
         url: 'https://www.flickr.com/photos/sloalan/7664772034/',
         author: 'Alan Schmierer',
       }}
+      title="PAGE NOT FOUND"
+      subtitle="You appear to be lost..."
     />
-
-    <Container>
-      <h1>PAGE NOT FOUND</h1>
-      <h2>You appear to be lost...</h2>
-      <h3>
-        Try going <Link to="/">Home</Link>
-      </h3>
-    </Container>
   </Layout>
 )
 
