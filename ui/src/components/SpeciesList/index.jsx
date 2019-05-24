@@ -2,8 +2,8 @@ import React, { useEffect, useReducer, useRef, memo } from 'react'
 import PropTypes from 'prop-types'
 import { Set, List, Map } from 'immutable'
 import ImmutablePropTypes from 'react-immutable-proptypes'
-import { Index } from 'elasticlunr'
 
+import { SearchField, useIndex } from 'components/Search'
 import { Box, Flex, Columns, Column } from 'components/Grid'
 import { SortBar, SearchBar } from 'components/List'
 import styled, { themeGet } from 'style'
@@ -53,8 +53,9 @@ export const NoResults = styled(Box)`
   text-align: center;
 `
 
-const SpeciesList = ({ species, index: rawIndex }) => {
-  const indexRef = useRef(null)
+const SpeciesList = ({ species }) => {
+  const queryIndex = useIndex()
+
   const initialState = Map({
     species: species.sort(sortOptions[0].sortFunc),
     query: '',
@@ -68,14 +69,8 @@ const SpeciesList = ({ species, index: rawIndex }) => {
 
         let newSpecies = species
         if (payload) {
-          const { current: index } = indexRef
           const filteredIDs = Set(
-            index
-              .search(payload, {
-                expand: true,
-                fields: { commonName: {}, sciName: {}, species: {} },
-              })
-              .map(({ ref }) => index.documentStore.getDoc(ref).species)
+            queryIndex(payload).map(({ species: spp }) => spp)
           )
           newSpecies = species.filter(item =>
             filteredIDs.has(item.get('species'))
@@ -103,11 +98,6 @@ const SpeciesList = ({ species, index: rawIndex }) => {
 
   const [state, dispatch] = useReducer(speciesReducer, initialState)
 
-  useEffect(() => {
-    indexRef.current = Index.load(rawIndex)
-    window.index = indexRef.current
-  }, [rawIndex])
-
   const handleQueryChange = value => {
     dispatch({ type: 'query', payload: value })
   }
@@ -123,12 +113,12 @@ const SpeciesList = ({ species, index: rawIndex }) => {
     <Wrapper>
       <Columns px="1rem" alignItems="baseline">
         <Column>
-          <Count>{items.size} currently visible</Count>
+          <Count>{items.size} species currently visible</Count>
         </Column>
         <Column>
           <SortBar
             index={state.get('sortIdx', 0)}
-            options={sortOptions.map(({label}) => label)}
+            options={sortOptions.map(({ label }) => label)}
             onChange={handleSortChange}
           />
         </Column>
@@ -141,7 +131,9 @@ const SpeciesList = ({ species, index: rawIndex }) => {
       />
 
       {items.size > 0 ? (
-        items.map(item => <ListItem key={item.get('species')} item={item} metric={metric}/>)
+        items.map(item => (
+          <ListItem key={item.get('species')} item={item} metric={metric} />
+        ))
       ) : (
         <NoResults>No visible species...</NoResults>
       )}
@@ -151,7 +143,6 @@ const SpeciesList = ({ species, index: rawIndex }) => {
 
 SpeciesList.propTypes = {
   species: ImmutablePropTypes.list.isRequired,
-  index: PropTypes.object.isRequired,
 }
 
 // only render once on construction

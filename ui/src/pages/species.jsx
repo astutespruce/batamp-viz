@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
 import { fromJS } from 'immutable'
 
 import Layout from 'components/Layout'
-import { Container, Flex } from 'components/Grid'
+import { Container } from 'components/Grid'
 import SpeciesList from 'components/SpeciesList'
 import styled from 'style'
 
@@ -15,7 +15,6 @@ const Title = styled.h1`
 const SpeciesPage = ({
   data: {
     allSpeciesJson: { edges },
-    siteSearchIndex: { index },
   },
 }) => {
   const species = fromJS(edges.map(({ node }) => node))
@@ -24,7 +23,7 @@ const SpeciesPage = ({
     <Layout title="Explore Bat Species">
       <Container py="2rem">
         <Title>Explore Bat Species</Title>
-        <SpeciesList species={species} index={index} />
+        <SpeciesList species={species} />
       </Container>
     </Layout>
   )
@@ -46,9 +45,6 @@ SpeciesPage.propTypes = {
         })
       ).isRequired,
     }).isRequired,
-    siteSearchIndex: PropTypes.shape({
-      index: PropTypes.object.isRequired,
-    }).isRequired,
   }).isRequired,
 }
 
@@ -65,9 +61,6 @@ export const pageQuery = graphql`
           contributors
         }
       }
-    }
-    siteSearchIndex {
-      index
     }
   }
 `

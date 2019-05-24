@@ -3,9 +3,9 @@ import React from 'react'
 import { ResponsiveText } from 'components/Text'
 import { Flex } from 'components/Grid'
 import { Link } from 'components/Link'
-import Search from 'components/Search'
 import styled, { themeGet } from 'style'
 import Navigation from './Navigation'
+import Search from './Search'
 
 import { siteMetadata } from '../../../gatsby-config'
 
