@@ -17,6 +17,10 @@ const WideColumn = styled(BaseColumn).attrs({
   width: ['100%', '100%', '60%'],
 })``
 
+const ImgWrapper = styled.div`
+position: relative;
+`
+
 const BatAMP = () => {
   const data = useStaticQuery(graphql`
     query BackgroundSectionQuery {
@@ -35,11 +39,13 @@ const BatAMP = () => {
       <Title>The Bat Acoustic Monitoring Portal</Title>
       <Columns>
         <Column>
+        <ImgWrapper>
           <Img fluid={data.image.childImageSharp.fluid} alt="" />
           <Credits
             url="https://www.instagram.com/svaldvard/?hl=en"
             author="José G. Martínez-Fonseca"
           />
+          </ImgWrapper>
         </Column>
         <WideColumn>
           <p>

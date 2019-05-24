@@ -41,7 +41,7 @@ const IndexPage = ({
 
         <BatAMPSection />
 
-        <ContributorsSection contributors={contributors} />
+        <ContributorsSection contributors={contributors} totals={summaryJson} />
       </Container>
     </Layout>
   )
@@ -85,6 +85,9 @@ export const pageQuery = graphql`
       contributors
       nights
       years
+      detections
+      detectors
+      species
     }
     allContributorsJson(sort: { fields: [detections], order: DESC }) {
       edges {

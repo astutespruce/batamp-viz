@@ -5,9 +5,8 @@ import ImmutablePropTypes from 'react-immutable-proptypes'
 import { Index } from 'elasticlunr'
 
 import { Box, Flex, Columns, Column } from 'components/Grid'
+import { SortBar, SearchBar } from 'components/List'
 import styled, { themeGet } from 'style'
-import SearchBar from './SearchBar'
-import SortBar from './SortBar'
 import ListItem from './ListItem'
 
 const sortOptions = [
@@ -118,6 +117,7 @@ const SpeciesList = ({ species, index: rawIndex }) => {
   }
 
   const items = state.get('species', List())
+  const metric = sortOptions[state.get('sortIdx')].label
 
   return (
     <Wrapper>
@@ -128,7 +128,7 @@ const SpeciesList = ({ species, index: rawIndex }) => {
         <Column>
           <SortBar
             index={state.get('sortIdx', 0)}
-            options={sortOptions}
+            options={sortOptions.map(({label}) => label)}
             onChange={handleSortChange}
           />
         </Column>
@@ -141,7 +141,7 @@ const SpeciesList = ({ species, index: rawIndex }) => {
       />
 
       {items.size > 0 ? (
-        items.map(item => <ListItem key={item.get('species')} item={item} />)
+        items.map(item => <ListItem key={item.get('species')} item={item} metric={metric}/>)
       ) : (
         <NoResults>No visible species...</NoResults>
       )}

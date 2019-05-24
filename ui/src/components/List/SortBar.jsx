@@ -29,9 +29,9 @@ export const Option = styled.span`
 const SortBar = ({ index, options, onChange }) => (
   <Wrapper>
     sort:
-    {options.map(({ label }, idx) => (
-      <Option key={label} active={idx === index} onClick={() => onChange(idx)}>
-        {label}
+    {options.map((option, idx) => (
+      <Option key={option} active={idx === index} onClick={() => onChange(idx)}>
+        {option}
       </Option>
     ))}
   </Wrapper>
@@ -39,11 +39,7 @@ const SortBar = ({ index, options, onChange }) => (
 
 SortBar.propTypes = {
   index: PropTypes.number.isRequired,
-  options: PropTypes.arrayOf(
-    PropTypes.shape({
-      label: PropTypes.string.isRequired,
-    })
-  ).isRequired,
+  options: PropTypes.arrayOf(PropTypes.string).isRequired,
   onChange: PropTypes.func.isRequired,
 }
 

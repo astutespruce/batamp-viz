@@ -1,6 +1,7 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
+import { css } from 'styled-components'
 
 import { Columns, Column } from 'components/Grid'
 import { Link } from 'components/Link'
@@ -38,7 +39,16 @@ const Stats = styled.div`
   text-align: right;
 `
 
-const ListItem = ({ item }) => {
+const Metric = styled.span`
+  ${({ isActive }) =>
+    isActive &&
+    css`
+      font-weight: bold;
+      color: ${themeGet('colors.grey.800')};
+    `}
+`
+
+const ListItem = ({ item, metric }) => {
   const {
     species,
     commonName,
@@ -59,14 +69,24 @@ const ListItem = ({ item }) => {
             </Column>
             <Column>
               <Stats>
-                {formatNumber(detections, 0)} detections
+                <Metric isActive={metric === 'detections'}>
+                  {formatNumber(detections, 0)} detections
+                </Metric>
                 <br />
-                on {formatNumber(nights, 0)} nights
+                on{' '}
+                <Metric isActive={metric === 'nights'}>
+                  {formatNumber(nights, 0)} nights
+                </Metric>
                 {contributors ? (
                   <>
                     <br />
-                    by {contributors.length}{' '}
-                    {contributors.length === 1 ? 'contributor' : 'contributors'}
+                    by{' '}
+                    <Metric isActive={metric === 'contributors'}>
+                      {contributors.length}{' '}
+                      {contributors.length === 1
+                        ? 'contributor'
+                        : 'contributors'}
+                    </Metric>
                   </>
                 ) : null}
               </Stats>
@@ -87,9 +107,14 @@ ListItem.propTypes = {
     nights: PropTypes.number.isRequired,
     contributors: ImmutablePropTypes.listOf(PropTypes.string).isRequired,
   }).isRequired,
+  metric: PropTypes.string.isRequired,
 }
 
-// only rerender on ID change
-export default memo(ListItem, ({ item: prevItem }, { item: nextItem }) =>
-  prevItem.equals(nextItem)
+// only rerender on item or metric change
+export default memo(
+  ListItem,
+  (
+    { item: prevItem, metric: prevMetric },
+    { item: nextItem, metric: nextMetric }
+  ) => prevItem.equals(nextItem) && prevMetric === nextMetric
 )
