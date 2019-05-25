@@ -12,6 +12,7 @@ const Wrapper = styled(Flex).attrs({
 })`
   line-height: 1;
   padding: 1rem 1rem 0.25rem;
+  flex: 0 0 auto;
 `
 
 const Icon = styled(FaIcon).attrs({})`

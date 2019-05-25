@@ -6,6 +6,10 @@ import Crossfilter from 'crossfilter2'
 import { isDebug } from 'util/dom'
 import { countByDimension, countFiltered } from './util'
 
+// returns true if passed in values contains the value
+// values must be a Set
+export const hasValue = filterValues => value => filterValues.has(value)
+
 // Actions
 export const RESET_FILTERS = 'RESET_FILTERS'
 export const SET_FILTER = 'SET_FILTER' // payload is {field, filterValue}
@@ -31,6 +35,8 @@ export const useCrossfilter = (data, filters) => {
       case SET_FILTER: {
         const { field, filterValue } = payload
         const dimension = dimensions[field]
+
+        console.log('dimension', dimension, field, filterValue)
 
         if (!filterValue || filterValue.size === 0) {
           // there are no filter values, so clear filter on this field

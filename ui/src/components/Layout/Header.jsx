@@ -20,7 +20,7 @@ const Wrapper = styled(Flex).attrs({
 
 const RootLink = styled(Link)`
   text-decoration: none;
-  color: #fff;
+  color: #fff !important;
 `
 
 const Title = styled(ResponsiveText).attrs({

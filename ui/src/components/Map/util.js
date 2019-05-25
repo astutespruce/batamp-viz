@@ -23,3 +23,42 @@ export const getCenterAndZoom = (bounds, width, height, padding = 0) => {
 
   return { center: viewport.center, zoom }
 }
+
+export const toGeoJSONPoint = (record, x = 'lon', y = 'lat') => {
+  const properties = {}
+  Object.keys(record)
+    .filter(f => f !== x && f !== y)
+    .forEach(f => {
+      properties[f] = record[f]
+    })
+
+  const feature = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [record[x], record[y]],
+    },
+    properties,
+  }
+
+  const { id } = record
+  if (id !== undefined && id !== null) {
+    feature.id = id
+  }
+
+  return feature
+}
+
+export const toGeoJSONPoints = records => ({
+  type: 'FeatureCollection',
+  features: records.map(r => toGeoJSONPoint(r)),
+})
+
+export const boundsOverlap = (
+  [xmin, ymin, xmax, ymax],
+  [xmin2, ymin2, xmax2, ymax2]
+) => ymax2 >= ymin && ymin2 <= ymax && xmax2 >= xmin && xmin2 <= xmax
+
+// returns true if lat / lon is within bounds
+export const withinBounds = ({ lat, lon }, [xmin, ymin, xmax, ymax]) =>
+  lon >= xmin && lon <= xmax && lat >= ymin && lat <= ymax

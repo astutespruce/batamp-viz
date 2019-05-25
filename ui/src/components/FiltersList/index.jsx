@@ -1,4 +1,5 @@
 import React, { useContext } from 'react'
+import PropTypes from 'prop-types'
 import { FaRegTimesCircle } from 'react-icons/fa'
 import { Text } from 'rebass'
 
@@ -7,7 +8,6 @@ import { Button } from 'components/Button'
 import { Flex, Box, Columns, Column } from 'components/Grid'
 import styled, { themeGet } from 'style'
 import Filter from './Filter'
-import { filters as rawFilters } from '../../../config/filters'
 
 const Wrapper = styled(Flex).attrs({
   flexDirection: 'column',
@@ -49,10 +49,7 @@ const Filters = styled(Box).attrs({ flex: 1, pr: '1rem' })`
   overflow-y: auto;
 `
 
-// filter out internal filters
-const filters = rawFilters.filter(({ internal }) => !internal)
-
-const index = () => {
+const FiltersList = ({ filters }) => {
   const { state, dispatch } = useContext(Crossfilter)
 
   const hasFilters =
@@ -75,7 +72,7 @@ const index = () => {
       <Header alignItems="baseline">
         <Column>
           <Count>
-            {state.get('filteredCount')} estuaries currently visible
+            {state.get('filteredCount')} detectors currently visible
           </Count>
         </Column>
         <Column>
@@ -101,4 +98,18 @@ const index = () => {
   )
 }
 
-export default index
+FiltersList.propTypes = {
+  filters: PropTypes.arrayOf(
+    PropTypes.shape({
+      field: PropTypes.string.isRequired,
+      filterFunc: PropTypes.func.isRequired,
+      title: PropTypes.string.isRequired,
+      values: PropTypes.arrayOf(
+        PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      ),
+      labels: PropTypes.arrayOf(PropTypes.string),
+    })
+  ).isRequired,
+}
+
+export default FiltersList

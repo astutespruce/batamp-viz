@@ -12,6 +12,7 @@
     "@rebass/grid": "^6.0.0",
     "@sentry/browser": "^5.2.0",
     "babel-plugin-styled-components": "^1.10.0",
+    "crossfilter2": "^1.4.7",
     "elasticlunr": "^0.9.5",
     "gatsby": "^2.4.2",
     "gatsby-background-image": "^0.5.5",

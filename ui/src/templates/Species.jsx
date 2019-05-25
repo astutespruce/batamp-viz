@@ -1,14 +1,22 @@
-import React from 'react'
+import React, { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
+import { List, fromJS } from 'immutable'
 
 import Layout from 'components/Layout'
 import { Text } from 'components/Text'
-import Map from 'components/Map'
+import {
+  hasValue,
+  Provider as CrossfilterProvider,
+  FilteredMap as Map,
+} from 'components/Crossfilter'
+// import Map from 'components/Map'
 import Sidebar from 'components/Sidebar'
 import { Column, Columns, Flex } from 'components/Grid'
 import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
+import { GraphQLArrayPropType } from 'util/graphql'
+import { NABounds } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -43,6 +51,21 @@ const RightColumn = styled(Column)`
   text-align: right;
 `
 
+const filters = [
+  {
+    field: 'detector',
+    internal: true,
+    filterFunc: hasValue,
+  },
+  {
+    field: 'bounds',
+    internal: true,
+
+    filterFunc: () => () => true, // FIXME!
+    // TODO: use rbush or spatial filter?
+  },
+]
+
 const SpeciesTemplate = ({
   data: {
     speciesJson: {
@@ -54,37 +77,63 @@ const SpeciesTemplate = ({
       detectors,
       contributors,
     },
-    detectorsJson: { detector, latitude, longitude },
+    allDetectorsJson,
   },
 }) => {
+  const data = fromJS(allDetectorsJson.edges.map(({ node }) => node))
+
+  console.log(data.toJS())
+
+  const [selectedId, setSelectedId] = useState(null)
+  // const boundsRef = useRef(NABounds) // store bounds so they are updated without rerendering
+  // const [{ prevBounds, nextBounds }, setBounds] = useState({
+  //   prevBounds: List(NABounds),
+  // })
+
+  const handleSelect = id => {
+    console.log('onSelect', id)
+    setSelectedId(id)
+  }
+
+  // const handleBoundsChange = bounds => {
+  //   boundsRef.current = bounds
+  // }
+
   return (
     <Layout title={`${commonName} (${sciName})`}>
       <Wrapper>
-        <Sidebar>
-          <Header>
-            <CommonName>{commonName}</CommonName>
-            <ScientificName>{sciName}</ScientificName>
-          </Header>
+        <CrossfilterProvider data={data} filters={filters}>
+          <Sidebar>
+            <Header>
+              <CommonName>{commonName}</CommonName>
+              <ScientificName>{sciName}</ScientificName>
+            </Header>
 
-          <Stats>
-            <Column>
-              {formatNumber(detections, 0)} detections
-              <br />
-              {formatNumber(nights, 0)} nights
-            </Column>
-            <RightColumn>
-              {detectors} detectors
-              <br />
-              {contributors ? (
-                <>
-                  {contributors.length}{' '}
-                  {contributors.length === 1 ? 'contributor' : 'contributors'}
-                </>
-              ) : null}
-            </RightColumn>
-          </Stats>
-        </Sidebar>
-        <Map />
+            <Stats>
+              <Column>
+                {formatNumber(detections, 0)} detections
+                <br />
+                {formatNumber(nights, 0)} nights
+              </Column>
+              <RightColumn>
+                {detectors} detectors
+                <br />
+                {contributors ? (
+                  <>
+                    {contributors.length}{' '}
+                    {contributors.length === 1 ? 'contributor' : 'contributors'}
+                  </>
+                ) : null}
+              </RightColumn>
+            </Stats>
+          </Sidebar>
+          <Map
+            // bounds={nextBounds}
+            selectedFeature={selectedId}
+            onSelectFeature={handleSelect}
+            // onBoundsChange={handleBoundsChange}
+          />
+        </CrossfilterProvider>
       </Wrapper>
     </Layout>
   )
@@ -101,11 +150,13 @@ SpeciesTemplate.propTypes = {
       detectors: PropTypes.number.isRequired,
       contributors: PropTypes.arrayOf(PropTypes.string).isRequired,
     }).isRequired,
-    detectorsJson: PropTypes.shape({
-      detector: PropTypes.number.isRequired,
-      latitude: PropTypes.number.isRequired,
-      longitude: PropTypes.number.isRequired,
-    }).isRequired,
+    allDetectorsJson: GraphQLArrayPropType(
+      PropTypes.shape({
+        detector: PropTypes.number.isRequired,
+        lat: PropTypes.number.isRequired,
+        lon: PropTypes.number.isRequired,
+      })
+    ).isRequired,
   }).isRequired,
 }
 
@@ -120,11 +171,15 @@ export const pageQuery = graphql`
       detectors
       contributors
     }
-    detectorsJson(species_present: { eq: $species }) {
-      site
-      detector
-      latitude
-      longitude
+    allDetectorsJson(filter: { species_present: { eq: $species } }) {
+      edges {
+        node {
+          site
+          detector
+          lat
+          lon
+        }
+      }
     }
   }
 `

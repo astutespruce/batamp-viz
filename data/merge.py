@@ -19,7 +19,7 @@ boundary_dir = Path("data/boundaries")
 json_dir = Path("ui/data")
 
 
-location_fields = ["latitude", "longitude"]
+location_fields = ["lat", "lon"]
 time_fields = ["year", "month", "week"]
 
 #### Read raw source data from CSV ############################################
@@ -44,8 +44,8 @@ df = df.drop(
     columns=["x_coord", "y_coord", "site_id", "det_id"] + GROUP_ACTIVITY_COLUMNS
 ).rename(
     columns={
-        "db_longitude": "longitude",
-        "db_latitude": "latitude",
+        "db_longitude": "lon",
+        "db_latitude": "lat",
         # "site_id": "orig_site_id",
         # "det_id": "orig_det_id",
     }
@@ -138,7 +138,7 @@ detectors["detector"] = detectors.index
 sites = detectors.groupby(location_fields).size().reset_index()[location_fields]
 
 # construct geometries so that sites can be joined to boundaries
-sites["geometry"] = sites.apply(lambda row: Point(row.longitude, row.latitude), axis=1)
+sites["geometry"] = sites.apply(lambda row: Point(row.lon, row.lat), axis=1)
 sites = gp.GeoDataFrame(sites, geometry="geometry", crs={"init": "epsg:4326"})
 sites["site"] = sites.index
 
@@ -196,9 +196,9 @@ detectors = (
 # drop all detector related info from df
 df = (
     df.drop(columns=DETECTOR_FIELDS[:-1])
-    .set_index(["latitude", "longitude", "mic_ht"])
+    .set_index(location_fields + ["mic_ht"])
     .join(
-        detectors.set_index(["latitude", "longitude", "mic_ht"])[["detector", "site"]]
+        detectors.set_index(location_fields + ["mic_ht"])[["detector", "site"]]
     )
     .reset_index()
 )
@@ -369,7 +369,7 @@ det_ts.name = "ts"
 
 det_info = (
     detectors[
-        ["latitude", "longitude", "mic_ht", "admin_id", "grts", "na50k", "na100k"]
+        location_fields + ["mic_ht", "admin_id", "grts", "na50k", "na100k"]
     ]
     .join(det_spps)
     .join(det_spp_ranges, rsuffix="_range")
