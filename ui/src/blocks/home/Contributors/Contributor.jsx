@@ -69,7 +69,7 @@ const Contributor = ({
           detected
         </Stats>
       </Column>
-      <Column>
+      <Column flex={0}>
         <Donut
           size={100}
           percentSize={24}
