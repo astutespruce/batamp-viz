@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 import { FaRegTimesCircle } from 'react-icons/fa'
 
@@ -22,7 +22,7 @@ const Subtitle = styled(Text).attrs({
   fontSize: ['0.8rem', '0.8rem', '1rem'],
 })``
 
-const Stats = styled(Box).attrs({ px: '1rem' })`
+const Stats = styled(Box)`
   border-top: 1px solid ${themeGet('colors.grey.400')};
   border-bottom: 1px solid ${themeGet('colors.grey.400')};
   font-size: 0.8rem;
@@ -214,4 +214,4 @@ Details.defaultProps = {
   idMethods: null,
 }
 
-export default Details
+export default memo(Details)
