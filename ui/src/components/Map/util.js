@@ -62,3 +62,21 @@ export const boundsOverlap = (
 // returns true if lat / lon is within bounds
 export const withinBounds = ({ lat, lon }, [xmin, ymin, xmax, ymax]) =>
   lon >= xmin && lon <= xmax && lat >= ymin && lat <= ymax
+
+/**
+ * Convert a list of objects into mapbox step expression
+ * @param {Array of objects} entries - list of objects to map to steps, each must have {threshold, property}
+ * @param {string} property  - property to assign to each step, e.g., radius
+ */
+export const createSteps = (entries, property) => {
+  const steps = []
+  entries.forEach(({ threshold, ...entry }, i) => {
+    steps.push(entry[property])
+
+    // omit the last threshold
+    if (i < entries.length - 1) {
+      steps.push(threshold)
+    }
+  })
+  return steps
+}

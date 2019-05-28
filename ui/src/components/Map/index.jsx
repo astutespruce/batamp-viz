@@ -98,6 +98,20 @@ const Map = ({
       onBoundsChange(lowerLeft.concat(upperRight))
     })
 
+    map.on('click', e => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['points', 'clusters'],
+      })
+      if (features) {
+        console.log(
+          'clicked features',
+          features.map(({ properties }) => properties)
+        )
+        // TODO: process selected features and highlight
+        // onSelectFeature(feature.properties)
+      }
+    })
+
     return () => {
       map.remove()
     }
@@ -108,7 +122,11 @@ const Map = ({
     const { current: map } = mapRef
     if (!(map && map.isStyleLoaded())) return
 
+    console.log('incoming data to map', data.toJS())
+
     const geoJSON = data ? toGeoJSONPoints(data.toJS()) : []
+
+    console.log(geoJSON)
     map.getSource('points').setData(geoJSON)
 
     // TODO: set filter on the estuary boundaries?

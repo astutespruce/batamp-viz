@@ -78,7 +78,7 @@ DETECTOR_FIELDS = [
     # "orig_site_id",
     # "orig_det_id",
     # source_dataset omitted since there may be multiple per detector
-    "contributor",
+    # "contributor",  # omitted since there may be multiple
 ]
 
 

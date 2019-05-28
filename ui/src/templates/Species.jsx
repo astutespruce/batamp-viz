@@ -92,11 +92,11 @@ const SpeciesTemplate = ({
   const ts = extractNodes(allDetectorTsJson)
 
   const timestepField = 'month'
-  const metricField = 'detections'
+  const valueField = 'detections'
 
   // TODO: this could migrate to server tier too
   const data = fromJS(
-    ts.map(({ unitID, [timestepField]: timestep, [metricField]: value }) => ({
+    ts.map(({ unitID, [timestepField]: timestep, [valueField]: value }) => ({
       unitID,
       timestep,
       value,
@@ -130,7 +130,7 @@ const SpeciesTemplate = ({
         <CrossfilterProvider
           data={data}
           filters={filters}
-          valueField={metricField}
+          valueField={valueField}
         >
           <Sidebar>
             <Header>
@@ -200,7 +200,7 @@ export const pageQuery = graphql`
       detectors
       contributors
     }
-    allDetectorsJson(filter: { species_present: { eq: $species } }) {
+    allDetectorsJson(filter: { speciesPresent: { eq: $species } }) {
       edges {
         node {
           site

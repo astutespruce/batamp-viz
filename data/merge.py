@@ -11,7 +11,7 @@ from shapely.geometry import Point
 
 from geofeather import read_geofeather
 from constants import SPECIES, ACTIVITY_COLUMNS, GROUP_ACTIVITY_COLUMNS, DETECTOR_FIELDS
-
+from util import camelcase
 
 src_dir = Path("data/src")
 derived_dir = Path("data/derived")
@@ -89,7 +89,7 @@ for col in [
     "wthr_prof",
 ]:
     df[col] = df[col].fillna("").str.strip()
-    df.loc[df[col] == "none", [col]] = "None"
+    df.loc[df[col] == "none", [col]] = ""
 
 # TODO: beware, this is not filled out for all
 # TODO: fill with "Not provided" on frontend
@@ -134,6 +134,14 @@ detectors = (
 )
 detectors["detector"] = detectors.index
 
+# Coalesce call ids into single field
+call_id_columns = ["call_id_1", "call_id_2"]
+detectors["call_id"] = detectors[call_id_columns].apply(
+    lambda row: [v for v in row if v], axis=1
+)
+detectors = detectors.drop(columns=call_id_columns)
+
+
 # extract out unique locations
 sites = detectors.groupby(location_fields).size().reset_index()[location_fields]
 
@@ -154,7 +162,7 @@ if len(missing):
     missing_admin = gp.sjoin(missing, admin_df.loc[admin_df.is_buffer], how="left")
     site_admin.loc[missing_admin.index, admin_cols] = missing_admin[admin_cols]
 
-site_admin = site_admin[admin_cols].rename(columns={"id": "admin_id"})
+site_admin = site_admin[admin_cols].rename(columns={"id": "admin_id", "name": "admin1"})
 
 # extract species list for site based on species ranges
 print("Assigning species ranges to sites...")
@@ -285,8 +293,23 @@ det_contributors = (
     df.groupby("detector").contributor.unique().apply(sorted).rename("contributors")
 )
 
-detectors = detectors.join(detector_datasets).join(det_spps).join(det_contributors)
+# Tally detections and nights
+det_g = df[["detector"] + ACTIVITY_COLUMNS].groupby("detector")
+det_detections = det_g.sum().sum(axis=1).astype("uint").rename("detections")
+det_nights = det_g.size().rename("nights")
 
+detectors = (
+    detectors.join(det_detections)
+    .join(det_nights)
+    .join(detector_datasets)
+    .join(det_spps)
+    .join(det_contributors)
+)
+
+detectors = detectors.rename(columns={"det_mfg": "mfg", "det_model": "model"})
+
+
+detectors.columns = camelcase(detectors.columns)
 detectors[location_fields] = detectors[location_fields].round(5)
 detectors.to_json(json_dir / "detectors.json", orient="records")
 
@@ -336,6 +359,8 @@ spp_stats.to_json(json_dir / "species.json", orient="records")
 
 
 ### Calculate detector - species stats per year, month, week
+# Due to size limits in Gatsby, just doing by month for now
+time_fields = ["month"]
 # transpose species columns to rows
 det = (
     df[["detector"] + ACTIVITY_COLUMNS + time_fields]
@@ -511,3 +536,18 @@ det_ts.to_json(json_dir / "detector_ts.json", orient="records")
 
 # # grouped first
 # apply(lambda row: {spp: {'detections': row[spp].sum().astype('uint')} for spp in ACTIVITY_COLUMNS if row[spp].sum() > 0})
+
+
+# For tallying detections & nights by species by detector:
+# det = (
+#     df[["detector"] + ACTIVITY_COLUMNS]
+#     .set_index("detector")
+#     .stack()
+#     .reset_index()
+# )
+# det.columns = ["detector", "species", "detections"]
+# det_stats = det.groupby(["detector", "species"]).agg(["sum", "count"])
+# det_stats.columns = ["detections", "nights"]
+# det_stats.detections = det_stats.detections.astype("uint32")
+# det_stats.nights = det_stats.nights.astype("uint16")
+# det_stats = det_stats.reset_index()

@@ -67,12 +67,16 @@ const FiltersList = ({ filters }) => {
     })
   }
 
+  const count = state.get('filteredCount')
+  const total = state.get('total')
+
   return (
     <Wrapper>
       <Header alignItems="baseline">
         <Column>
           <Count>
-            {state.get('filteredCount')} detectors currently visible
+            {count} {count < total ? `of ${total}` : ''} detectors currently
+            visible
           </Count>
         </Column>
         <Column>

@@ -1,3 +1,5 @@
+import { createSteps } from './util'
+
 const TILE_HOST = 'https://tiles.batamp.databasin.org'
 
 export const config = {
@@ -21,24 +23,148 @@ export const sources = {
   points: {
     type: 'geojson',
     data: {},
-    // cluster: true,
-    // clusterMaxZoom: 14,
-    // clusterRadius: 45,
+    cluster: true,
+    maxZoom: 15,
+    clusterMaxZoom: 15, // show clusters at lowest zoom since there may be multiple detectors at a site
+    clusterRadius: 24,
+    clusterProperties: {
+      detections: ['+', ['get', 'detections']],
+      nights: ['+', ['get', 'nights']],
+    },
   },
 }
 
+const defaultRadius = 6
+const clusters = [
+  {
+    threshold: 10,
+    // label: '< 10 estuaries',
+    color: '#74a9cf',
+    borderColor: '#2b8cbe',
+    radius: defaultRadius,
+  },
+  {
+    threshold: 100,
+    // label: '10 - 100 estuaries',
+    color: '#2b8cbe',
+    borderColor: '#045a8d',
+    radius: 20,
+  },
+  {
+    threshold: Infinity,
+    // label: '> 100 estuaries',
+    color: '#045a8d',
+    borderColor: '#000',
+    radius: 25,
+  },
+]
+
+// TODO: linear interopolation?
+const clusterRadii = createSteps(
+  [
+    { threshold: 0, radius: 4 },
+    { threshold: 100, radius: 6 },
+    { threshold: 100, radius: 6 },
+    { threshold: 500, radius: 14 },
+  ],
+  'radius'
+)
+
 export const layers = [
+  {
+    id: 'clusters',
+    type: 'circle',
+    source: 'points',
+    filter: ['has', 'point_count'], // point_count field added by mapbox GL
+    paint: {
+      'circle-color': [
+        // 'step',
+        // ['get', 'point_count'],
+        // ...createSteps(clusters, 'color'),
+        'interpolate',
+        ['linear'],
+        ['sqrt', ['get', 'detections']],
+        0,
+        '#AAA',
+        1,
+        '#74a9cf',
+        100,
+        '#2b8cbe',
+        1000,
+        '#045a8d',
+      ],
+      // 'circle-stroke-color': [
+      //   'step',
+      //   ['get', 'point_count'],
+      //   ...createSteps(clusters, 'borderColor'),
+      // ],
+      'circle-stroke-width': 1,
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['sqrt', ['get', 'detections']],
+        1,
+        6,
+        100,
+        10,
+        1000,
+        20,
+      ],
+    },
+  },
   {
     id: 'points', // unclustered points
     type: 'circle',
     source: 'points',
-    // maxzoom: 15,
-    // filter: ['!', ['has', 'point_count']],
+    filter: ['!', ['has', 'point_count']],
     paint: {
-      'circle-color': '#000',
-      'circle-radius': 6,
+      'circle-color': [
+        // 'step',
+        // ['get', 'point_count'],
+        // ...createSteps(clusters, 'color'),
+        'interpolate',
+        ['linear'],
+        ['sqrt', ['get', 'detections']],
+        0,
+        '#AAA',
+        1,
+        '#74a9cf',
+        100,
+        '#2b8cbe',
+        1000,
+        '#045a8d',
+      ],
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['sqrt', ['get', 'detections']],
+        1,
+        6,
+        100,
+        10,
+        1000,
+        20,
+      ],
       'circle-stroke-width': 1,
       'circle-stroke-color': '#fff',
+    },
+  },
+  {
+    id: 'clusters-label',
+    type: 'symbol',
+    source: 'points',
+    filter: ['has', 'point_count'],
+    layout: {
+      'text-field': '{point_count_abbreviated}',
+      'text-size': 10,
+      'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+    },
+    paint: {
+      'text-color': '#FFFFFF',
+      'text-opacity': 1,
+      'text-halo-color': '#000',
+      'text-halo-blur': 1,
+      'text-halo-width': 0.5,
     },
   },
 ]

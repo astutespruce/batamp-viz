@@ -25,9 +25,9 @@ const Wrapper = styled(Flex)`
 const Help = styled(HelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
 const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
-  const species = extractNodes(allSpeciesJson).sort((a, b) =>
-    a.commonName < b.commonName ? -1 : 1
-  )
+  const species = extractNodes(allSpeciesJson)
+
+  const valueField = 'detections'
 
   const filters = [
     {
@@ -45,7 +45,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
         withinBounds({ lat, lon }, mapBounds),
     },
     {
-      field: 'species_present',
+      field: 'speciesPresent',
       title: 'Species Detected',
       isOpen: true,
       hideEmpty: true,
@@ -61,6 +61,9 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
 
   const data = fromJS(extractNodes(allDetectorsJson))
 
+  // possible map styles:
+  // map.setPaintProperty('points', 'circle-radius', ['interpolate', ['linear'], ['sqrt', ['get', 'detections']], 1, 2, 500, 10])
+
   console.log(data.toJS())
 
   // filter out internal filters
@@ -69,7 +72,11 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
   return (
     <Layout title="Explore data">
       <Wrapper>
-        <CrossfilterProvider data={data} filters={filters}>
+        <CrossfilterProvider
+          data={data}
+          filters={filters}
+          valueField={valueField}
+        >
           <Sidebar allowScroll={false}>
             <Box flex={0}>
               <SidebarHeader title="Explore Data" icon="slidersH" />
@@ -113,11 +120,13 @@ export const pageQuery = graphql`
           detector
           lat
           lon
-          species_present
+          speciesPresent
+          detections
+          nights
         }
       }
     }
-    allSpeciesJson {
+    allSpeciesJson(sort: { fields: [commonName], order: ASC }) {
       edges {
         node {
           species
