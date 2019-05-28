@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { List, fromJS } from 'immutable'
+import { List, fromJS, Set } from 'immutable'
 
 import Layout from 'components/Layout'
 import { Text } from 'components/Text'
@@ -15,8 +15,9 @@ import Sidebar from 'components/Sidebar'
 import { Column, Columns, Flex } from 'components/Grid'
 import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
-import { GraphQLArrayPropType } from 'util/graphql'
-import { NABounds } from '../../config/constants'
+import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
+import { createIndex, filterIndex } from 'util/data'
+import { NABounds, MONTHS } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -53,8 +54,14 @@ const RightColumn = styled(Column)`
 
 const filters = [
   {
-    field: 'detector',
+    field: 'unitID',
     internal: true,
+    filterFunc: hasValue,
+  },
+  {
+    field: 'timestep',
+    internal: true,
+    values: MONTHS,
     filterFunc: hasValue,
   },
   {
@@ -72,17 +79,35 @@ const SpeciesTemplate = ({
       species,
       commonName,
       sciName,
-      detections,
-      nights,
-      detectors,
+      detections: totalDetections,
+      nights: totalNights,
+      detectors: totalDetectors,
       contributors,
     },
     allDetectorsJson,
+    allDetectorTsJson,
   },
 }) => {
-  const data = fromJS(allDetectorsJson.edges.map(({ node }) => node))
+  const detectors = extractNodes(allDetectorsJson)
+  const ts = extractNodes(allDetectorTsJson)
+
+  const timestepField = 'month'
+  const metricField = 'detections'
+
+  // TODO: this could migrate to server tier too
+  const data = fromJS(
+    ts.map(({ unitID, [timestepField]: timestep, [metricField]: value }) => ({
+      unitID,
+      timestep,
+      value,
+    }))
+  )
 
   console.log(data.toJS())
+
+  const index = createIndex(detectors, 'detector')
+
+  // console.log('ts', ts)
 
   const [selectedId, setSelectedId] = useState(null)
   // const boundsRef = useRef(NABounds) // store bounds so they are updated without rerendering
@@ -102,7 +127,11 @@ const SpeciesTemplate = ({
   return (
     <Layout title={`${commonName} (${sciName})`}>
       <Wrapper>
-        <CrossfilterProvider data={data} filters={filters}>
+        <CrossfilterProvider
+          data={data}
+          filters={filters}
+          valueField={metricField}
+        >
           <Sidebar>
             <Header>
               <CommonName>{commonName}</CommonName>
@@ -111,12 +140,12 @@ const SpeciesTemplate = ({
 
             <Stats>
               <Column>
-                {formatNumber(detections, 0)} detections
+                {formatNumber(totalDetections, 0)} detections
                 <br />
-                {formatNumber(nights, 0)} nights
+                {formatNumber(totalDetectors, 0)} nights
               </Column>
               <RightColumn>
-                {detectors} detectors
+                {totalDetectors} detectors
                 <br />
                 {contributors ? (
                   <>
@@ -178,6 +207,16 @@ export const pageQuery = graphql`
           detector
           lat
           lon
+        }
+      }
+    }
+    allDetectorTsJson(filter: { s: { eq: $species } }) {
+      edges {
+        node {
+          unitID
+          month: m
+          detections: d
+          nights: n
         }
       }
     }

@@ -197,9 +197,7 @@ detectors = (
 df = (
     df.drop(columns=DETECTOR_FIELDS[:-1])
     .set_index(location_fields + ["mic_ht"])
-    .join(
-        detectors.set_index(location_fields + ["mic_ht"])[["detector", "site"]]
-    )
+    .join(detectors.set_index(location_fields + ["mic_ht"])[["detector", "site"]])
     .reset_index()
 )
 
@@ -221,7 +219,7 @@ summary = {
     "detectors": len(detectors),
     "detections": int(df[ACTIVITY_COLUMNS].sum().sum().astype("uint")),
     "nights": len(df),
-    "years": df.year.unique().size
+    "years": df.year.unique().size,
 }
 
 with open(json_dir / "summary.json", "w") as outfile:
@@ -347,36 +345,41 @@ det = (
 )
 det.columns = ["detector"] + time_fields + ["species", "detections"]
 
-det_spp_stats = det.groupby(["detector", "species"] + time_fields).agg(["sum", "count"])
-det_spp_stats.columns = ["detections", "nights"]
-det_spp_stats.detections = det_spp_stats.detections.astype("uint32")
-det_spp_stats.nights = det_spp_stats.nights.astype("uint16")
-det_spp_stats = det_spp_stats.reset_index().set_index("detector")
+det_ts = det.groupby(["detector", "species"] + time_fields).agg(["sum", "count"])
+det_ts.columns = ["detections", "nights"]
+det_ts.detections = det_ts.detections.astype("uint32")
+det_ts.nights = det_ts.nights.astype("uint16")
+det_ts = det_ts.reset_index()  # .set_index("detector")
 
-# det_spp_stats.reset_index().to_feather(derived_dir / "detector_spp_stats.feather")
+det_ts.to_feather(derived_dir / "detector_ts.feather")
+
+# use smaller column names
+# det_ts.columns = ["unitID", "s", "y", "m", "w", "d", "n"]
+det_ts.columns = ["unitID", "s", "m", "d", "n"]
+det_ts.to_json(json_dir / "detector_ts.json", orient="records")
 
 # join in detector / site / species range information and output to JSON
 
 # species present at detector
-det_spps = det_spp_stats.groupby(level=0).species.unique()
-det_spps.name = "species_present"
+# det_spps = det_spp_stats.groupby(level=0).species.unique()
+# det_spps.name = "species_present"
 
-# distill down to a time series of dicts
-det_ts = det_spp_stats.groupby(level=0).apply(
-    lambda g: [{k: v for k, v in zip(g.columns, r)} for r in g.values]
-)
-det_ts.name = "ts"
+# # distill down to a time series of dicts
+# det_ts = det_spp_stats.groupby(level=0).apply(
+#     lambda g: [{k: v for k, v in zip(g.columns, r)} for r in g.values]
+# )
+# det_ts.name = "ts"
 
-det_info = (
-    detectors[
-        location_fields + ["mic_ht", "admin_id", "grts", "na50k", "na100k"]
-    ]
-    .join(det_spps)
-    .join(det_spp_ranges, rsuffix="_range")
-    .join(det_ts)
-)
+# det_info = (
+#     detectors[
+#         location_fields + ["mic_ht", "admin_id", "grts", "na50k", "na100k"]
+#     ]
+#     .join(det_spps)
+#     .join(det_spp_ranges, rsuffix="_range")
+#     .join(det_ts)
+# )
 
-det_info.to_json(json_dir / "detectors.json", orient="records", double_precision=5)
+# det_info.to_json(json_dir / "detectors.json", orient="records", double_precision=5)
 
 ########### In progress
 

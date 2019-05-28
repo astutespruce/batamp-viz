@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Map, Set } from 'immutable'
 import { FaRegTimesCircle, FaCaretDown, FaCaretRight } from 'react-icons/fa'
 
-import {HelpText} from 'components/Text'
+import { HelpText } from 'components/Text'
 import { Context as Crossfilter, SET_FILTER } from 'components/Crossfilter'
 import { Flex } from 'components/Grid'
 
@@ -62,13 +62,46 @@ const Bars = styled.div`
   padding: 0.5rem 0 0 1rem;
 `
 
-const Filter = ({ field, title, values, labels, help, isOpen: initIsOpen }) => {
+const EmptyMessage = styled.div`
+  color: ${themeGet('colors.grey.600')};
+  text-align: center;
+  font-style: italic;
+  font-size: smaller;
+`
+
+const Filter = ({
+  field,
+  title,
+  values,
+  labels,
+  help,
+  isOpen: initIsOpen,
+  hideEmpty,
+  sortByCount,
+}) => {
   const [isOpen, setIsOpen] = useState(initIsOpen)
   const { state, dispatch } = useContext(Crossfilter)
 
   const filterValues = state.get('filters').get(field, Set())
   const counts = state.get('dimensionCounts').get(field, Map())
   const total = state.get('total')
+
+  // splice together label, value, and count so that we can filter and sort
+  let data = values.map((value, i) => ({
+    value,
+    label: labels[i] || value,
+    count: counts.get(value),
+    isFiltered: filterValues.has(value),
+    isExcluded: !filterValues.isEmpty() && !filterValues.has(value),
+  }))
+
+  if (hideEmpty) {
+    data = data.filter(({ count }) => count > 0)
+  }
+
+  if (sortByCount) {
+    data = data.sort((a, b) => (a.count < b.count ? 1 : -1))
+  }
 
   const toggle = () => {
     setIsOpen(prev => !prev)
@@ -113,21 +146,25 @@ const Filter = ({ field, title, values, labels, help, isOpen: initIsOpen }) => {
       </Header>
 
       {isOpen && (
-        <Bars>
-          {values.map((value, idx) => (
-            <Bar
-              key={value}
-              isFiltered={filterValues.has(value)}
-              isExcluded={!filterValues.isEmpty() && !filterValues.has(value)}
-              label={labels && labels[idx] ? labels[idx] : value}
-              count={counts.get(value, 0)}
-              total={total}
-              onClick={() => handleFilterClick(value)}
-            />
-          ))}
+        <>
+          {data.length > 0 ? (
+            <Bars>
+              {data.map(({ value, ...props }) => (
+                <Bar
+                  key={value}
+                  value={value}
+                  {...props}
+                  total={total}
+                  onClick={() => handleFilterClick(value)}
+                />
+              ))}
 
-          {help && <HelpText>{help}</HelpText>}
-        </Bars>
+              {help && <HelpText>{help}</HelpText>}
+            </Bars>
+          ) : (
+            <EmptyMessage>No data available</EmptyMessage>
+          )}
+        </>
       )}
     </Wrapper>
   )
@@ -140,12 +177,16 @@ Filter.propTypes = {
   labels: PropTypes.array,
   help: PropTypes.string,
   isOpen: PropTypes.bool,
+  hideEmpty: PropTypes.bool,
+  sortByCount: PropTypes.bool,
 }
 
 Filter.defaultProps = {
   labels: null,
   help: null,
   isOpen: false,
+  hideEmpty: false,
+  sortByCount: false,
 }
 
 export default Filter

@@ -26,7 +26,7 @@ const Help = styled(HelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
 const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
   const species = extractNodes(allSpeciesJson).sort((a, b) =>
-    a.commonName < b.commonName ? 1 : -1
+    a.commonName < b.commonName ? -1 : 1
   )
 
   const filters = [
@@ -46,9 +46,11 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
     },
     {
       field: 'species_present',
-      title: 'Species',
+      title: 'Species Detected',
       isOpen: true,
+      hideEmpty: true,
       filterFunc: hasValue,
+      sortByCount: true,
       isArray: true,
       values: species.map(({ species: spp }) => spp),
       labels: species.map(

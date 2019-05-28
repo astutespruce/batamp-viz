@@ -36,6 +36,12 @@ export const useCrossfilter = (data, filters) => {
         const { field, filterValue } = payload
         const dimension = dimensions[field]
 
+        if (!dimension) {
+          console.warn(
+            `Filter requested on dimension that does not exist: ${field}`
+          )
+          return
+        }
         console.log('dimension', dimension, field, filterValue)
 
         if (!filterValue || filterValue.size === 0) {
