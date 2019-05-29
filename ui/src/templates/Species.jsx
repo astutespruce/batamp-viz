@@ -213,7 +213,7 @@ export const pageQuery = graphql`
     allDetectorTsJson(filter: { s: { eq: $species } }) {
       edges {
         node {
-          unitID
+          unitID: i
           month: m
           detections: d
           nights: n

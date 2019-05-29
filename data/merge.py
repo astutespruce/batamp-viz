@@ -162,7 +162,9 @@ if len(missing):
     missing_admin = gp.sjoin(missing, admin_df.loc[admin_df.is_buffer], how="left")
     site_admin.loc[missing_admin.index, admin_cols] = missing_admin[admin_cols]
 
-site_admin = site_admin[admin_cols].rename(columns={"id": "admin_id", "name": "admin1"})
+site_admin = site_admin[admin_cols].rename(
+    columns={"id": "admin1", "name": "admin1_name"}
+)
 
 # extract species list for site based on species ranges
 print("Assigning species ranges to sites...")
@@ -203,9 +205,13 @@ detectors = (
 #### Join site and detector IDs to df
 # drop all detector related info from df
 df = (
-    df.drop(columns=DETECTOR_FIELDS[:-1])
+    df.drop(columns=DETECTOR_FIELDS)
     .set_index(location_fields + ["mic_ht"])
-    .join(detectors.set_index(location_fields + ["mic_ht"])[["detector", "site"]])
+    .join(
+        detectors.set_index(location_fields + ["mic_ht"])[
+            ["detector", "site", "admin1", "grts", "na50k", "na100k"]
+        ]
+    )
     .reset_index()
 )
 
@@ -313,6 +319,22 @@ detectors.columns = camelcase(detectors.columns)
 detectors[location_fields] = detectors[location_fields].round(5)
 detectors.to_json(json_dir / "detectors.json", orient="records")
 
+
+### Calculate species statistics by detector:
+det = df[["detector"] + ACTIVITY_COLUMNS].set_index("detector").stack().reset_index()
+det.columns = ["detector", "species", "detections"]
+det_stats = det.groupby(["detector", "species"]).agg(["sum", "count"])
+det_stats.columns = ["detections", "nights"]
+det_stats.detections = det_stats.detections.astype("uint32")
+det_stats.nights = det_stats.nights.astype("uint16")
+det_stats = det_stats.reset_index()
+
+
+# use short column names
+det_stats.columns = ["i", "s", "d", "n"]
+det_stats.to_json(json_dir / "detectorSpecies.json", orient="records")
+
+
 # TODO: figure out flat format for detectors
 # detectors.to_feather(derived_dir / "detectors.feather")
 
@@ -380,8 +402,40 @@ det_ts.to_feather(derived_dir / "detector_ts.feather")
 
 # use smaller column names
 # det_ts.columns = ["unitID", "s", "y", "m", "w", "d", "n"]
-det_ts.columns = ["unitID", "s", "m", "d", "n"]
-det_ts.to_json(json_dir / "detector_ts.json", orient="records")
+det_ts.columns = ["i", "s", "m", "d", "n"]
+det_ts.to_json(json_dir / "detectorTS.json", orient="records")
+
+
+### Summary statistics for each summary unit
+
+#### Admin1
+# admin1_g = df[['admin1'] + ACTIVITY_COLUMNS].groupby('admin1')
+# admin1_nights = admin1_g.size().rename('nights')
+
+admin_detectors = (
+    df.groupby(["admin1", "detector"])
+    .size()
+    .reset_index()
+    .groupby("admin1")
+    .size()
+    .rename("detectors")
+)
+
+admin1_pivot = (
+    df[["admin1"] + ACTIVITY_COLUMNS].set_index("admin1").stack().reset_index()
+)
+admin1_pivot.columns = ["admin1", "species", "detections"]
+admin1_stats = admin1_pivot.groupby(["admin1", "species"]).agg(["sum", "count"])
+admin1_stats.columns = ["detections", "nights"]
+admin1_stats.detections = admin1_stats.detections.astype("uint32")
+admin1_stats.nights = admin1_stats.nights.astype("uint32")
+admin1_stats = (
+    admin1_stats.reset_index().set_index("admin1").join(admin_detectors).reset_index()
+)
+
+admin1_stats.columns = ["i", "s", "d", "n", "ds"]
+admin1_stats.to_json(json_dir / "admin1Species.json", orient="records")
+
 
 # join in detector / site / species range information and output to JSON
 
@@ -537,17 +591,3 @@ det_ts.to_json(json_dir / "detector_ts.json", orient="records")
 # # grouped first
 # apply(lambda row: {spp: {'detections': row[spp].sum().astype('uint')} for spp in ACTIVITY_COLUMNS if row[spp].sum() > 0})
 
-
-# For tallying detections & nights by species by detector:
-# det = (
-#     df[["detector"] + ACTIVITY_COLUMNS]
-#     .set_index("detector")
-#     .stack()
-#     .reset_index()
-# )
-# det.columns = ["detector", "species", "detections"]
-# det_stats = det.groupby(["detector", "species"]).agg(["sum", "count"])
-# det_stats.columns = ["detections", "nights"]
-# det_stats.detections = det_stats.detections.astype("uint32")
-# det_stats.nights = det_stats.nights.astype("uint16")
-# det_stats = det_stats.reset_index()

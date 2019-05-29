@@ -41,5 +41,3 @@ export const sumByDimension = (dimensions, valueField) => {
       })
   )
 }
-
-window.sumByDimension = sumByDimension
