@@ -95,15 +95,17 @@ const SpeciesTemplate = ({
   const valueField = 'detections'
 
   // TODO: this could migrate to server tier too
-  const data = fromJS(
-    ts.map(({ unitID, [timestepField]: timestep, [valueField]: value }) => ({
-      unitID,
-      timestep,
-      value,
-    }))
-  )
+  // const data = fromJS(
+  //   ts.map(({ unitID, [timestepField]: timestep, [valueField]: value }) => ({
+  //     unitID,
+  //     timestep,
+  //     value,
+  //   }))
+  // )
 
-  console.log(data.toJS())
+  // console.log(data.toJS())
+
+  const data = fromJS(detectors)
 
   const index = createIndex(detectors, 'detector')
 

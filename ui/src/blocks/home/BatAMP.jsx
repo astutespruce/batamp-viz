@@ -3,22 +3,17 @@ import { graphql, useStaticQuery } from 'gatsby'
 import Img from 'gatsby-image'
 
 import { Credits } from 'components/Image'
-import { Box, Columns, Column as BaseColumn } from 'components/Grid'
+import { Columns, Column as BaseColumn } from 'components/Grid'
 import { OutboundLink } from 'components/Link'
-import { Link } from 'components/Link'
-import styled, { themeGet } from 'style'
+import styled from 'style'
 import { Section, Title } from './styles'
 
 const Column = styled(BaseColumn).attrs({
-  width: ['100%', '100%', '30%'],
-})``
-
-const WideColumn = styled(BaseColumn).attrs({
-  width: ['100%', '100%', '60%'],
+  width: ['100%', '50%', '50%'],
 })``
 
 const ImgWrapper = styled.div`
-position: relative;
+  position: relative;
 `
 
 const BatAMP = () => {
@@ -39,17 +34,17 @@ const BatAMP = () => {
       <Title>The Bat Acoustic Monitoring Portal</Title>
       <Columns>
         <Column>
-        <ImgWrapper>
-          <Img fluid={data.image.childImageSharp.fluid} alt="" />
-          <Credits
-            url="https://www.instagram.com/svaldvard/?hl=en"
-            author="José G. Martínez-Fonseca"
-          />
+          <ImgWrapper>
+            <Img fluid={data.image.childImageSharp.fluid} alt="" />
+            <Credits
+              url="https://www.instagram.com/svaldvard/?hl=en"
+              author="Hoary Bat, José G. Martínez-Fonseca"
+            />
           </ImgWrapper>
         </Column>
-        <WideColumn>
+        <Column>
           <p>
-            This application is a companion application to the{' '}
+            This application is a companion to the{' '}
             <OutboundLink
               from="/"
               to="https://batamp.databasin.org/"
@@ -59,7 +54,7 @@ const BatAMP = () => {
             </OutboundLink>{' '}
             (BatAMP). BatAMP is a ...
           </p>
-        </WideColumn>
+        </Column>
       </Columns>
     </Section>
   )

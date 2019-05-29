@@ -10,6 +10,7 @@ import {
   AboutSection,
   BatAMPSection,
   ContributorsSection,
+  CreditsSection,
 } from 'blocks/home'
 
 const IndexPage = ({
@@ -42,6 +43,8 @@ const IndexPage = ({
         <BatAMPSection />
 
         <ContributorsSection contributors={contributors} totals={summaryJson} />
+
+        <CreditsSection />
       </Container>
     </Layout>
   )

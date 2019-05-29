@@ -60,15 +60,69 @@ const clusters = [
 ]
 
 // TODO: linear interopolation?
-const clusterRadii = createSteps(
-  [
-    { threshold: 0, radius: 4 },
-    { threshold: 100, radius: 6 },
-    { threshold: 100, radius: 6 },
-    { threshold: 500, radius: 14 },
-  ],
-  'radius'
-)
+// const clusterRadii = createSteps(
+//   [
+//     { threshold: 0, radius: 4 },
+//     { threshold: 100, radius: 6 },
+//     { threshold: 100, radius: 6 },
+//     { threshold: 500, radius: 14 },
+//   ],
+//   'radius'
+// )
+
+// for detections:
+// const circleRadius = [
+//   'interpolate',
+//   ['linear'],
+//   ['get', 'detections'],
+//   1,
+//   6,
+//   10000,
+//   10,
+//   1000000,
+//   20,
+// ]
+
+// const circleColor = [
+//   'interpolate',
+//   ['linear'],
+//   ['get', 'detections'],
+//   0,
+//   '#AAA',
+//   1,
+//   '#74a9cf',
+//   10000,
+//   '#2b8cbe',
+//   1000000,
+//   '#045a8d',
+// ]
+
+// for detectors
+const circleRadius = [
+  'interpolate',
+  ['linear'],
+  ['get', 'point_count'],
+  1,
+  6,
+  10,
+  10,
+  50,
+  20,
+]
+
+const circleColor = [
+  'interpolate',
+  ['linear'],
+  ['get', 'point_count'],
+  0,
+  '#AAA',
+  1,
+  '#74a9cf',
+  10,
+  '#2b8cbe',
+  50,
+  '#045a8d',
+]
 
 export const layers = [
   {
@@ -77,39 +131,9 @@ export const layers = [
     source: 'points',
     filter: ['has', 'point_count'], // point_count field added by mapbox GL
     paint: {
-      'circle-color': [
-        // 'step',
-        // ['get', 'point_count'],
-        // ...createSteps(clusters, 'color'),
-        'interpolate',
-        ['linear'],
-        ['get', 'detections'],
-        0,
-        '#AAA',
-        1,
-        '#74a9cf',
-        10000,
-        '#2b8cbe',
-        1000000,
-        '#045a8d',
-      ],
-      // 'circle-stroke-color': [
-      //   'step',
-      //   ['get', 'point_count'],
-      //   ...createSteps(clusters, 'borderColor'),
-      // ],
+      'circle-color': circleColor,
       'circle-stroke-width': 1,
-      'circle-radius': [
-        'interpolate',
-        ['linear'],
-        ['get', 'detections'],
-        1,
-        6,
-        10000,
-        10,
-        1000000,
-        20,
-      ],
+      'circle-radius': circleRadius,
     },
   },
   {
@@ -118,33 +142,8 @@ export const layers = [
     source: 'points',
     filter: ['!', ['has', 'point_count']],
     paint: {
-      'circle-color': [
-        // 'step',
-        // ['get', 'point_count'],
-        // ...createSteps(clusters, 'color'),
-        'interpolate',
-        ['linear'],
-        ['get', 'detections'],
-        0,
-        '#AAA',
-        1,
-        '#74a9cf',
-        10000,
-        '#2b8cbe',
-        1000000,
-        '#045a8d',
-      ],
-      'circle-radius': [
-        'interpolate',
-        ['linear'],
-        ['get', 'detections'],
-        1,
-        6,
-        10000,
-        10,
-        1000000,
-        20,
-      ],
+      'circle-color': circleColor,
+      'circle-radius': circleRadius,
       'circle-stroke-width': 1,
       'circle-stroke-color': '#fff',
     },
