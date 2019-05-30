@@ -83,14 +83,14 @@ const Filter = ({
   const { state, dispatch } = useContext(Crossfilter)
 
   const filterValues = state.get('filters').get(field, Set())
-  const counts = state.get('dimensionCounts').get(field, Map())
+  const stats = state.get('dimensionStats').get(field, Map())
   const total = state.get('total')
 
   // splice together label, value, and count so that we can filter and sort
   let data = values.map((value, i) => ({
     value,
     label: labels ? labels[i] : value,
-    count: counts.get(value),
+    quantity: stats.get(value, 0),
     isFiltered: filterValues.has(value),
     isExcluded: !filterValues.isEmpty() && !filterValues.has(value),
   }))

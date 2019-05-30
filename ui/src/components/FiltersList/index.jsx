@@ -6,6 +6,7 @@ import { Text } from 'rebass'
 import { Context as Crossfilter, RESET_FILTERS } from 'components/Crossfilter'
 import { Button } from 'components/Button'
 import { Flex, Box, Columns, Column } from 'components/Grid'
+import { formatNumber } from 'util/format'
 import styled, { themeGet } from 'style'
 import Filter from './Filter'
 
@@ -67,7 +68,13 @@ const FiltersList = ({ filters }) => {
     })
   }
 
-  const count = state.get('filteredCount')
+  let valueField = state.get('valueField')
+  // TODO: generalize
+  if (valueField === 'id') {
+    valueField = 'detectors'
+  }
+
+  const filteredTotal = state.get('filteredTotal')
   const total = state.get('total')
 
   return (
@@ -75,8 +82,9 @@ const FiltersList = ({ filters }) => {
       <Header alignItems="baseline">
         <Column>
           <Count>
-            {count} {count < total ? `of ${total}` : ''} detectors currently
-            visible
+            {formatNumber(filteredTotal, 0)}{' '}
+            {filteredTotal < total ? `of ${formatNumber(total, 0)}` : ''}{' '}
+            {valueField} currently visible
           </Count>
         </Column>
         <Column>

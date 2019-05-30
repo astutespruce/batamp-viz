@@ -35,3 +35,5 @@ export const createIndex = (data, field) => {
 export const filterIndex = (index, keys) => {
   return index.filter((v, k) => keys.has(k))
 }
+
+export const sum = values => values.reduce((prev, value) => prev + value, 0)

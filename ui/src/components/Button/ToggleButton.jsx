@@ -6,8 +6,6 @@ import { DefaultButton, PrimaryButton } from './Button'
 import ButtonGroup from './ButtonGroup'
 
 const ToggleButton = ({ value, options, onChange, ...props }) => {
-  console.log('render toggle')
-
   const handleClick = newValue => {
     if (newValue === value) return
 

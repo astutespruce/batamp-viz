@@ -3,12 +3,7 @@ import { Map, List, Set } from 'immutable'
 
 import Crossfilter from 'crossfilter2'
 import { isDebug } from 'util/dom'
-import {
-  aggregateByDimension,
-  countByDimension,
-  aggregateTotal,
-  countFiltered,
-} from './util'
+import { aggregateByDimension, getRawTotal, getFilteredTotal } from './util'
 
 // returns true if passed in values contains the value
 // values must be a Set
@@ -61,11 +56,9 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
         newState = state.merge({
           // convert Array from crossfilter back to an immutable List
           data: List(crossfilter.allFiltered()),
-          dimensionCounts: countByDimension(dimensions),
-          filteredCount: countFiltered(crossfilter),
           filters: state.get('filters').set(field, filterValue),
           dimensionStats: aggregateByDimension(dimensions, valueField),
-          filteredTotal: aggregateTotal(crossfilter, valueField),
+          filteredTotal: getFilteredTotal(crossfilter, valueField),
         })
         break
       }
@@ -86,11 +79,9 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
         newState = state.merge({
           // convert Array from crossfilter back to an immutable List
           data: List(crossfilter.allFiltered()),
-          dimensionCounts: countByDimension(dimensions),
-          filteredCount: countFiltered(crossfilter),
           filters: newFilters,
           dimensionStats: aggregateByDimension(dimensions, valueField),
-          filteredTotal: aggregateTotal(crossfilter, valueField),
+          filteredTotal: getFilteredTotal(crossfilter, valueField),
         })
         break
       }
@@ -101,7 +92,8 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
         newState = state.merge({
           valueField: field,
           dimensionStats: aggregateByDimension(dimensions, field),
-          filteredTotal: aggregateTotal(crossfilter, field),
+          filteredTotal: getFilteredTotal(crossfilter, field),
+          total: getRawTotal(crossfilter, field),
         })
 
         break
@@ -154,17 +146,15 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
       window.dimensions = dimensions
     }
 
-    const total = aggregateTotal(crossfilter, initValueField)
+    const total = getRawTotal(crossfilter, initValueField)
 
     // initial state
     return Map({
       data,
       filters: Map(),
-      dimensionCounts: countByDimension(dimensions),
       dimensionStats: aggregateByDimension(dimensions, initValueField),
-      filteredCount: countFiltered(crossfilter),
       filteredTotal: total,
-      total, // we can use total because filters are not yet applied
+      total,
       valueField: initValueField,
     })
   }

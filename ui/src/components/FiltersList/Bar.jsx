@@ -48,15 +48,15 @@ const Filler = styled.div`
   transition: flex-grow 300ms;
 `
 
-const Bar = ({ isFiltered, isExcluded, label, count, total, onClick }) => {
-  const position = count / total
+const Bar = ({ isFiltered, isExcluded, label, quantity, total, onClick }) => {
+  const position = quantity / total
   const remainder = 1 - position
 
   return (
     <Wrapper onClick={onClick} isExcluded={isExcluded}>
       <Labels active={isFiltered}>
         <Column>{label}</Column>
-        <Column flex={0}>{formatNumber(count)}</Column>
+        <Column flex={0}>{formatNumber(quantity)}</Column>
       </Labels>
       <IndicatorWrapper>
         {position > 0 && (
@@ -77,7 +77,7 @@ Bar.propTypes = {
   isFiltered: PropTypes.bool, // true if filter is set on this bar
   isExcluded: PropTypes.bool, // true if filters are set on others but not this one
   label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  count: PropTypes.number.isRequired,
+  quantity: PropTypes.number.isRequired,
   total: PropTypes.number.isRequired,
   onClick: PropTypes.func.isRequired,
 }

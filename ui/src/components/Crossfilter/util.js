@@ -1,4 +1,5 @@
 import { Map, Set } from 'immutable'
+import { sum } from 'util/data'
 
 /**
  * reducer functions to group by unique ID.  Returns a set of IDS.
@@ -10,31 +11,54 @@ import { Map, Set } from 'immutable'
  * By dimension:
  * `dimensions.timestep.group().reduce(...idReducer).all().map(d => [d.key, d.value.size])`
  */
+
 const idReducer = [
   // add
-  (prev, d) => prev.add(d.get('id')),
+  (prev, d) => {
+    return prev.update(d.get('id'), 0, prevCount => prevCount + 1)
+  },
   // remove
-  (prev, d) => prev.remove(d.get('id')),
+  (prev, d) => {
+    const id = d.get('id')
+    const prevCount = prev.get(id, 0)
+    if (prevCount > 1) {
+      return prev.set(id, prevCount - 1)
+    }
+    // remove due to insufficient count
+    return prev.remove(id)
+  },
   // init
-  () => Set(),
+  () => Map(),
 ]
 
-window.idReducer = idReducer
-
-export const countFiltered = cf =>
-  cf
-    .groupAll()
-    .reduceCount()
-    .value()
+/**
+ * Calculates the total COUNT (if valueField is absent) or total SUM (if valueField provided)
+ * of ALL records.
+ * Note: id is a special case, this returns count of unique id
+ *
+ * @param {Object} crossfilter - Crossfilter object
+ * @param {String} valueField - name of the value field within record.
+ */
+export const getRawTotal = (crossfilter, valueField) => {
+  if (!valueField) {
+    return crossfilter.size()
+  }
+  const values = crossfilter.all().map(d => d.get(valueField))
+  if (valueField === 'id') {
+    return Set(values).size
+  }
+  return sum(values)
+}
 
 /**
  * Calculates the total COUNT (if valueField is absent) or total SUM (if valueField provided)
  * for all records that meet the current filters.
+ * Note: id is a special case, this returns count of unique id
  *
  * @param {Object} crossfilter - Crossfilter object
  * @param {String} valueField - name of value field within record.
  */
-export const aggregateTotal = ({ groupAll }, valueField) => {
+export const getFilteredTotal = ({ groupAll }, valueField) => {
   if (!valueField) {
     return groupAll().value()
   }
@@ -49,40 +73,60 @@ export const aggregateTotal = ({ groupAll }, valueField) => {
     .value()
 }
 
-// COUNT records by dimension value for each dimension
+/**
+ * COUNT(valueField) by dimension.
+ * Excludes any dimension for which `aggregate` property is `false`.
+ * Note: records in crossfilter are ImmutableJS Map objects.
+ *
+ * @param {Object} dimensions - object containing crossfilter dimensions.
+ *
+ */
 export const countByDimension = dimensions => {
   return Map(
-    Object.values(dimensions).map(({ group, config: { field } }) => {
-      // Convert the array of key:count returned by crossfilter to a Map
-      const counts = Map(
-        group()
-          .all()
-          .map(d => Object.values(d))
-      )
-      return [field, counts]
-    })
-  )
-}
-
-// SUM(valueField) by dimension value in each dimension
-export const sumByDimension = (dimensions, valueField) => {
-  return Map(
-    Object.values(dimensions).map(({ group, config: { field } }) => {
-      const sums = Map(
-        group()
-          .reduceSum(d => d.get(valueField))
-          .all()
-          .map(d => Object.values(d))
-      )
-      return [field, sums]
-    })
+    Object.values(dimensions)
+      .filter(({ config: { aggregate = true } }) => aggregate)
+      .map(({ group, config: { field } }) => {
+        // Convert the array of key:count returned by crossfilter to a Map
+        const counts = Map(
+          group()
+            .all()
+            .map(d => Object.values(d))
+        )
+        return [field, counts]
+      })
   )
 }
 
 /**
- * Aggregate values within each dimension.  Note: records in crossfilter are ImmutableJS Map objects.
+ * SUM(valueField) by dimension
+ * Excludes any dimension for which `aggregate` property is `false`.
+ * Note: records in crossfilter are ImmutableJS Map objects.
+ *
+ * @param {Object} dimensions - object containing crossfilter dimensions.
+ * @param {String} valueField - name of value field within record.
+ *
+ */
+export const sumByDimension = (dimensions, valueField) => {
+  return Map(
+    Object.values(dimensions)
+      .filter(({ config: { aggregate = true } }) => aggregate)
+      .map(({ group, config: { field } }) => {
+        const sums = Map(
+          group()
+            .reduceSum(d => d.get(valueField))
+            .all()
+            .map(d => Object.values(d))
+        )
+        return [field, sums]
+      })
+  )
+}
+
+/**
+ * Aggregate values within each dimension.
  * If valueField is provided, aggregate will return the SUM, otherwise COUNT.
- * Exludes any dimension for which `aggregate` property is `false`.
+ * Excludes any dimension for which `aggregate` property is `false`.
+ * Note: records in crossfilter are ImmutableJS Map objects.
  *
  * @param {Object} dimensions - object containing crossfilter dimensions.
  * @param {String} valueField - name of value field within record.
