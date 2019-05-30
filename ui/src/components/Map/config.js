@@ -2,6 +2,9 @@ import { createSteps } from './util'
 
 const TILE_HOST = 'https://tiles.batamp.databasin.org'
 
+export const MINRADIUS = 4
+export const MAXRADIUS = 24
+
 export const config = {
   // Mapbox public token.  TODO: migrate to .env setting
   accessToken:
@@ -23,13 +26,14 @@ export const sources = {
   detectors: {
     type: 'geojson',
     data: {},
-    // cluster: true,
-    maxzoom: 15,
-    clusterMaxZoom: 15, // show clusters at lowest zoom since there may be multiple detectors at a site
-    clusterRadius: 24,
+    cluster: true,
+    clusterMaxZoom: 24, // show clusters at lowest zoom since there may be multiple detectors at a site
+    clusterRadius: MAXRADIUS,
     clusterProperties: {
-      detections: ['+', ['get', 'detections']],
-      nights: ['+', ['get', 'nights']],
+      //   detections: ['+', ['get', 'detections']],
+      //   nights: ['+', ['get', 'nights']],
+      //   detectors: ['+', ['get', 'nights']],
+      total: ['+', ['get', 'total']],
     },
   },
 }
@@ -74,7 +78,7 @@ export const sources = {
 const circleRadius = [
   'interpolate',
   ['linear'],
-  ['get', 'detections'],
+  ['get', 'total'],
   1,
   6,
   10000,
@@ -86,7 +90,7 @@ const circleRadius = [
 const circleColor = [
   'interpolate',
   ['linear'],
-  ['get', 'detections'],
+  ['get', 'total'],
   0,
   '#AAA',
   1,
@@ -168,32 +172,46 @@ export const layers = [
     type: 'circle',
     source: 'detectors',
     filter: ['!', ['has', 'point_count']],
+    // filter: ['>', ['feature-state', 'total'], 0],
     paint: {
-      'circle-color': circleColor,
+      // 'circle-color': circleColor,
       // 'circle-radius': circleRadius,
-      'circle-radius': 4,
+      'circle-color': '#000',
+      // TODO: graduate based on metric
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['get', 'total'],
+        0,
+        0,
+        1,
+        4,
+        100,
+        10,
+      ],
       'circle-stroke-width': 1,
       'circle-stroke-color': '#fff',
     },
   },
-  {
-    id: 'detectors-cluster-label',
-    type: 'symbol',
-    source: 'detectors',
-    filter: ['has', 'point_count'],
-    layout: {
-      'text-field': '{point_count_abbreviated}', // only show when displaying detector locations and not values
-      'text-size': 10,
-      'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-    },
-    paint: {
-      'text-color': '#FFFFFF',
-      'text-opacity': 1,
-      'text-halo-color': '#000',
-      'text-halo-blur': 1,
-      'text-halo-width': 0.5,
-    },
-  },
+  // {
+  //   id: 'detectors-cluster-label',
+  //   type: 'symbol',
+  //   source: 'detectors',
+  //   filter: ['has', 'point_count'],
+  //   layout: {
+  //     'text-field': '{point_count_abbreviated}', // only show when displaying detector locations and not values
+  //     // 'text-field': '{total}',
+  //     'text-size': 10,
+  //     'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+  //   },
+  //   paint: {
+  //     'text-color': '#FFFFFF',
+  //     'text-opacity': 1,
+  //     'text-halo-color': '#000',
+  //     'text-halo-blur': 1,
+  //     'text-halo-width': 0.5,
+  //   },
+  // },
 ]
 // [
 //   {

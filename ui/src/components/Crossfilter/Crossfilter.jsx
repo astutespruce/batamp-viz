@@ -57,7 +57,7 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
           // convert Array from crossfilter back to an immutable List
           data: List(crossfilter.allFiltered()),
           filters: state.get('filters').set(field, filterValue),
-          dimensionStats: aggregateByDimension(dimensions, valueField),
+          dimensionTotals: aggregateByDimension(dimensions, valueField),
           filteredTotal: getFilteredTotal(crossfilter, valueField),
         })
         break
@@ -80,7 +80,7 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
           // convert Array from crossfilter back to an immutable List
           data: List(crossfilter.allFiltered()),
           filters: newFilters,
-          dimensionStats: aggregateByDimension(dimensions, valueField),
+          dimensionTotals: aggregateByDimension(dimensions, valueField),
           filteredTotal: getFilteredTotal(crossfilter, valueField),
         })
         break
@@ -91,7 +91,7 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
 
         newState = state.merge({
           valueField: field,
-          dimensionStats: aggregateByDimension(dimensions, field),
+          dimensionTotals: aggregateByDimension(dimensions, field),
           filteredTotal: getFilteredTotal(crossfilter, field),
           total: getRawTotal(crossfilter, field),
         })
@@ -152,7 +152,7 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
     return Map({
       data,
       filters: Map(),
-      dimensionStats: aggregateByDimension(dimensions, initValueField),
+      dimensionTotals: aggregateByDimension(dimensions, initValueField),
       filteredTotal: total,
       total,
       valueField: initValueField,

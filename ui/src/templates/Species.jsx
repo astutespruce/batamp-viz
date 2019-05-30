@@ -174,13 +174,13 @@ const SpeciesTemplate = ({
 
             <FiltersList filters={visibleFilters} />
           </Sidebar>
-          {/* <Map
+          <Map
           detectors={detectors}
             // bounds={nextBounds}
             // selectedFeature={selectedId}
             // onSelectFeature={handleSelect}
             // onBoundsChange={handleBoundsChange}
-          /> */}
+          />
         </CrossfilterProvider>
       </Wrapper>
     </Layout>

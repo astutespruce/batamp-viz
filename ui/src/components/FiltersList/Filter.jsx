@@ -83,14 +83,14 @@ const Filter = ({
   const { state, dispatch } = useContext(Crossfilter)
 
   const filterValues = state.get('filters').get(field, Set())
-  const stats = state.get('dimensionStats').get(field, Map())
-  const total = state.get('total')
+  const totals = state.get('dimensionTotals').get(field, Map())
+  const max = totals.max()
 
   // splice together label, value, and count so that we can filter and sort
   let data = values.map((value, i) => ({
     value,
     label: labels ? labels[i] : value,
-    quantity: stats.get(value, 0),
+    quantity: totals.get(value, 0),
     isFiltered: filterValues.has(value),
     isExcluded: !filterValues.isEmpty() && !filterValues.has(value),
   }))
@@ -154,7 +154,7 @@ const Filter = ({
                   key={value}
                   value={value}
                   {...props}
-                  total={total}
+                  max={max}
                   onClick={() => handleFilterClick(value)}
                 />
               ))}

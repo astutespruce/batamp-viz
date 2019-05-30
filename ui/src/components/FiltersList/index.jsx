@@ -23,7 +23,7 @@ const Header = styled(Columns).attrs({
   border-bottom: 1px solid ${themeGet('colors.grey.200')};
 `
 
-export const Count = styled.span`
+export const Count = styled.div`
   color: ${themeGet('colors.grey.600')};
   font-size: 0.8em;
   line-height: 1.2;
@@ -87,7 +87,7 @@ const FiltersList = ({ filters }) => {
             {valueField} currently visible
           </Count>
         </Column>
-        <Column>
+        <Column flexShrink={0}>
           {hasFilters && (
             <Text textAlign="right">
               <ResetButton onClick={handleReset}>

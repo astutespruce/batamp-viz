@@ -12,7 +12,7 @@ import { hasWindow } from 'util/dom'
 
 import StyleSelector from './StyleSelector'
 import { getCenterAndZoom, toGeoJSONPoints } from './util'
-import { config, sources, layers } from './config'
+import { config, sources, layers, MINRADIUS, MAXRADIUS } from './config'
 
 const TRANSPARENT = 'rgba(0,0,0,0)'
 
@@ -23,6 +23,7 @@ const Wrapper = styled.div`
 
 const Map = ({
   detectors,
+  // totals,
   data,
   selectedFeature,
   bounds,
@@ -92,6 +93,11 @@ const Map = ({
       layers.forEach(layer => {
         map.addLayer(layer)
       })
+
+      // set initial rendering of detectors
+      // totals.entrySeq().forEach(([id, total]) => {
+      //   map.setFeatureState({ id, source: 'detectors' }, { total })
+      // })
     })
 
     map.on('moveend', () => {
@@ -118,20 +124,55 @@ const Map = ({
     }
   }, [])
 
-  // Update points when the filtered data change
+  // Update detectors
   useEffect(() => {
     const { current: map } = mapRef
     if (!(map && map.isStyleLoaded())) return
 
-    // console.log('incoming data to map', data.toJS())
-
-    // const geoJSON = data ? toGeoJSONPoints(data.toJS()) : []
+    console.log('incoming data to map', detectors.toJS())
 
     // console.log(geoJSON)
-    // map.getSource('points').setData(geoJSON)
+    map.getSource('detectors').setData(toGeoJSONPoints(detectors.toJS()))
 
-    // TODO: set filter on the estuary boundaries?
-  }, [data])
+    // update symbology - TODO: watch for race condition with clustering
+    const max = Math.max(
+      ...map
+        .querySourceFeatures('detectors')
+        .map(({ properties: { total } }) => total)
+    )
+    map.setPaintProperty('detectors-clusters', 'circle-radius', [
+      'interpolate',
+      ['linear'],
+      ['get', 'total'],
+      1,
+      MINRADIUS,
+      max,
+      MAXRADIUS,
+    ])
+    map.setPaintProperty('detectors-points', 'circle-radius', [
+      'interpolate',
+      ['linear'],
+      ['get', 'total'],
+      1,
+      MINRADIUS,
+      max,
+      MAXRADIUS,
+    ])
+  }, [detectors])
+
+  // Update points when the filtered data change
+  // useEffect(() => {
+  //   const { current: map } = mapRef
+  //   if (!(map && map.isStyleLoaded())) return
+
+  //   console.log('incoming totals', totals.toJS())
+  //   window.totals = totals
+
+  //   // doesn't work w/ clustering
+  //   // totals.entrySeq().forEach(([id, total]) => {
+  //   //   map.setFeatureState({ id, source: 'detectors' }, { total })
+  //   // })
+  // }, [data])
 
   const handleBasemapChange = styleID => {
     const { current: map } = mapRef
@@ -197,12 +238,15 @@ Map.propTypes = {
   //     lat: PropTypes.number.isRequired,
   //     lon: PropTypes.number.isRequired,
   //   }).isRequired,
+  // List of detector locations, provided at map init
   detectors: ImmutablePropTypes.listOf(
     ImmutablePropTypes.mapContains({
       lat: PropTypes.number.isRequired,
       lon: PropTypes.number.isRequired,
     })
   ).isRequired,
+  // Map of id:total for each unit, updated dynamically by crossfilter
+  // totals: ImmutablePropTypes.map.isRequired,
   selectedFeature: PropTypes.number,
   onSelectFeature: PropTypes.func,
   onBoundsChange: PropTypes.func,
@@ -216,6 +260,14 @@ Map.defaultProps = {
 }
 
 export default Map
+// Working notes
+// get max for rendering clusters and points, on update of detectors
+// max = Math.max(...map.queryRenderedFeatures({layers: ['detectors-clusters', 'detectors-points']}).map(({properties: {total}}) => total))
+// or
+// max = Math.max(...map.querySourceFeatures("detectors").map(({properties: {total}}) => total))
+// map.setPaintProperty('detectors-clusters', 'circle-radius', ['interpolate', ['linear'], ['get', 'total'], 1,minRadius, max, maxRadius])
+// map.setPaintProperty('detectors-points', 'circle-radius', ['interpolate', ['linear'], ['get', 'total'], 1,minRadius, max, maxRadius])
+
 // in map load:
 // add layers
 // layers.forEach(layer => {

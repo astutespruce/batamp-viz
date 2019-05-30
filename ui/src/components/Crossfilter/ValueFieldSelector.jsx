@@ -27,7 +27,6 @@ const ToggleButton = styled(BaseButton)`
 `
 
 const ValueFieldSelector = ({ fields }) => {
-  console.log('render value field selector')
   const { state, dispatch } = useContext(Context)
 
   const handleChange = field => {
@@ -37,7 +36,10 @@ const ValueFieldSelector = ({ fields }) => {
     })
   }
 
-  const options = fields.map(f => ({ value: f, label: f }))
+  const options = fields.map(f => ({
+    value: f,
+    label: f === 'id' ? 'detectors' : f,
+  }))
 
   return (
     <Wrapper>

@@ -48,8 +48,8 @@ const Filler = styled.div`
   transition: flex-grow 300ms;
 `
 
-const Bar = ({ isFiltered, isExcluded, label, quantity, total, onClick }) => {
-  const position = quantity / total
+const Bar = ({ isFiltered, isExcluded, label, quantity, max, onClick }) => {
+  const position = quantity / max
   const remainder = 1 - position
 
   return (
@@ -78,7 +78,7 @@ Bar.propTypes = {
   isExcluded: PropTypes.bool, // true if filters are set on others but not this one
   label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   quantity: PropTypes.number.isRequired,
-  total: PropTypes.number.isRequired,
+  max: PropTypes.number.isRequired,
   onClick: PropTypes.func.isRequired,
 }
 
