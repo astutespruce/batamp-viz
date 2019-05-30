@@ -76,7 +76,7 @@ const Bar = ({ isFiltered, isExcluded, label, count, total, onClick }) => {
 Bar.propTypes = {
   isFiltered: PropTypes.bool, // true if filter is set on this bar
   isExcluded: PropTypes.bool, // true if filters are set on others but not this one
-  label: PropTypes.string.isRequired,
+  label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   count: PropTypes.number.isRequired,
   total: PropTypes.number.isRequired,
   onClick: PropTypes.func.isRequired,

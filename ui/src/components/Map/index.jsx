@@ -22,6 +22,7 @@ const Wrapper = styled.div`
 `
 
 const Map = ({
+  detectors,
   data,
   selectedFeature,
   bounds,
@@ -76,8 +77,8 @@ const Map = ({
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
-    // Construct GeoJSON points from data
-    sources.points.data = data ? toGeoJSONPoints(data.toJS()) : []
+    // Construct GeoJSON points from detector locations
+    sources.detectors.data = toGeoJSONPoints(detectors.toJS())
 
     map.on('load', () => {
       // snapshot existing map config
@@ -100,7 +101,7 @@ const Map = ({
 
     map.on('click', e => {
       const features = map.queryRenderedFeatures(e.point, {
-        layers: ['points', 'clusters'],
+        layers: ['detectors-points', 'detectors-clusters'],
       })
       if (features) {
         console.log(
@@ -122,12 +123,12 @@ const Map = ({
     const { current: map } = mapRef
     if (!(map && map.isStyleLoaded())) return
 
-    console.log('incoming data to map', data.toJS())
+    // console.log('incoming data to map', data.toJS())
 
-    const geoJSON = data ? toGeoJSONPoints(data.toJS()) : []
+    // const geoJSON = data ? toGeoJSONPoints(data.toJS()) : []
 
-    console.log(geoJSON)
-    map.getSource('points').setData(geoJSON)
+    // console.log(geoJSON)
+    // map.getSource('points').setData(geoJSON)
 
     // TODO: set filter on the estuary boundaries?
   }, [data])
@@ -171,7 +172,7 @@ const Map = ({
   return (
     <Wrapper>
       <div ref={mapNode} style={{ width: '100%', height: '100%' }} />
-      {mapRef.current && mapRef.current.isStyleLoaded() && (
+      {mapRef.current && (
         <StyleSelector
           styles={styles}
           token={accessToken}
@@ -183,14 +184,25 @@ const Map = ({
 }
 
 Map.propTypes = {
-  data: ImmutablePropTypes.listOf(
+  // data: ImmutablePropTypes.listOf(
+  //   ImmutablePropTypes.mapContains({
+  //     detector: PropTypes.number.isRequired,
+  //     lat: PropTypes.number.isRequired,
+  //     lon: PropTypes.number.isRequired,
+  //   })
+  // ).isRequired,
+  bounds: ImmutablePropTypes.listOf(PropTypes.number),
+  // detectors:
+  //   ImmutablePropTypes.mapContains({
+  //     lat: PropTypes.number.isRequired,
+  //     lon: PropTypes.number.isRequired,
+  //   }).isRequired,
+  detectors: ImmutablePropTypes.listOf(
     ImmutablePropTypes.mapContains({
-      detector: PropTypes.number.isRequired,
       lat: PropTypes.number.isRequired,
       lon: PropTypes.number.isRequired,
     })
   ).isRequired,
-  bounds: ImmutablePropTypes.listOf(PropTypes.number),
   selectedFeature: PropTypes.number,
   onSelectFeature: PropTypes.func,
   onBoundsChange: PropTypes.func,

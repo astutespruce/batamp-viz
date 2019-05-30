@@ -9,8 +9,13 @@ import { useCrossfilter } from './Crossfilter'
  * component tree can access crossfilter state or dispatch.
  */
 export const Context = createContext()
-export const Provider = ({ data, filters, children }) => {
-  const [state, dispatch] = useCrossfilter(data, filters)
+export const Provider = ({ data, filters, valueField, children }) => {
+  const [state, dispatch] = useCrossfilter(data, filters, valueField)
+
+
+  console.log('context state', state.toJS())
+
+
   return (
     <Context.Provider value={{ state, dispatch }}>{children}</Context.Provider>
   )
@@ -19,9 +24,14 @@ export const Provider = ({ data, filters, children }) => {
 Provider.propTypes = {
   data: ImmutablePropTypes.list.isRequired,
   filters: PropTypes.array.isRequired,
+  valueField: PropTypes.string,
   children: PropTypes.oneOfType([
     PropTypes.node,
     PropTypes.element,
     PropTypes.array,
   ]).isRequired,
+}
+
+Provider.defaultProps = {
+  valueField: null,
 }

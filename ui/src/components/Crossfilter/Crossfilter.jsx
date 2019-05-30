@@ -1,10 +1,14 @@
 import { useReducer, useRef } from 'react'
-
 import { Map, List, Set } from 'immutable'
 
 import Crossfilter from 'crossfilter2'
 import { isDebug } from 'util/dom'
-import { countByDimension, countFiltered } from './util'
+import {
+  aggregateByDimension,
+  countByDimension,
+  aggregateTotal,
+  countFiltered,
+} from './util'
 
 // returns true if passed in values contains the value
 // values must be a Set
@@ -13,9 +17,10 @@ export const hasValue = filterValues => value => filterValues.has(value)
 // Actions
 export const RESET_FILTERS = 'RESET_FILTERS'
 export const SET_FILTER = 'SET_FILTER' // payload is {field, filterValue}
+export const SET_VALUE_FIELD = 'SET_VALUE_FIELD' // payload is {field}
 
 // Incoming data is an immutableJS List of Maps
-export const useCrossfilter = (data, filters) => {
+export const useCrossfilter = (data, filters, initValueField = null) => {
   const crossfilterRef = useRef(null)
   const dimensionsRef = useRef(null)
 
@@ -35,14 +40,15 @@ export const useCrossfilter = (data, filters) => {
       case SET_FILTER: {
         const { field, filterValue } = payload
         const dimension = dimensions[field]
+        const valueField = state.get('valueField')
 
         if (!dimension) {
           console.warn(
             `Filter requested on dimension that does not exist: ${field}`
           )
-          return
+          return state
         }
-        console.log('dimension', dimension, field, filterValue)
+        // console.log('dimension', dimension, field, filterValue)
 
         if (!filterValue || filterValue.size === 0) {
           // there are no filter values, so clear filter on this field
@@ -58,6 +64,8 @@ export const useCrossfilter = (data, filters) => {
           dimensionCounts: countByDimension(dimensions),
           filteredCount: countFiltered(crossfilter),
           filters: state.get('filters').set(field, filterValue),
+          dimensionStats: aggregateByDimension(dimensions, valueField),
+          filteredTotal: aggregateTotal(crossfilter, valueField),
         })
         break
       }
@@ -66,6 +74,7 @@ export const useCrossfilter = (data, filters) => {
         const { fields } = payload
 
         let newFilters = state.get('filters')
+        const valueField = state.get('valueField')
 
         fields.forEach(field => {
           dimensions[field].filterAll()
@@ -80,7 +89,21 @@ export const useCrossfilter = (data, filters) => {
           dimensionCounts: countByDimension(dimensions),
           filteredCount: countFiltered(crossfilter),
           filters: newFilters,
+          dimensionStats: aggregateByDimension(dimensions, valueField),
+          filteredTotal: aggregateTotal(crossfilter, valueField),
         })
+        break
+      }
+
+      case SET_VALUE_FIELD: {
+        const { field } = payload
+
+        newState = state.merge({
+          valueField: field,
+          dimensionStats: aggregateByDimension(dimensions, field),
+          filteredTotal: aggregateTotal(crossfilter, field),
+        })
+
         break
       }
 
@@ -131,15 +154,21 @@ export const useCrossfilter = (data, filters) => {
       window.dimensions = dimensions
     }
 
+    const total = aggregateTotal(crossfilter, initValueField)
+
     // initial state
     return Map({
       data,
       filters: Map(),
       dimensionCounts: countByDimension(dimensions),
+      dimensionStats: aggregateByDimension(dimensions, initValueField),
       filteredCount: countFiltered(crossfilter),
-      total: data.size,
+      filteredTotal: total,
+      total, // we can use total because filters are not yet applied
+      valueField: initValueField,
     })
   }
 
+  // returns {state, dispatch}
   return useReducer(reducer, undefined, initialize)
 }

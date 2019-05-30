@@ -20,10 +20,10 @@ export const sources = {
   //   minzoom: 1,
   //   maxzoom: 8,
   // },
-  points: {
+  detectors: {
     type: 'geojson',
     data: {},
-    cluster: true,
+    // cluster: true,
     maxzoom: 15,
     clusterMaxZoom: 15, // show clusters at lowest zoom since there may be multiple detectors at a site
     clusterRadius: 24,
@@ -34,30 +34,30 @@ export const sources = {
   },
 }
 
-const defaultRadius = 6
-const clusters = [
-  {
-    threshold: 10,
-    // label: '< 10 estuaries',
-    color: '#74a9cf',
-    borderColor: '#2b8cbe',
-    radius: defaultRadius,
-  },
-  {
-    threshold: 100,
-    // label: '10 - 100 estuaries',
-    color: '#2b8cbe',
-    borderColor: '#045a8d',
-    radius: 20,
-  },
-  {
-    threshold: Infinity,
-    // label: '> 100 estuaries',
-    color: '#045a8d',
-    borderColor: '#000',
-    radius: 25,
-  },
-]
+// const defaultRadius = 6
+// const clusters = [
+//   {
+//     threshold: 10,
+//     // label: '< 10 estuaries',
+//     color: '#74a9cf',
+//     borderColor: '#2b8cbe',
+//     radius: defaultRadius,
+//   },
+//   {
+//     threshold: 100,
+//     // label: '10 - 100 estuaries',
+//     color: '#2b8cbe',
+//     borderColor: '#045a8d',
+//     radius: 20,
+//   },
+//   {
+//     threshold: Infinity,
+//     // label: '> 100 estuaries',
+//     color: '#045a8d',
+//     borderColor: '#000',
+//     radius: 25,
+//   },
+// ]
 
 // TODO: linear interopolation?
 // const clusterRadii = createSteps(
@@ -70,16 +70,43 @@ const clusters = [
 //   'radius'
 // )
 
-// for detections:
+// for detections - with clustering:
+const circleRadius = [
+  'interpolate',
+  ['linear'],
+  ['get', 'detections'],
+  1,
+  6,
+  10000,
+  10,
+  1000000,
+  20,
+]
+
+const circleColor = [
+  'interpolate',
+  ['linear'],
+  ['get', 'detections'],
+  0,
+  '#AAA',
+  1,
+  '#74a9cf',
+  10000,
+  '#2b8cbe',
+  1000000,
+  '#045a8d',
+]
+
+// for detections without clustering
 // const circleRadius = [
 //   'interpolate',
 //   ['linear'],
 //   ['get', 'detections'],
 //   1,
 //   6,
-//   10000,
+//   1000,
 //   10,
-//   1000000,
+//   100000,
 //   20,
 // ]
 
@@ -91,44 +118,44 @@ const clusters = [
 //   '#AAA',
 //   1,
 //   '#74a9cf',
-//   10000,
+//   1000,
 //   '#2b8cbe',
-//   1000000,
+//   100000,
 //   '#045a8d',
 // ]
 
 // for detectors
-const circleRadius = [
-  'interpolate',
-  ['linear'],
-  ['get', 'point_count'],
-  1,
-  6,
-  10,
-  10,
-  50,
-  20,
-]
+// const circleRadius = [
+//   'interpolate',
+//   ['linear'],
+//   ['get', 'point_count'],
+//   1,
+//   6,
+//   10,
+//   10,
+//   50,
+//   20,
+// ]
 
-const circleColor = [
-  'interpolate',
-  ['linear'],
-  ['get', 'point_count'],
-  0,
-  '#AAA',
-  1,
-  '#74a9cf',
-  10,
-  '#2b8cbe',
-  50,
-  '#045a8d',
-]
+// const circleColor = [
+//   'interpolate',
+//   ['linear'],
+//   ['get', 'point_count'],
+//   0,
+//   '#AAA',
+//   1,
+//   '#74a9cf',
+//   10,
+//   '#2b8cbe',
+//   50,
+//   '#045a8d',
+// ]
 
 export const layers = [
   {
-    id: 'clusters',
+    id: 'detectors-clusters',
     type: 'circle',
-    source: 'points',
+    source: 'detectors',
     filter: ['has', 'point_count'], // point_count field added by mapbox GL
     paint: {
       'circle-color': circleColor,
@@ -137,21 +164,22 @@ export const layers = [
     },
   },
   {
-    id: 'points', // unclustered points
+    id: 'detectors-points', // unclustered points
     type: 'circle',
-    source: 'points',
+    source: 'detectors',
     filter: ['!', ['has', 'point_count']],
     paint: {
       'circle-color': circleColor,
-      'circle-radius': circleRadius,
+      // 'circle-radius': circleRadius,
+      'circle-radius': 4,
       'circle-stroke-width': 1,
       'circle-stroke-color': '#fff',
     },
   },
   {
-    id: 'clusters-label',
+    id: 'detectors-cluster-label',
     type: 'symbol',
-    source: 'points',
+    source: 'detectors',
     filter: ['has', 'point_count'],
     layout: {
       'text-field': '{point_count_abbreviated}', // only show when displaying detector locations and not values

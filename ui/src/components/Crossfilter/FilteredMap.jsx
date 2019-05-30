@@ -10,22 +10,22 @@ import { Context } from './Context'
 const FilteredMap = ({ onBoundsChange, ...props }) => {
   const { state, dispatch } = useContext(Context)
 
-  const handleBoundsChange = bounds => {
-    // TODO: persist bounds and convert to immutable throughout stack
-    dispatch({
-      type: SET_FILTER,
-      payload: {
-        field: 'bounds',
-        filterValue: bounds,
-      },
-    })
-    onBoundsChange(bounds)
-  }
+  // const handleBoundsChange = bounds => {
+  //   // TODO: persist bounds and convert to immutable throughout stack
+  //   dispatch({
+  //     type: SET_FILTER,
+  //     payload: {
+  //       field: 'bounds',
+  //       filterValue: bounds,
+  //     },
+  //   })
+  //   onBoundsChange(bounds)
+  // }
 
   return (
     <Map
       data={state.get('data')}
-      onBoundsChange={handleBoundsChange}
+      // onBoundsChange={handleBoundsChange}
       {...props}
     />
   )

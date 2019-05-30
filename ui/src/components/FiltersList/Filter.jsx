@@ -89,7 +89,7 @@ const Filter = ({
   // splice together label, value, and count so that we can filter and sort
   let data = values.map((value, i) => ({
     value,
-    label: labels[i] || value,
+    label: labels ? labels[i] : value,
     count: counts.get(value),
     isFiltered: filterValues.has(value),
     isExcluded: !filterValues.isEmpty() && !filterValues.has(value),

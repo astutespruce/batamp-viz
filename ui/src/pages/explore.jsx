@@ -64,7 +64,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
   // possible map styles:
   // map.setPaintProperty('points', 'circle-radius', ['interpolate', ['linear'], ['sqrt', ['get', 'detections']], 1, 2, 500, 10])
 
-  console.log(data.toJS())
+  // console.log(data.toJS())
 
   // filter out internal filters
   const visibleFilters = filters.filter(({ internal }) => !internal)

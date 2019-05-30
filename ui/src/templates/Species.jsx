@@ -9,10 +9,12 @@ import {
   hasValue,
   Provider as CrossfilterProvider,
   FilteredMap as Map,
+  ValueFieldSelector,
 } from 'components/Crossfilter'
 // import Map from 'components/Map'
 import Sidebar from 'components/Sidebar'
-import { Column, Columns, Flex } from 'components/Grid'
+import { Box, Column, Columns, Flex } from 'components/Grid'
+import FiltersList from 'components/FiltersList'
 import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
@@ -54,19 +56,21 @@ const RightColumn = styled(Column)`
 
 const filters = [
   {
-    field: 'unitID',
+    field: 'id',
     internal: true,
     filterFunc: hasValue,
   },
   {
     field: 'timestep',
-    internal: true,
-    values: MONTHS,
+    title: 'Month', // TODO: variable
+    isOpen: true,
+    values: MONTHS, // TODO: variable
     filterFunc: hasValue,
   },
   {
     field: 'bounds',
     internal: true,
+    aggregate: false,
 
     filterFunc: () => () => true, // FIXME!
     // TODO: use rbush or spatial filter?
@@ -88,11 +92,19 @@ const SpeciesTemplate = ({
     allDetectorTsJson,
   },
 }) => {
-  const detectors = extractNodes(allDetectorsJson)
-  const ts = extractNodes(allDetectorTsJson)
+  const [valueField, setValueField] = useState('detections')
 
-  const timestepField = 'month'
-  const valueField = 'detections'
+  const detectors = fromJS(extractNodes(allDetectorsJson))
+
+  // Note: only adding detectors field to detectors, will come in with data for other units
+  const data = fromJS(
+    extractNodes(allDetectorTsJson).map(d => ({ detectors: 1, ...d }))
+  )
+
+  // console.log('ts', data.toJS())
+
+  // const timestepField = 'month'
+  // const valueField = 'detections' // one of detectors, detections,
 
   // TODO: this could migrate to server tier too
   // const data = fromJS(
@@ -103,28 +115,24 @@ const SpeciesTemplate = ({
   //   }))
   // )
 
-  // console.log(data.toJS())
+  // const index = createIndex(detectors, 'detector')
 
-  const data = fromJS(detectors)
-
-  const index = createIndex(detectors, 'detector')
-
-  // console.log('ts', ts)
-
-  const [selectedId, setSelectedId] = useState(null)
+  // const [selectedId, setSelectedId] = useState(null)
   // const boundsRef = useRef(NABounds) // store bounds so they are updated without rerendering
   // const [{ prevBounds, nextBounds }, setBounds] = useState({
   //   prevBounds: List(NABounds),
   // })
 
-  const handleSelect = id => {
-    console.log('onSelect', id)
-    setSelectedId(id)
-  }
+  // const handleSelect = id => {
+  //   console.log('onSelect', id)
+  //   setSelectedId(id)
+  // }
 
   // const handleBoundsChange = bounds => {
   //   boundsRef.current = bounds
   // }
+
+  const visibleFilters = filters.filter(({ internal }) => !internal)
 
   return (
     <Layout title={`${commonName} (${sciName})`}>
@@ -144,7 +152,7 @@ const SpeciesTemplate = ({
               <Column>
                 {formatNumber(totalDetections, 0)} detections
                 <br />
-                {formatNumber(totalDetectors, 0)} nights
+                {formatNumber(totalNights, 0)} nights
               </Column>
               <RightColumn>
                 {totalDetectors} detectors
@@ -157,13 +165,22 @@ const SpeciesTemplate = ({
                 ) : null}
               </RightColumn>
             </Stats>
+
+            <Box my="1rem">
+              <ValueFieldSelector
+                fields={['detections', 'nights', 'id']}
+              />
+            </Box>
+
+            <FiltersList filters={visibleFilters} />
           </Sidebar>
-          <Map
+          {/* <Map
+          detectors={detectors}
             // bounds={nextBounds}
-            selectedFeature={selectedId}
-            onSelectFeature={handleSelect}
+            // selectedFeature={selectedId}
+            // onSelectFeature={handleSelect}
             // onBoundsChange={handleBoundsChange}
-          />
+          /> */}
         </CrossfilterProvider>
       </Wrapper>
     </Layout>
@@ -183,7 +200,7 @@ SpeciesTemplate.propTypes = {
     }).isRequired,
     allDetectorsJson: GraphQLArrayPropType(
       PropTypes.shape({
-        detector: PropTypes.number.isRequired,
+        id: PropTypes.number.isRequired,
         lat: PropTypes.number.isRequired,
         lon: PropTypes.number.isRequired,
       })
@@ -205,8 +222,7 @@ export const pageQuery = graphql`
     allDetectorsJson(filter: { speciesPresent: { eq: $species } }) {
       edges {
         node {
-          site
-          detector
+          id: detector
           lat
           lon
         }
@@ -215,8 +231,8 @@ export const pageQuery = graphql`
     allDetectorTsJson(filter: { s: { eq: $species } }) {
       edges {
         node {
-          unitID: i
-          month: m
+          id: i
+          timestep: m
           detections: d
           nights: n
         }
