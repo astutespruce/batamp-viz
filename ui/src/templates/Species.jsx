@@ -67,13 +67,17 @@ const filters = [
     values: MONTHS, // TODO: variable
     filterFunc: hasValue,
   },
-  {
-    field: 'bounds',
-    internal: true,
-    aggregate: false,
+  // {
+  //   field: 'bounds',
+  //   internal: true,
+  //   aggregate: false,
 
-    filterFunc: () => () => true, // FIXME!
-    // TODO: use rbush or spatial filter?
+  //   filterFunc: () => () => true, // FIXME!
+  //   // TODO: use rbush or spatial filter?
+  // },
+  {
+    field: 'i',
+    internal: true,
   },
 ]
 
@@ -98,7 +102,7 @@ const SpeciesTemplate = ({
 
   // Note: only adding detectors field to detectors, will come in with data for other units
   const data = fromJS(
-    extractNodes(allDetectorTsJson).map(d => ({ detectors: 1, ...d }))
+    extractNodes(allDetectorTsJson).map((d, i) => ({ i, detectors: 1, ...d }))
   )
 
   // console.log('ts', data.toJS())
@@ -167,15 +171,13 @@ const SpeciesTemplate = ({
             </Stats>
 
             <Box my="1rem">
-              <ValueFieldSelector
-                fields={['detections', 'nights', 'id']}
-              />
+              <ValueFieldSelector fields={['detections', 'nights', 'id']} />
             </Box>
 
             <FiltersList filters={visibleFilters} />
           </Sidebar>
           <Map
-          detectors={detectors}
+            detectors={detectors}
             // bounds={nextBounds}
             // selectedFeature={selectedId}
             // onSelectFeature={handleSelect}

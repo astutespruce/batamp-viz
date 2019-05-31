@@ -13,7 +13,15 @@ import { niceNumber, flatzip } from 'util/data'
 
 import StyleSelector from './StyleSelector'
 import { getCenterAndZoom, toGeoJSONPoints } from './util'
-import { config, sources, layers, MINRADIUS, MAXRADIUS } from './config'
+import {
+  config,
+  sources,
+  layers,
+  MINRADIUS,
+  MAXRADIUS,
+  LIGHTESTCOLOR,
+  DARKESTCOLOR,
+} from './config'
 
 const TRANSPARENT = 'rgba(0,0,0,0)'
 
@@ -26,6 +34,7 @@ const Map = ({
   detectors,
   // totals,
   data,
+  valueField,
   maxValue,
   selectedFeature,
   bounds,
@@ -98,7 +107,7 @@ const Map = ({
       })
 
       // Set initial rendering of cluster / point layers
-      styleDetectors(maxValue)
+      styleDetectors()
     })
 
     map.on('moveend', () => {
@@ -125,7 +134,7 @@ const Map = ({
     }
   }, [])
 
-  // Update detectors
+  // Only update style for detectors when they change because of the valueField
   useEffect(() => {
     const { current: map } = mapRef
     if (!(map && map.isStyleLoaded())) return
@@ -134,7 +143,7 @@ const Map = ({
 
     // console.log(geoJSON)
     map.getSource('detectors').setData(toGeoJSONPoints(detectors.toJS()))
-    styleDetectors(maxValue)
+    styleDetectors()
   }, [detectors, maxValue])
 
   // Update when data change
@@ -146,36 +155,61 @@ const Map = ({
   const styleDetectors = () => {
     const { current: map } = mapRef
 
-    // Note: we are getting the prop maxValue, watch for that being stale
-    const upperValue = niceNumber(maxValue)
-    console.log('maxValue', maxValue, '=>', upperValue)
-    const radii = flatzip([1, upperValue], [MINRADIUS, MAXRADIUS])
-    const colors = flatzip([1, upperValue], ['#74a9cf', '#045a8d'])
+    if (valueField === 'id') {
+      // how to find the max cluster size?
+      // visible, but filtered: Math.max(...map.querySourceFeatures("detectors").map(({properties: {point_count}}) => point_count).filter(v => !isNaN(v)))
+      // map.setPaintProperty('detectors-clusters', 'circle-radius', ['interpolate', ['linear'], ['get', 'point_count'], 2,6, 10, 12, 100, 24])
 
-    map.setPaintProperty('detectors-clusters', 'circle-radius', [
-      'interpolate',
-      ['linear'],
-      ['get', 'total'],
-      ...radii,
-    ])
-    map.setPaintProperty('detectors-clusters', 'circle-color', [
-      'interpolate',
-      ['linear'],
-      ['get', 'total'],
-      ...colors,
-    ])
-    map.setPaintProperty('detectors-points', 'circle-radius', [
-      'interpolate',
-      ['linear'],
-      ['get', 'total'],
-      ...radii,
-    ])
-    map.setPaintProperty('detectors-points', 'circle-color', [
-      'interpolate',
-      ['linear'],
-      ['get', 'total'],
-      ...colors,
-    ])
+      // set upper bound to 1/5th of the number of detectors
+      const upperValue = niceNumber(maxValue / 5)
+      console.log('maxValue', maxValue, '=>', upperValue)
+      // const upperValue = niceNumber(detectors.size / 5)
+
+      // console.log('maxValue', detectors.size, '=>', upperValue)
+      const colors = flatzip([1, upperValue], [LIGHTESTCOLOR, DARKESTCOLOR])
+      map.setPaintProperty('detectors-clusters', 'circle-radius', [
+        'interpolate',
+        ['linear'],
+        ['get', 'point_count'],
+        ...flatzip([1, upperValue], [MINRADIUS + 2, MAXRADIUS]),
+      ])
+      map.setPaintProperty('detectors-clusters', 'circle-color', [
+        'interpolate',
+        ['linear'],
+        ['get', 'point_count'],
+        ...colors,
+      ])
+      map.setPaintProperty('detectors-points', 'circle-radius', MINRADIUS)
+      map.setPaintProperty('detectors-points', 'circle-color', LIGHTESTCOLOR)
+    } else {
+      const upperValue = niceNumber(maxValue)
+      console.log('maxValue', maxValue, '=>', upperValue)
+      const colors = flatzip([1, upperValue], [LIGHTESTCOLOR, DARKESTCOLOR])
+      map.setPaintProperty('detectors-clusters', 'circle-radius', [
+        'interpolate',
+        ['linear'],
+        ['get', 'total'],
+        ...flatzip([1, upperValue], [MINRADIUS + 2, MAXRADIUS]),
+      ])
+      map.setPaintProperty('detectors-clusters', 'circle-color', [
+        'interpolate',
+        ['linear'],
+        ['get', 'total'],
+        ...colors,
+      ])
+      map.setPaintProperty('detectors-points', 'circle-radius', [
+        'interpolate',
+        ['linear'],
+        ['get', 'total'],
+        ...flatzip([1, upperValue], [MINRADIUS, MAXRADIUS]),
+      ])
+      map.setPaintProperty('detectors-points', 'circle-color', [
+        'interpolate',
+        ['linear'],
+        ['get', 'total'],
+        ...colors,
+      ])
+    }
   }
 
   const handleBasemapChange = styleID => {
@@ -249,6 +283,7 @@ Map.propTypes = {
       lon: PropTypes.number.isRequired,
     })
   ).isRequired,
+  valueField: PropTypes.string.isRequired,
   maxValue: PropTypes.number.isRequired,
   // Map of id:total for each unit, updated dynamically by crossfilter
   // totals: ImmutablePropTypes.map.isRequired,

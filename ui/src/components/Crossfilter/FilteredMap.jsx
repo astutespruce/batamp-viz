@@ -26,8 +26,18 @@ const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
 
   // total of current valueField by ID
   const totals = state.get('dimensionTotals').get('id')
+  const totalByID = state.get('idTotalsNoTime')
+  const valueField = state.get('valueField')
 
-  const maxValue = Math.max(...Array.from(state.get('idTotalsNoTime').values()))
+  let maxValue = 0
+  if (valueField === 'id') {
+    maxValue = totalByID.size
+  }
+  else {
+    maxValue = Math.max(...Array.from(totalByID.values()))
+  }
+
+  console.log('valueField', valueField)
 
   const keys = Set(['id', 'lat', 'lon'])
   const detectors = rawDetectors
@@ -36,8 +46,6 @@ const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
     )
     .filter(d => d.get('total') > 0)
 
-  window.detectors = detectors
-
   console.log('detectors', detectors)
 
   return (
@@ -45,6 +53,7 @@ const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
       data={state.get('data')}
       detectors={detectors}
       // totals={totals}
+      valueField={valueField}
       maxValue={maxValue}
       // onBoundsChange={handleBoundsChange}
       {...props}

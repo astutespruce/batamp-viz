@@ -16,6 +16,7 @@ import { sum } from 'util/data'
  * Note: all zero values are removed.
  * IMPORTANT: since this is applied to a dimension, the filters against
  * that dimension ARE NOT USED.
+ * Also note: this DOES NOT work where valueField === 'id'
  *
  * @param {String} valueField - name of value field
  */

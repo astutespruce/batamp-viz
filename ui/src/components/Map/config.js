@@ -3,7 +3,9 @@ import { createSteps } from './util'
 const TILE_HOST = 'https://tiles.batamp.databasin.org'
 
 export const MINRADIUS = 4
-export const MAXRADIUS = 24
+export const MAXRADIUS = 12
+export const LIGHTESTCOLOR = '#74a9cf'
+export const DARKESTCOLOR = '#045a8d'
 
 export const config = {
   // Mapbox public token.  TODO: migrate to .env setting
@@ -38,123 +40,6 @@ export const sources = {
   },
 }
 
-// const defaultRadius = 6
-// const clusters = [
-//   {
-//     threshold: 10,
-//     // label: '< 10 estuaries',
-//     color: '#74a9cf',
-//     borderColor: '#2b8cbe',
-//     radius: defaultRadius,
-//   },
-//   {
-//     threshold: 100,
-//     // label: '10 - 100 estuaries',
-//     color: '#2b8cbe',
-//     borderColor: '#045a8d',
-//     radius: 20,
-//   },
-//   {
-//     threshold: Infinity,
-//     // label: '> 100 estuaries',
-//     color: '#045a8d',
-//     borderColor: '#000',
-//     radius: 25,
-//   },
-// ]
-
-// TODO: linear interopolation?
-// const clusterRadii = createSteps(
-//   [
-//     { threshold: 0, radius: 4 },
-//     { threshold: 100, radius: 6 },
-//     { threshold: 100, radius: 6 },
-//     { threshold: 500, radius: 14 },
-//   ],
-//   'radius'
-// )
-
-// for detections - with clustering:
-const circleRadius = [
-  'interpolate',
-  ['linear'],
-  ['get', 'total'],
-  1,
-  6,
-  10000,
-  10,
-  1000000,
-  20,
-]
-
-const circleColor = [
-  'interpolate',
-  ['linear'],
-  ['get', 'total'],
-  0,
-  '#AAA',
-  1,
-  '#74a9cf',
-  10000,
-  '#2b8cbe',
-  1000000,
-  '#045a8d',
-]
-
-// for detections without clustering
-// const circleRadius = [
-//   'interpolate',
-//   ['linear'],
-//   ['get', 'detections'],
-//   1,
-//   6,
-//   1000,
-//   10,
-//   100000,
-//   20,
-// ]
-
-// const circleColor = [
-//   'interpolate',
-//   ['linear'],
-//   ['get', 'detections'],
-//   0,
-//   '#AAA',
-//   1,
-//   '#74a9cf',
-//   1000,
-//   '#2b8cbe',
-//   100000,
-//   '#045a8d',
-// ]
-
-// for detectors
-// const circleRadius = [
-//   'interpolate',
-//   ['linear'],
-//   ['get', 'point_count'],
-//   1,
-//   6,
-//   10,
-//   10,
-//   50,
-//   20,
-// ]
-
-// const circleColor = [
-//   'interpolate',
-//   ['linear'],
-//   ['get', 'point_count'],
-//   0,
-//   '#AAA',
-//   1,
-//   '#74a9cf',
-//   10,
-//   '#2b8cbe',
-//   50,
-//   '#045a8d',
-// ]
-
 export const layers = [
   {
     id: 'detectors-clusters',
@@ -162,9 +47,8 @@ export const layers = [
     source: 'detectors',
     filter: ['has', 'point_count'], // point_count field added by mapbox GL
     paint: {
-      // 'circle-color': circleColor,
+      'circle-stroke-color': '#fff',
       'circle-stroke-width': 1,
-      // 'circle-radius': circleRadius,
     },
   },
   {
@@ -172,23 +56,7 @@ export const layers = [
     type: 'circle',
     source: 'detectors',
     filter: ['!has', 'point_count'],
-    // filter: ['>', ['feature-state', 'total'], 0],
     paint: {
-      // 'circle-color': circleColor,
-      // 'circle-radius': circleRadius,
-      'circle-color': '#000',
-      // TODO: graduate based on metric
-      // 'circle-radius': [
-      //   'interpolate',
-      //   ['linear'],
-      //   ['get', 'total'],
-      //   0,
-      //   0,
-      //   1,
-      //   4,
-      //   100,
-      //   10,
-      // ],
       'circle-stroke-width': 1,
       'circle-stroke-color': '#fff',
     },
