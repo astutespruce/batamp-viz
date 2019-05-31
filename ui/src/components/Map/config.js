@@ -162,33 +162,33 @@ export const layers = [
     source: 'detectors',
     filter: ['has', 'point_count'], // point_count field added by mapbox GL
     paint: {
-      'circle-color': circleColor,
+      // 'circle-color': circleColor,
       'circle-stroke-width': 1,
-      'circle-radius': circleRadius,
+      // 'circle-radius': circleRadius,
     },
   },
   {
     id: 'detectors-points', // unclustered points
     type: 'circle',
     source: 'detectors',
-    filter: ['!', ['has', 'point_count']],
+    filter: ['!has', 'point_count'],
     // filter: ['>', ['feature-state', 'total'], 0],
     paint: {
       // 'circle-color': circleColor,
       // 'circle-radius': circleRadius,
       'circle-color': '#000',
       // TODO: graduate based on metric
-      'circle-radius': [
-        'interpolate',
-        ['linear'],
-        ['get', 'total'],
-        0,
-        0,
-        1,
-        4,
-        100,
-        10,
-      ],
+      // 'circle-radius': [
+      //   'interpolate',
+      //   ['linear'],
+      //   ['get', 'total'],
+      //   0,
+      //   0,
+      //   1,
+      //   4,
+      //   100,
+      //   10,
+      // ],
       'circle-stroke-width': 1,
       'circle-stroke-color': '#fff',
     },

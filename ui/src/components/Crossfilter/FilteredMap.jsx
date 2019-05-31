@@ -27,6 +27,8 @@ const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
   // total of current valueField by ID
   const totals = state.get('dimensionTotals').get('id')
 
+  const maxValue = Math.max(...Array.from(state.get('idTotalsNoTime').values()))
+
   const keys = Set(['id', 'lat', 'lon'])
   const detectors = rawDetectors
     .map(d =>
@@ -34,7 +36,7 @@ const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
     )
     .filter(d => d.get('total') > 0)
 
-    // TODO: figure out statistics of those that are visible for rendering
+  window.detectors = detectors
 
   console.log('detectors', detectors)
 
@@ -42,7 +44,8 @@ const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
     <Map
       data={state.get('data')}
       detectors={detectors}
-      totals={totals}
+      // totals={totals}
+      maxValue={maxValue}
       // onBoundsChange={handleBoundsChange}
       {...props}
     />

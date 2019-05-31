@@ -37,3 +37,20 @@ export const filterIndex = (index, keys) => {
 }
 
 export const sum = values => values.reduce((prev, value) => prev + value, 0)
+
+/**
+ * Round number UP to the nearest power of 10
+ * @param {Number} number
+ */
+export const niceNumber = number => {
+  const factor = 10 ** Math.max(number.toString().length - 2, 1)
+  return Math.ceil(number / factor) * factor
+}
+
+export const flatzip = (a, b) => {
+  if (a.length !== b.length) {
+    throw new Error('arrays must be equal to use zip')
+  }
+
+  return a.reduce((prev, v, i) => prev.concat([v, b[i]]), [])
+}

@@ -3,7 +3,22 @@ import { Map, List, Set } from 'immutable'
 
 import Crossfilter from 'crossfilter2'
 import { isDebug } from 'util/dom'
-import { aggregateByDimension, getRawTotal, getFilteredTotal } from './util'
+import {
+  aggregateByDimension,
+  getRawTotal,
+  getFilteredTotal,
+  getSemiFilteredTotalsByID,
+} from './util'
+
+// TODO: generalize handling of timestep
+// can be a prop on the filter itself to calculate max, and then toss that in a stats object here
+// dimensionStats: {
+//   dim: {
+//     'count':
+//     'total':
+//     'max'
+//   }
+// }
 
 // returns true if passed in values contains the value
 // values must be a Set
@@ -59,6 +74,10 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
           filters: state.get('filters').set(field, filterValue),
           dimensionTotals: aggregateByDimension(dimensions, valueField),
           filteredTotal: getFilteredTotal(crossfilter, valueField),
+          idTotalsNoTime: getSemiFilteredTotalsByID(
+            dimensions.timestep,
+            valueField
+          ),
         })
         break
       }
@@ -82,6 +101,10 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
           filters: newFilters,
           dimensionTotals: aggregateByDimension(dimensions, valueField),
           filteredTotal: getFilteredTotal(crossfilter, valueField),
+          idTotalsNoTime: getSemiFilteredTotalsByID(
+            dimensions.timestep,
+            valueField
+          ),
         })
         break
       }
@@ -94,6 +117,7 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
           dimensionTotals: aggregateByDimension(dimensions, field),
           filteredTotal: getFilteredTotal(crossfilter, field),
           total: getRawTotal(crossfilter, field),
+          idTotalsNoTime: getSemiFilteredTotalsByID(dimensions.timestep, field),
         })
 
         break
@@ -150,12 +174,19 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
 
     // initial state
     return Map({
+      // passed in data
       data,
+      valueField: initValueField,
+
+      // derived data
+      total,
+      filteredTotal: total,
       filters: Map(),
       dimensionTotals: aggregateByDimension(dimensions, initValueField),
-      filteredTotal: total,
-      total,
-      valueField: initValueField,
+      idTotalsNoTime: getSemiFilteredTotalsByID(
+        dimensions.timestep,
+        initValueField
+      ),
     })
   }
 

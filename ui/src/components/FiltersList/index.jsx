@@ -87,7 +87,7 @@ const FiltersList = ({ filters }) => {
             {valueField} currently visible
           </Count>
         </Column>
-        <Column flexShrink={0}>
+        <Column flex="0 0 auto">
           {hasFilters && (
             <Text textAlign="right">
               <ResetButton onClick={handleReset}>

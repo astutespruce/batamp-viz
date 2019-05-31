@@ -18,7 +18,8 @@ export const Option = styled.span`
   font-weight: bold;
   margin-left: 0.5em;
 
-  color: ${({ active }) => (active ? themeGet('colors.grey.900') : 'inherit')};
+  color: ${({ active }) =>
+    active ? themeGet('colors.highlight.500') : 'inherit'};
 
   &:not(:first-child) {
     padding-left: 0.5em;

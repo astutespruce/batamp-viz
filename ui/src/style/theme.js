@@ -30,7 +30,8 @@ const colors = {
   },
   highlight: {
     100: '#eeeaf4', // lightest violet
-    500: '#84000b',
+    // 500: '#84000b',
+    500: '#ee7a14', // orange
   },
   grey: {
     100: '#f9f9f9',

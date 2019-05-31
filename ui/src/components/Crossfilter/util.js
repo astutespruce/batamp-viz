@@ -1,5 +1,43 @@
 import { Map, Set } from 'immutable'
+
 import { sum } from 'util/data'
+
+// Custom reducer to get stats for all filtered records EXCEPT
+// filter by timestep
+
+/**
+ * Create a triad of add, remove, init reducers to use with the
+ * `.groupAll().reduce(...<thisResult>)` function on a dimension.
+ * The result of using this is an ImmutableJS Map Object where
+ * the key is the id value of each record, and the value is the non-zero
+ * total of all values of valueField for those records that meet all
+ * OTHER filters than the current dimension.
+ *
+ * Note: all zero values are removed.
+ * IMPORTANT: since this is applied to a dimension, the filters against
+ * that dimension ARE NOT USED.
+ *
+ * @param {String} valueField - name of value field
+ */
+const valueByIDReducer = valueField => [
+  (prev, d) => {
+    return prev.update(
+      d.get('id'),
+      0,
+      prevCount => prevCount + d.get(valueField)
+    )
+  },
+  (prev, d) => {
+    const id = d.get('id')
+    const total = prev.get(id, 0) - d.get(valueField)
+    if (total > 0) {
+      return prev.set(id, total)
+    }
+    // remove zero entries
+    return prev.remove(id)
+  },
+  () => Map(),
+]
 
 /**
  * reducer functions to group by unique ID.  Returns a set of IDS.
@@ -158,3 +196,13 @@ export const aggregateByDimension = (dimensions, valueField) => {
       })
   )
 }
+
+// Experimental
+
+// return total of valueField by ID without the filters applied to the
+// passed in dimension
+export const getSemiFilteredTotalsByID = (dimension, valueField) =>
+  dimension
+    .groupAll()
+    .reduce(...valueByIDReducer(valueField))
+    .value()
