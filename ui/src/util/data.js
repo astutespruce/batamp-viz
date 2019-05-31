@@ -47,6 +47,14 @@ export const niceNumber = number => {
   return Math.ceil(number / factor) * factor
 }
 
+/**
+ * Interleaves a and b arrays into a single flat array:
+ * a=[1,2], b=[3,4]
+ * returns [1,3,2,4]
+ * 
+ * @param {Array} a 
+ * @param {Array} b 
+ */
 export const flatzip = (a, b) => {
   if (a.length !== b.length) {
     throw new Error('arrays must be equal to use zip')
@@ -54,3 +62,11 @@ export const flatzip = (a, b) => {
 
   return a.reduce((prev, v, i) => prev.concat([v, b[i]]), [])
 }
+
+
+/**
+ * Interpolates the position linearly between min and max
+ * @param {Array} range - [min, max]
+ * @param {*} position - proportion of distance from min to max
+ */
+export const interpolate = ([min, max], position) => ((max-min) * position) + min

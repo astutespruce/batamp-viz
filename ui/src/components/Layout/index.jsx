@@ -1,14 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-import SEO from 'components/SEO'
-
 import { Flex } from 'components/Grid'
 import styled, { ThemeProvider, theme } from 'style'
 import { isUnsupported } from 'util/dom'
 import UnsupportedBrowser from './UnsupportedBrowser'
 import Header from './Header'
-import { siteMetadata } from '../../../gatsby-config'
+import SEO from './SEO'
 
 export { default as CallToActionBox } from './CallToActionBox'
 

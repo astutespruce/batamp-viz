@@ -3,15 +3,18 @@ import React, { useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import { List, fromJS } from 'immutable'
+import { interpolate, interpolateRgb } from 'd3-interpolate'
 
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 import styled from 'style'
 import { hasWindow } from 'util/dom'
+import { formatNumber } from 'util/format'
 import { niceNumber, flatzip } from 'util/data'
 
 import StyleSelector from './StyleSelector'
+import Legend from './Legend'
 import { getCenterAndZoom, toGeoJSONPoints } from './util'
 import {
   config,
@@ -139,7 +142,7 @@ const Map = ({
     const { current: map } = mapRef
     if (!(map && map.isStyleLoaded())) return
 
-    console.log('incoming data to map', detectors.toJS())
+    console.log('updated detectors for map', detectors.toJS())
 
     // console.log(geoJSON)
     map.getSource('detectors').setData(toGeoJSONPoints(detectors.toJS()))
@@ -163,14 +166,12 @@ const Map = ({
       // set upper bound to 1/5th of the number of detectors
       const upperValue = niceNumber(maxValue / 5)
       console.log('maxValue', maxValue, '=>', upperValue)
-      // const upperValue = niceNumber(detectors.size / 5)
-
-      // console.log('maxValue', detectors.size, '=>', upperValue)
       const colors = flatzip([1, upperValue], [LIGHTESTCOLOR, DARKESTCOLOR])
       map.setPaintProperty('detectors-clusters', 'circle-radius', [
         'interpolate',
         ['linear'],
         ['get', 'point_count'],
+        // make clusters slightly larger than single points
         ...flatzip([1, upperValue], [MINRADIUS + 2, MAXRADIUS]),
       ])
       map.setPaintProperty('detectors-clusters', 'circle-color', [
@@ -189,7 +190,7 @@ const Map = ({
         'interpolate',
         ['linear'],
         ['get', 'total'],
-        ...flatzip([1, upperValue], [MINRADIUS + 2, MAXRADIUS]),
+        ...flatzip([1, upperValue], [MINRADIUS, MAXRADIUS]),
       ])
       map.setPaintProperty('detectors-clusters', 'circle-color', [
         'interpolate',
@@ -210,6 +211,39 @@ const Map = ({
         ...colors,
       ])
     }
+  }
+
+  const getLegend = () => {
+    const radiusInterpolator = interpolate(MINRADIUS, MAXRADIUS)
+    const colorInterpolator = interpolateRgb(LIGHTESTCOLOR, DARKESTCOLOR)
+
+    const upperValue =
+      valueField === 'id' ? niceNumber(maxValue / 5) : niceNumber(maxValue)
+    let breaks = []
+    if (upperValue - 1 > 4) {
+      breaks = [0.66, 0.33]
+    }
+
+    const entries = [
+      {
+        type: 'circle',
+        radius: MAXRADIUS,
+        label: `≥ ${formatNumber(upperValue, 0)}`,
+        color: DARKESTCOLOR,
+      },
+    ]
+      .concat(
+        breaks.map(b => ({
+          type: 'circle',
+          label: `${formatNumber(upperValue * b, 0)}`,
+          radius: radiusInterpolator(b),
+          color: colorInterpolator(b),
+        }))
+      )
+      .concat([
+        { type: 'circle', radius: MINRADIUS, label: '1', color: LIGHTESTCOLOR },
+      ])
+    return entries
   }
 
   const handleBasemapChange = styleID => {
@@ -251,6 +285,13 @@ const Map = ({
   return (
     <Wrapper>
       <div ref={mapNode} style={{ width: '100%', height: '100%' }} />
+
+      <Legend
+        entries={getLegend()}
+        title={`Number of ${valueField === 'id' ? 'detectors' : valueField}`}
+        note="Map shows detector locations.  They may be clustered together if near each other."
+      />
+
       {mapRef.current && (
         <StyleSelector
           styles={styles}

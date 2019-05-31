@@ -1,11 +1,9 @@
-import { createSteps } from './util'
-
 const TILE_HOST = 'https://tiles.batamp.databasin.org'
 
 export const MINRADIUS = 4
-export const MAXRADIUS = 12
-export const LIGHTESTCOLOR = '#74a9cf'
-export const DARKESTCOLOR = '#045a8d'
+export const MAXRADIUS = 18
+export const DARKESTCOLOR = '#74a9cf'
+export const LIGHTESTCOLOR = '#045a8d'
 
 export const config = {
   // Mapbox public token.  TODO: migrate to .env setting
