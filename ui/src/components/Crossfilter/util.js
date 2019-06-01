@@ -198,12 +198,28 @@ export const aggregateByDimension = (dimensions, valueField) => {
   )
 }
 
-// Experimental
 
-// return total of valueField by ID without the filters applied to the
-// passed in dimension
-export const getSemiFilteredTotalsByID = (dimension, valueField) =>
-  dimension
-    .groupAll()
-    .reduce(...valueByIDReducer(valueField))
-    .value()
+/**
+ * Aggregate values by id field within each dimension.
+ * Aggregate will return the SUM by valueField.
+ * Excludes any dimension for which `aggregateById` property is `false`.
+ * Note: records in crossfilter are ImmutableJS Map objects.
+ *
+ * @param {Object} dimensions - object containing crossfilter dimensions.
+ * @param {String} valueField - name of value field within record. 
+ *
+ */
+export const aggregateDimensionById = (dimensions, valueField) => {
+  return Map(
+    Object.values(dimensions)
+      .filter(({ config: { aggregateById } }) => aggregateById)
+      .map(({ groupAll, config: { field } }) => {
+        return [
+          field,
+          groupAll()
+            .reduce(...valueByIDReducer(valueField))
+            .value(),
+        ]
+      })
+  )
+}

@@ -10,19 +10,17 @@ export const range = (start, stop) =>
   Array.from({ length: stop }, (v, i) => i + start)
 
 /**
- * Creates an index from an array of objects, using field as the index key.
+ * Creates an index from an array or ImmutableJS List of objects, using field as the index key.
  * Returns an ImmutableJS map
  *
- * @param {Array} data
+ * @param {Array or ImmutableJS List} data
  * @param {String} field
  */
 export const createIndex = (data, field) => {
-  // const temp = {}
-  // data.forEach(d => {
-  //   temp[d[field]] = d
-  // })
-
-  // return fromJS(temp)
+  if (data.size) {
+    // data are from a List of Map objects
+    return Map(data.map(d => [d.get(field), d.remove(field)]))
+  }
   return Map(data.map(({ [field]: k, ...rest }) => [k, fromJS(rest)]))
 }
 

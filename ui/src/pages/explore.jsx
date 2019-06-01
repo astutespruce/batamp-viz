@@ -31,7 +31,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
 
   const filters = [
     {
-      field: 'detector',
+      field: 'id',
       internal: true,
       filterFunc: hasValue,
     },
@@ -59,12 +59,8 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
     },
   ]
 
-  const data = fromJS(extractNodes(allDetectorsJson))
-
-  // possible map styles:
-  // map.setPaintProperty('points', 'circle-radius', ['interpolate', ['linear'], ['sqrt', ['get', 'detections']], 1, 2, 500, 10])
-
-  // console.log(data.toJS())
+  const detectors = fromJS(extractNodes(allDetectorsJson))
+  const data = detectors
 
   // filter out internal filters
   const visibleFilters = filters.filter(({ internal }) => !internal)
@@ -85,7 +81,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
 
             <FiltersList filters={visibleFilters} />
           </Sidebar>
-          <Map />
+          <Map detectors={detectors} />
         </CrossfilterProvider>
       </Wrapper>
     </Layout>
@@ -117,7 +113,7 @@ export const pageQuery = graphql`
     allDetectorsJson {
       edges {
         node {
-          detector
+          id: detector
           lat
           lon
           speciesPresent

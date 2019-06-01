@@ -7,7 +7,7 @@ import {
   aggregateByDimension,
   getRawTotal,
   getFilteredTotal,
-  getSemiFilteredTotalsByID,
+  aggregateDimensionById,
 } from './util'
 
 // TODO: generalize handling of timestep
@@ -74,10 +74,7 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
           filters: state.get('filters').set(field, filterValue),
           dimensionTotals: aggregateByDimension(dimensions, valueField),
           filteredTotal: getFilteredTotal(crossfilter, valueField),
-          idTotalsNoTime: getSemiFilteredTotalsByID(
-            dimensions.timestep,
-            valueField
-          ),
+          dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
         })
         break
       }
@@ -101,10 +98,7 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
           filters: newFilters,
           dimensionTotals: aggregateByDimension(dimensions, valueField),
           filteredTotal: getFilteredTotal(crossfilter, valueField),
-          idTotalsNoTime: getSemiFilteredTotalsByID(
-            dimensions.timestep,
-            valueField
-          ),
+          dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
         })
         break
       }
@@ -117,7 +111,7 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
           dimensionTotals: aggregateByDimension(dimensions, field),
           filteredTotal: getFilteredTotal(crossfilter, field),
           total: getRawTotal(crossfilter, field),
-          idTotalsNoTime: getSemiFilteredTotalsByID(dimensions.timestep, field),
+          dimensionTotalsById: aggregateDimensionById(dimensions, field),
         })
 
         break
@@ -183,10 +177,7 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
       filteredTotal: total,
       filters: Map(),
       dimensionTotals: aggregateByDimension(dimensions, initValueField),
-      idTotalsNoTime: getSemiFilteredTotalsByID(
-        dimensions.timestep,
-        initValueField
-      ),
+      dimensionTotalsById: aggregateDimensionById(dimensions, initValueField),
     })
   }
 

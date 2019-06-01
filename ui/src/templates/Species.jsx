@@ -1,16 +1,17 @@
 import React, { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { List, fromJS, Set } from 'immutable'
+import { List, fromJS, Set, Map as IMap } from 'immutable'
 
 import Layout from 'components/Layout'
+import { Switch } from 'components/Form'
 import { Text } from 'components/Text'
 import {
   hasValue,
   Provider as CrossfilterProvider,
   FilteredMap as Map,
   ValueFieldSelector,
-  TimePlayer
+  TimePlayer,
 } from 'components/Crossfilter'
 // import Map from 'components/Map'
 import Sidebar from 'components/Sidebar'
@@ -19,6 +20,7 @@ import FiltersList from 'components/FiltersList'
 import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
+import { withinBounds } from 'components/Map/util'
 import { createIndex, filterIndex } from 'util/data'
 import { NABounds, MONTHS, MONTH_LABELS } from '../../config/constants'
 
@@ -67,19 +69,17 @@ const filters = [
     isOpen: true,
     values: MONTHS, // TODO: variable
     labels: MONTH_LABELS,
+    aggregateById: true,
     filterFunc: hasValue,
   },
-  // {
-  //   field: 'bounds',
-  //   internal: true,
-  //   aggregate: false,
-
-  //   filterFunc: () => () => true, // FIXME!
-  //   // TODO: use rbush or spatial filter?
-  // },
   {
-    field: 'i',
+    field: 'bounds', // note: constructed field!
     internal: true,
+    getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
+
+    // TODO: use rbush or spatial filter?
+    filterFunc: mapBounds => ({ lat, lon }) =>
+      withinBounds({ lat, lon }, mapBounds),
   },
 ]
 
@@ -99,44 +99,30 @@ const SpeciesTemplate = ({
   },
 }) => {
   const [valueField, setValueField] = useState('detections')
+  const [filterByBounds, setFilterByBounds] = useState(true)
 
   const detectors = fromJS(extractNodes(allDetectorsJson))
 
+  const detectorIndex = createIndex(detectors, 'id')
+
   // Note: only adding detectors field to detectors, will come in with data for other units
+
+  // TODO: write generic join / splice routine
   const data = fromJS(
-    extractNodes(allDetectorTsJson).map((d, i) => ({ i, detectors: 1, ...d }))
+    extractNodes(allDetectorTsJson).map(d => {
+      const detector = detectorIndex.get(d.id)
+      return {
+        detectors: 1,
+        lat: detector.get('lat'),
+        lon: detector.get('lon'),
+        ...d,
+      }
+    })
   )
 
-  // console.log('ts', data.toJS())
-
-  // const timestepField = 'month'
-  // const valueField = 'detections' // one of detectors, detections,
-
-  // TODO: this could migrate to server tier too
-  // const data = fromJS(
-  //   ts.map(({ unitID, [timestepField]: timestep, [valueField]: value }) => ({
-  //     unitID,
-  //     timestep,
-  //     value,
-  //   }))
-  // )
-
-  // const index = createIndex(detectors, 'detector')
-
-  // const [selectedId, setSelectedId] = useState(null)
-  // const boundsRef = useRef(NABounds) // store bounds so they are updated without rerendering
-  // const [{ prevBounds, nextBounds }, setBounds] = useState({
-  //   prevBounds: List(NABounds),
-  // })
-
-  // const handleSelect = id => {
-  //   console.log('onSelect', id)
-  //   setSelectedId(id)
-  // }
-
-  // const handleBoundsChange = bounds => {
-  //   boundsRef.current = bounds
-  // }
+  const handleToggleBoundsFilter = () => {
+    setFilterByBounds(prev => !prev)
+  }
 
   const visibleFilters = filters.filter(({ internal }) => !internal)
 
@@ -172,17 +158,26 @@ const SpeciesTemplate = ({
               </RightColumn>
             </Stats>
 
+            <Box m="1rem">
+              <Switch
+                label="filter detectors by map extent?"
+                enabled={filterByBounds}
+                onChange={handleToggleBoundsFilter}
+              />
+            </Box>
+
             <Box my="1rem">
               <ValueFieldSelector fields={['detections', 'nights', 'id']} />
             </Box>
 
             <Box my="1rem">
-            <TimePlayer timesteps={MONTHS} timestepLabels={MONTH_LABELS}></TimePlayer>
+              <TimePlayer timesteps={MONTHS} timestepLabels={MONTH_LABELS} />
             </Box>
 
             <FiltersList filters={visibleFilters} />
           </Sidebar>
           <Map
+            filterByBounds={filterByBounds}
             detectors={detectors}
             // bounds={nextBounds}
             // selectedFeature={selectedId}

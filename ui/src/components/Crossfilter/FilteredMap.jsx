@@ -1,32 +1,59 @@
 /** A wrapper for the map to inject context from crossfilter so that the map doesn't need to know anything about crossfilter */
 
-import React, { useContext } from 'react'
+import React, { useContext, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
-import { Set } from 'immutable'
+import { Set, Map as ImmutableMap } from 'immutable'
 
 import Map from 'components/Map'
 import { SET_FILTER } from './Crossfilter'
 import { Context } from './Context'
 
-const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
+const FilteredMap = ({
+  detectors: rawDetectors,
+  filterByBounds,
+  onBoundsChange,
+  ...props
+}) => {
   const { state, dispatch } = useContext(Context)
+  const filterByBoundsRef = useRef(filterByBounds)
+  const boundsRef = useRef(null)
 
-  // const handleBoundsChange = bounds => {
-  //   // TODO: persist bounds and convert to immutable throughout stack
-  //   dispatch({
-  //     type: SET_FILTER,
-  //     payload: {
-  //       field: 'bounds',
-  //       filterValue: bounds,
-  //     },
-  //   })
-  //   onBoundsChange(bounds)
-  // }
+  useEffect(() => {
+    filterByBoundsRef.current = filterByBounds
+
+    // reset existing bounds filter if needed, or enable it to the last bounds
+    dispatch({
+      type: SET_FILTER,
+      payload: {
+        field: 'bounds',
+        filterValue: filterByBounds ? boundsRef.current : null,
+      },
+    })
+  }, [filterByBounds])
+
+  const handleBoundsChange = bounds => {
+    boundsRef.current = bounds
+
+    onBoundsChange(bounds)
+
+    // do not filter if this is not enabled
+    if (!filterByBounds.current) return
+
+    dispatch({
+      type: SET_FILTER,
+      payload: {
+        field: 'bounds',
+        filterValue: bounds,
+      },
+    })
+  }
 
   // total of current valueField by ID
   const totals = state.get('dimensionTotals').get('id')
-  const totalByID = state.get('idTotalsNoTime')
+  const totalByID = state
+    .get('dimensionTotalsById', ImmutableMap())
+    .get('timestep', ImmutableMap())
   const valueField = state.get('valueField')
 
   let maxValue = 0
@@ -52,7 +79,7 @@ const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
       // totals={totals}
       valueField={valueField}
       maxValue={maxValue}
-      // onBoundsChange={handleBoundsChange}
+      onBoundsChange={handleBoundsChange}
       {...props}
     />
   )
@@ -65,10 +92,12 @@ FilteredMap.propTypes = {
       lon: PropTypes.number.isRequired,
     })
   ).isRequired,
+  filterByBounds: PropTypes.bool,
   onBoundsChange: PropTypes.func,
 }
 
 FilteredMap.defaultProps = {
+  filterByBounds: true,
   onBoundsChange: () => {},
 }
 
