@@ -57,31 +57,10 @@ const RightColumn = styled(Column)`
   text-align: right;
 `
 
-const filters = [
-  {
-    field: 'id',
-    internal: true,
-    filterFunc: hasValue,
-  },
-  {
-    field: 'timestep',
-    title: 'Month', // TODO: variable
-    isOpen: true,
-    values: MONTHS, // TODO: variable
-    labels: MONTH_LABELS,
-    aggregateById: true,
-    filterFunc: hasValue,
-  },
-  {
-    field: 'bounds', // note: constructed field!
-    internal: true,
-    getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
+const filterByBounds = mapBounds => ({ lat, lon }) =>
+withinBounds({ lat, lon }, mapBounds)
 
-    // TODO: use rbush or spatial filter?
-    filterFunc: mapBounds => ({ lat, lon }) =>
-      withinBounds({ lat, lon }, mapBounds),
-  },
-]
+
 
 const SpeciesTemplate = ({
   data: {
@@ -101,8 +80,11 @@ const SpeciesTemplate = ({
   const [valueField, setValueField] = useState('detections')
   const [filterByBounds, setFilterByBounds] = useState(true)
 
-  const detectors = fromJS(extractNodes(allDetectorsJson))
+  const handleToggleBoundsFilter = () => {
+    setFilterByBounds(prev => !prev)
+  }
 
+  const detectors = fromJS(extractNodes(allDetectorsJson))
   const detectorIndex = createIndex(detectors, 'id')
 
   // Note: only adding detectors field to detectors, will come in with data for other units
@@ -120,10 +102,39 @@ const SpeciesTemplate = ({
     })
   )
 
-  const handleToggleBoundsFilter = () => {
-    setFilterByBounds(prev => !prev)
-  }
+  const years = Array.from(Set(data.map(d => d.get('year'))).values()).sort()
 
+  const filters = [
+    {
+      field: 'id',
+      internal: true,
+      filterFunc: hasValue,
+    },
+    {
+      field: 'timestep',
+      title: 'Month', // TODO: variable
+      isOpen: true,
+      values: MONTHS, // TODO: variable
+      labels: MONTH_LABELS,
+      aggregateById: true,
+      filterFunc: hasValue,
+    },
+    {
+      field: 'year',
+      title: 'Year',
+      isOpen: false,
+      filterFunc: hasValue,
+      values: years,
+    },
+    {
+      field: 'bounds', // note: constructed field!
+      internal: true,
+      getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
+  
+      // TODO: use rbush or spatial filter?
+      filterFunc: filterByBounds,
+    },
+  ]
   const visibleFilters = filters.filter(({ internal }) => !internal)
 
   return (
@@ -208,6 +219,15 @@ SpeciesTemplate.propTypes = {
         lon: PropTypes.number.isRequired,
       })
     ).isRequired,
+    allDetectorTsJson: GraphQLArrayPropType(
+      PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        year: PropTypes.number.isRequired,
+        timestep: PropTypes.number.isRequired,
+        detections: PropTypes.number.isRequired,
+        nights: PropTypes.number.isRequired,
+      })
+    ).isRequired,
   }).isRequired,
 }
 
@@ -235,6 +255,7 @@ export const pageQuery = graphql`
       edges {
         node {
           id: i
+          year: y
           timestep: m
           detections: d
           nights: n

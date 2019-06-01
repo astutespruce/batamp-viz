@@ -227,7 +227,7 @@ df.reset_index().to_feather(derived_dir / "merged.feather")
 
 ### Calculate high level summary statistics
 summary = {
-    "admin1": site_admin.admin_id.unique().size,
+    "admin1": site_admin.admin1.unique().size,
     "species": len(ACTIVITY_COLUMNS),
     "contributors": df.contributor.unique().size,
     "detectors": len(detectors),
@@ -382,7 +382,7 @@ spp_stats.to_json(json_dir / "species.json", orient="records")
 
 ### Calculate detector - species stats per year, month, week
 # Due to size limits in Gatsby, just doing by month for now
-time_fields = ["month"]
+time_fields = ["year", "month"]
 # transpose species columns to rows
 det = (
     df[["detector"] + ACTIVITY_COLUMNS + time_fields]
@@ -402,7 +402,8 @@ det_ts.to_feather(derived_dir / "detector_ts.feather")
 
 # use smaller column names
 # det_ts.columns = ["unitID", "s", "y", "m", "w", "d", "n"]
-det_ts.columns = ["i", "s", "m", "d", "n"]
+# det_ts.columns = ["i", "s", "m", "d", "n"]
+det_ts.columns = ["i", "s", "y", "m", "d", "n"]
 det_ts.to_json(json_dir / "detectorTS.json", orient="records")
 
 

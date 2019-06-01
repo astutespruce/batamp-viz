@@ -132,6 +132,50 @@ const Map = ({
       }
     })
 
+  //   map.on('mouseenter', 'clusters', e => {
+  //     map.getCanvas().style.cursor = 'pointer'
+
+  //     const [feature] = map.queryRenderedFeatures(e.point, {
+  //       layers: ['clusters'],
+  //     })
+  //     const clusterId = feature.properties.cluster_id
+
+  //     // highlight
+  //     map.setFilter('points-highlight', [
+  //       '==',
+  //       ['get', 'cluster_id'],
+  //       clusterId,
+  //     ])
+
+  //     map
+  //       .getSource('points')
+  //       .getClusterLeaves(clusterId, Infinity, 0, (err, children) => {
+  //         if (err) return
+
+  //         let names = children
+  //           .slice(0, 5)
+  //           .map(({ properties: { name } }) => name)
+  //           .join('<br/>')
+  //         if (children.length > 5) {
+  //           names += `<br/>and ${children.length - 5} more...`
+  //         }
+
+  //         tooltip
+  //           .setLngLat(feature.geometry.coordinates)
+  //           .setHTML(names)
+  //           .addTo(map)
+  //       })
+  //   })
+  //   map.on('mouseleave', 'clusters', () => {
+  //     map.getCanvas().style.cursor = ''
+  //     map.setFilter('points-highlight', [
+  //       '==',
+  //       'id',
+  //       selectedFeatureRef.current || Infinity,
+  //     ])
+  //     tooltip.remove()
+  //   })
+
     return () => {
       map.remove()
     }
