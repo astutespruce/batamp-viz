@@ -142,9 +142,7 @@ const Map = ({
     const { current: map } = mapRef
     if (!(map && map.isStyleLoaded())) return
 
-    console.log('updated detectors for map', detectors.toJS())
-
-    // console.log(geoJSON)
+    // console.log('updated detectors for map', detectors.toJS())
     map.getSource('detectors').setData(toGeoJSONPoints(detectors.toJS()))
     styleDetectors()
   }, [detectors, maxValue])
@@ -161,11 +159,9 @@ const Map = ({
     if (valueField === 'id') {
       // how to find the max cluster size?
       // visible, but filtered: Math.max(...map.querySourceFeatures("detectors").map(({properties: {point_count}}) => point_count).filter(v => !isNaN(v)))
-      // map.setPaintProperty('detectors-clusters', 'circle-radius', ['interpolate', ['linear'], ['get', 'point_count'], 2,6, 10, 12, 100, 24])
 
       // set upper bound to 1/5th of the number of detectors
       const upperValue = niceNumber(maxValue / 5)
-      console.log('maxValue', maxValue, '=>', upperValue)
       const colors = flatzip([1, upperValue], [LIGHTESTCOLOR, DARKESTCOLOR])
       map.setPaintProperty('detectors-clusters', 'circle-radius', [
         'interpolate',
@@ -184,7 +180,6 @@ const Map = ({
       map.setPaintProperty('detectors-points', 'circle-color', LIGHTESTCOLOR)
     } else {
       const upperValue = niceNumber(maxValue)
-      console.log('maxValue', maxValue, '=>', upperValue)
       const colors = flatzip([1, upperValue], [LIGHTESTCOLOR, DARKESTCOLOR])
       map.setPaintProperty('detectors-clusters', 'circle-radius', [
         'interpolate',

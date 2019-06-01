@@ -12,10 +12,6 @@ export const Context = createContext()
 export const Provider = ({ data, filters, valueField, children }) => {
   const [state, dispatch] = useCrossfilter(data, filters, valueField)
 
-
-  console.log('context state', state.toJS())
-
-
   return (
     <Context.Provider value={{ state, dispatch }}>{children}</Context.Provider>
   )

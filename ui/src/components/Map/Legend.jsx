@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, memo } from 'react'
 import PropTypes from 'prop-types'
 
 import { Text } from 'components/Text'
@@ -151,4 +151,4 @@ Legend.defaultProps = {
   note: null,
 }
 
-export default Legend
+export default memo(Legend)

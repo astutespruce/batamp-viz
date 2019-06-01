@@ -10,6 +10,7 @@ import {
   Provider as CrossfilterProvider,
   FilteredMap as Map,
   ValueFieldSelector,
+  TimePlayer
 } from 'components/Crossfilter'
 // import Map from 'components/Map'
 import Sidebar from 'components/Sidebar'
@@ -19,7 +20,7 @@ import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import { createIndex, filterIndex } from 'util/data'
-import { NABounds, MONTHS } from '../../config/constants'
+import { NABounds, MONTHS, MONTH_LABELS } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -65,6 +66,7 @@ const filters = [
     title: 'Month', // TODO: variable
     isOpen: true,
     values: MONTHS, // TODO: variable
+    labels: MONTH_LABELS,
     filterFunc: hasValue,
   },
   // {
@@ -172,6 +174,10 @@ const SpeciesTemplate = ({
 
             <Box my="1rem">
               <ValueFieldSelector fields={['detections', 'nights', 'id']} />
+            </Box>
+
+            <Box my="1rem">
+            <TimePlayer timesteps={MONTHS} timestepLabels={MONTH_LABELS}></TimePlayer>
             </Box>
 
             <FiltersList filters={visibleFilters} />

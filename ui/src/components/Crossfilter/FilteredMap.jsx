@@ -32,12 +32,9 @@ const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
   let maxValue = 0
   if (valueField === 'id') {
     maxValue = totalByID.size
-  }
-  else {
+  } else {
     maxValue = Math.max(...Array.from(totalByID.values()))
   }
-
-  console.log('valueField', valueField)
 
   const keys = Set(['id', 'lat', 'lon'])
   const detectors = rawDetectors
@@ -46,7 +43,7 @@ const FilteredMap = ({ detectors: rawDetectors, onBoundsChange, ...props }) => {
     )
     .filter(d => d.get('total') > 0)
 
-  console.log('detectors', detectors)
+  // console.log('detectors', detectors)
 
   return (
     <Map

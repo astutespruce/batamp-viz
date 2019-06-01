@@ -9,4 +9,7 @@ export const COUNTRIES = {
 }
 
 export const MONTHS = range(1, 12)
+export const MONTH_LABELS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+
 export const WEEKS = range(1, 52)

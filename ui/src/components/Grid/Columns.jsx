@@ -1,6 +1,8 @@
 import React from 'react'
 import { Flex, Box } from '@rebass/grid'
 
+import styled from 'style'
+
 export const Columns = props => (
   <Flex
     flexWrap={['wrap', 'nowrap']}
@@ -12,3 +14,7 @@ export const Columns = props => (
 )
 
 export const Column = props => <Box flex="1 1 auto" px="1rem" {...props} />
+
+export const RightColumn = styled(Column)`
+  text-align: right;
+`
