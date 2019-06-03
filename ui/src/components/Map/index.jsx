@@ -8,7 +8,7 @@ import { interpolate, interpolateRgb } from 'd3-interpolate'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
-import styled from 'style'
+import styled, { theme } from 'style'
 import { hasWindow } from 'util/dom'
 import { formatNumber } from 'util/format'
 import { niceNumber, flatzip } from 'util/data'
@@ -20,6 +20,8 @@ import {
   config,
   sources,
   layers,
+  speciesSource,
+  speciesLayers,
   MINRADIUS,
   MAXRADIUS,
   LIGHTESTCOLOR,
@@ -41,6 +43,7 @@ const Map = ({
   maxValue,
   selectedFeature,
   bounds,
+  species,
   onSelectFeature,
   onBoundsChange,
 }) => {
@@ -98,6 +101,18 @@ const Map = ({
     map.on('load', () => {
       // snapshot existing map config
       baseStyleRef.current = fromJS(map.getStyle())
+
+      // add species range underneath everything else
+      if (species) {
+        map.addSource('species', speciesSource)
+        speciesLayers.forEach(speciesLayer => {
+          map.addLayer(
+            fromJS(speciesLayer)
+              .merge({ filter: ['==', 'species', species] })
+              .toJS()
+          )
+        })
+      }
 
       // add sources
       Object.entries(sources).forEach(([id, source]) => {
@@ -202,7 +217,10 @@ const Map = ({
     if (!(map && map.isStyleLoaded())) return
 
     // console.log('updated detectors for map', detectors.toJS())
-    map.getSource('detectors').setData(toGeoJSONPoints(detectors.toJS()))
+    const source = map.getSource('detectors')
+    if (!source) return
+
+    source.setData(toGeoJSONPoints(detectors.toJS()))
     styleDetectors()
   }, [detectors, maxValue])
 
@@ -278,39 +296,43 @@ const Map = ({
   }
 
   const getLegend = () => {
-    if (maxValue === 0) {
-      return []
-    }
-
     const radiusInterpolator = interpolate(MINRADIUS, MAXRADIUS)
     const colorInterpolator = interpolateRgb(LIGHTESTCOLOR, DARKESTCOLOR)
 
-    const upperValue =
-      valueField === 'id' ? niceNumber(maxValue / 5) : niceNumber(maxValue)
-    let breaks = []
-    if (upperValue - 1 > 4) {
-      breaks = [0.66, 0.33]
-    }
+    const entries = []
 
-    const entries = [
-      {
-        type: 'circle',
-        radius: MAXRADIUS,
-        label: `≥ ${formatNumber(upperValue, 0)}`,
-        color: DARKESTCOLOR,
-      },
-    ]
-      .concat(
-        breaks.map(b => ({
+    if (maxValue > 0) {
+      const upperValue =
+        valueField === 'id' ? niceNumber(maxValue / 5) : niceNumber(maxValue)
+      let breaks = []
+      if (upperValue - 1 > 4) {
+        breaks = [0.66, 0.33]
+      }
+
+      entries.push(
+        {
+          type: 'circle',
+          radius: MAXRADIUS,
+          label: `≥ ${formatNumber(upperValue, 0)}`,
+          color: DARKESTCOLOR,
+        },
+        ...breaks.map(b => ({
           type: 'circle',
           label: `${formatNumber(upperValue * b, 0)}`,
           radius: radiusInterpolator(b),
           color: colorInterpolator(b),
-        }))
+        })),
+        { type: 'circle', radius: MINRADIUS, label: '1', color: LIGHTESTCOLOR }
       )
-      .concat([
-        { type: 'circle', radius: MINRADIUS, label: '1', color: LIGHTESTCOLOR },
-      ])
+    }
+
+    if (species) {
+      entries.push({
+        color: `${theme.colors.highlight[500]}23`,
+        label: 'Species range',
+      })
+    }
+
     return entries
   }
 
@@ -398,8 +420,7 @@ Map.propTypes = {
   ).isRequired,
   valueField: PropTypes.string.isRequired,
   maxValue: PropTypes.number.isRequired,
-  // Map of id:total for each unit, updated dynamically by crossfilter
-  // totals: ImmutablePropTypes.map.isRequired,
+  species: PropTypes.string,
   selectedFeature: PropTypes.number,
   onSelectFeature: PropTypes.func,
   onBoundsChange: PropTypes.func,
@@ -407,6 +428,7 @@ Map.propTypes = {
 
 Map.defaultProps = {
   bounds: List(),
+  species: null,
   selectedFeature: null,
   onSelectFeature: () => {},
   onBoundsChange: () => {},

@@ -1,3 +1,5 @@
+import { theme } from '../../style/theme'
+
 // const TILE_HOST = 'https://tiles.batamp.databasin.org'
 const TILE_HOST = 'http://localhost:8001'
 
@@ -125,6 +127,7 @@ export const layers = [
   //   },
   // },
 ]
+
 // [
 //   {
 //     id: 'na_grts',
@@ -190,3 +193,41 @@ export const layers = [
 //     },
 //   },
 // ],
+
+// id: "source"
+export const speciesSource = {
+  type: 'vector',
+  tiles: [`${TILE_HOST}/services/species_ranges/tiles/{z}/{x}/{y}.pbf`],
+  minzoom: 0,
+  maxzoom: 6,
+}
+
+export const speciesLayers = [
+  {
+    id: 'species-fill',
+    source: 'species',
+    'source-layer': 'species_ranges',
+    type: 'fill',
+    minzoom: 0,
+    maxzoom: 22,
+    // filter: set dynamically when loaded
+    paint: {
+      'fill-color': theme.colors.highlight[500],
+      'fill-opacity': { stops: [[0, 0.1], [8, 0.05]] },
+    },
+  },
+  {
+    id: 'species-outline',
+    source: 'species',
+    'source-layer': 'species_ranges',
+    type: 'line',
+    minzoom: 0,
+    maxzoom: 22,
+    // filter: set dynamically when loaded
+    paint: {
+      'line-color': theme.colors.highlight[500],
+      'line-opacity': { stops: [[0, 0.1], [6, 0.5], [10, 0.75]] },
+      'line-width': { stops: [[0, 0.1], [6, 0.5], [10, 0.75]] },
+    },
+  },
+]

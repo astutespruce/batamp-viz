@@ -195,6 +195,7 @@ const SpeciesTemplate = ({
           <Map
             filterByBounds={filterByBounds}
             detectors={detectors}
+            species={species}
             // bounds={nextBounds}
             // selectedFeature={selectedId}
             // onSelectFeature={handleSelect}
