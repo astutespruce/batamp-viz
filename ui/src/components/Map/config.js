@@ -1,4 +1,5 @@
-const TILE_HOST = 'https://tiles.batamp.databasin.org'
+// const TILE_HOST = 'https://tiles.batamp.databasin.org'
+const TILE_HOST = 'http://localhost:8001'
 
 export const MINRADIUS = 4
 export const MAXRADIUS = 18
@@ -22,6 +23,12 @@ export const sources = {
   //   tiles: [`${TILE_HOST}/services/grids/tiles/{z}/{x}/{y}.pbf`],
   //   minzoom: 1,
   //   maxzoom: 8,
+  // },
+  // admin: {
+  //   type: 'vector',
+  //   tiles: [`${TILE_HOST}/services/na_admin1/tiles/{z}/{x}/{y}.pbf`],
+  //   minzoom: 0,
+  //   maxzoom: 9,
   // },
   detectors: {
     type: 'geojson',
@@ -59,6 +66,45 @@ export const layers = [
       'circle-stroke-color': '#fff',
     },
   },
+  // {
+  //   id: 'admin1-outline',
+  //   type: 'line',
+  //   source: 'admin',
+  //   'source-layer': 'na_admin1',
+  //   paint: {
+  //     'line-width': {
+  //       base: 0.1,
+  //       stops: [[1, 0.1], [5, 0.25], [6, 1], [8, 2], [10, 3]],
+  //     },
+  //     'line-opacity': {
+  //       stops: [[1, 0.1], [5, 0.5], [8, 1]],
+  //     },
+  //     'line-color': '#004d84', // theme.colors.primary.500
+  //   },
+  // },
+  // {
+  //   id: 'admin1-fill',
+  //   type: 'fill',
+  //   source: 'admin',
+  //   'source-layer': 'admin1',
+  //   // filter: ['>', ['get', 'total'], 0],
+  //   // filter: ['>', ['feature-state', 'total'], 0],
+  //   paint: {
+  //     'fill-color': [
+  //       'interpolate',
+  //       ['linear'],
+  //       ['feature-state', 'total'],
+  //       0,
+  //       'rgba(0,0,0,0)',
+  //       1,
+  //       '#F00',
+  //       100,
+  //       '#00F',
+  //     ],
+  //     'fill-opacity': 0.5,
+  //   },
+  // },
+
   // {
   //   id: 'detectors-cluster-label',
   //   type: 'symbol',

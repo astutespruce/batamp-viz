@@ -37,14 +37,16 @@ const IndicatorWrapper = styled(Flex).attrs({
 `
 
 const Indicator = styled.div`
-  background-color: ${({ active }) =>
-    active ? themeGet('colors.highlight.500') : themeGet('colors.primary.500')};
+  background-color: ${themeGet('colors.primary.500')};
   flex-grow: ${({ width }) => width};
   transition: flex-grow 300ms;
 `
 
+const FilteredIndicator = styled(Indicator)`
+  background-color: ${themeGet('colors.highlight.500')};
+`
+
 const Filler = styled.div`
-  flex-grow: ${({ width }) => width};
   transition: flex-grow 300ms;
 `
 
@@ -60,14 +62,16 @@ const Bar = ({ isFiltered, isExcluded, label, quantity, max, onClick }) => {
       </Labels>
       <IndicatorWrapper>
         {position > 0 && (
-          <Indicator
-            active={isFiltered}
-            isExcluded={isExcluded}
-            width={position}
-          />
+          <>
+            {isFiltered ? (
+              <FilteredIndicator style={{ flexGrow: position }} />
+            ) : (
+              <Indicator style={{ flexGrow: position }} />
+            )}
+          </>
         )}
 
-        {remainder > 0 && <Filler width={remainder} />}
+        {remainder > 0 && <Filler style={{ flexGrow: remainder }} />}
       </IndicatorWrapper>
     </Wrapper>
   )

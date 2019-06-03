@@ -164,7 +164,7 @@ export const sumByDimension = (dimensions, valueField) => {
 /**
  * Aggregate values within each dimension.
  * If valueField is provided, aggregate will return the SUM, otherwise COUNT.
- * Excludes any dimension for which `aggregate` property is `false`.
+ * Excludes any dimension for which `internal` property is `true`.
  * Note: records in crossfilter are ImmutableJS Map objects.
  *
  * @param {Object} dimensions - object containing crossfilter dimensions.
@@ -174,7 +174,8 @@ export const sumByDimension = (dimensions, valueField) => {
 export const aggregateByDimension = (dimensions, valueField) => {
   return Map(
     Object.values(dimensions)
-      .filter(({ config: { aggregate = true } }) => aggregate)
+      // .filter(({ config: { aggregate = true } }) => aggregate)
+      .filter(({ config: { internal } }) => !internal)
       .map(({ group, config: { field } }) => {
         let sums = null
 

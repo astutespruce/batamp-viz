@@ -28,11 +28,20 @@ src_dir = boundaries_dir / "src"
 
 ### Process admin boundaries
 print("Extracting admin boundaries...")
-admin_df = gp.read_file(src_dir / "ne_10m_admin_1_states_provinces.shp")
+admin_df = gp.read_file(src_dir / "ne_10m_admin_1_states_provinces_lakes.shp")
 # select Canada, US, Mexico
-admin_df = admin_df.loc[admin_df.iso_a2.isin(("CA", "US", "MX"))][
-    ["iso_a2", "iso_3166_2", "name", "geometry"]
-].rename(columns={"iso_a2": "country", "iso_3166_2": "id"})
+admin_df = (
+    admin_df.loc[admin_df.iso_a2.isin(("CA", "US", "MX"))][
+        ["iso_a2", "iso_3166_2", "name", "geometry"]
+    ]
+    .rename(columns={"iso_a2": "country"})
+    .reset_index(drop=True)
+)  # , "iso_3166_2": "id"
+
+# need a unique numeric ID throughout stack
+admin_df["id"] = (admin_df.index + 1).astype(
+    "uint16"
+)  # note: 0 is not a valid ID according to tippecanoe
 
 # Write out GeoJSON for vector tiles
 to_geojson(admin_df, boundaries_dir / "na_admin1.json")
@@ -42,10 +51,10 @@ print("Buffering coastal units...")
 admin_df["is_buffer"] = False
 
 # buffer coastal units to capture detectors just offshore
-coastal_df = admin_df.loc[admin_df.id.isin(COASTAL_ADMIN_UNITS)]
+coastal_df = admin_df.loc[admin_df.iso_3166_2.isin(COASTAL_ADMIN_UNITS)]
 # add 0.1 degree buffer, roughly 5-10km depending on latitude
 buffered = gp.GeoDataFrame(
-    coastal_df[["id", "country", "name"]], geometry=coastal_df.buffer(0.1)
+    coastal_df[["id", "country", "name", "iso_3166_2"]], geometry=coastal_df.buffer(0.1)
 )
 buffered["is_buffer"] = True
 

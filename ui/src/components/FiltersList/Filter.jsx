@@ -77,7 +77,7 @@ const Filter = ({
   help,
   isOpen: initIsOpen,
   hideEmpty,
-  sortByCount,
+  sort,
 }) => {
   const [isOpen, setIsOpen] = useState(initIsOpen)
   const { state, dispatch } = useContext(Crossfilter)
@@ -96,11 +96,11 @@ const Filter = ({
   }))
 
   if (hideEmpty) {
-    data = data.filter(({ count }) => count > 0)
+    data = data.filter(({ quantity, isFiltered }) => quantity > 0 || isFiltered)
   }
 
-  if (sortByCount) {
-    data = data.sort((a, b) => (a.count < b.count ? 1 : -1))
+  if (sort) {
+    data = data.sort((a, b) => (a.quantity < b.quantity ? 1 : -1))
   }
 
   const toggle = () => {
@@ -178,7 +178,7 @@ Filter.propTypes = {
   help: PropTypes.string,
   isOpen: PropTypes.bool,
   hideEmpty: PropTypes.bool,
-  sortByCount: PropTypes.bool,
+  sort: PropTypes.bool,
 }
 
 Filter.defaultProps = {
@@ -186,7 +186,7 @@ Filter.defaultProps = {
   help: null,
   isOpen: false,
   hideEmpty: false,
-  sortByCount: false,
+  sort: false,
 }
 
 export default Filter

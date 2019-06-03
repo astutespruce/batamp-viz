@@ -75,10 +75,15 @@ const SpeciesTemplate = ({
     },
     allDetectorsJson,
     allDetectorTsJson,
+    allAdmin1SpeciesTsJson
   },
 }) => {
   const [valueField, setValueField] = useState('detections')
   const [filterByBounds, setFilterByBounds] = useState(true)
+
+
+  // window.d = fromJS(extractNodes(allAdmin1SpeciesTsJson))
+
 
   const handleToggleBoundsFilter = () => {
     setFilterByBounds(prev => !prev)
@@ -258,6 +263,18 @@ export const pageQuery = graphql`
           year: y
           timestep: m
           detections: d
+          nights: n
+        }
+      }
+    }
+    allAdmin1SpeciesTsJson(filter: {s: {eq: $species}}) {
+      edges {
+        node {
+          id: i
+          species: s
+          year: y
+          month: m
+          detections: d,
           nights: n
         }
       }

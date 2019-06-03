@@ -27,7 +27,7 @@ All boundaries above were processed into geofeather (aka, serialized WKB geopand
 Vector tiles were created with `tippecanoe`, from root directory:
 
 ```
-tippecanoe -f -Z0 -z9 --no-tile-stats -l na_admin1 -o tiles/na_admin1.mbtiles data/boundaries/na_admin1.json
+tippecanoe -f -Z0 -z9 --no-tile-stats -l admin1 --use-attribute-for-id id -o tiles/na_admin1.mbtiles data/boundaries/na_admin1.json
 tippecanoe -f -Z0 -z6 --no-tile-stats -l species_ranges -o tiles/species_ranges.mbtiles data/boundaries/species_ranges.json
 ```
 

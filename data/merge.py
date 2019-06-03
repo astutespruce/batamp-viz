@@ -162,9 +162,11 @@ if len(missing):
     missing_admin = gp.sjoin(missing, admin_df.loc[admin_df.is_buffer], how="left")
     site_admin.loc[missing_admin.index, admin_cols] = missing_admin[admin_cols]
 
+site_admin.id = site_admin.id.astype("uint8")
 site_admin = site_admin[admin_cols].rename(
     columns={"id": "admin1", "name": "admin1_name"}
 )
+
 
 # extract species list for site based on species ranges
 print("Assigning species ranges to sites...")
@@ -410,9 +412,7 @@ det_ts.to_json(json_dir / "detectorTS.json", orient="records")
 ### Summary statistics for each summary unit
 
 #### Admin1
-# admin1_g = df[['admin1'] + ACTIVITY_COLUMNS].groupby('admin1')
-# admin1_nights = admin1_g.size().rename('nights')
-
+# calculate statistics for each admin
 admin_detectors = (
     df.groupby(["admin1", "detector"])
     .size()
@@ -423,19 +423,23 @@ admin_detectors = (
 )
 
 admin1_pivot = (
-    df[["admin1"] + ACTIVITY_COLUMNS].set_index("admin1").stack().reset_index()
+    df[["admin1"] + ACTIVITY_COLUMNS + time_fields]
+    .set_index(["admin1"] + time_fields)
+    .stack()
+    .reset_index()
 )
-admin1_pivot.columns = ["admin1", "species", "detections"]
-admin1_stats = admin1_pivot.groupby(["admin1", "species"]).agg(["sum", "count"])
+admin1_pivot.columns = ["admin1"] + time_fields + ["species", "detections"]
+admin1_pivot.detections = admin1_pivot.detections.astype("uint")
+admin1_stats = admin1_pivot.groupby(["admin1", "species"] + time_fields).agg(
+    ["sum", "count"]
+)
 admin1_stats.columns = ["detections", "nights"]
-admin1_stats.detections = admin1_stats.detections.astype("uint32")
-admin1_stats.nights = admin1_stats.nights.astype("uint32")
 admin1_stats = (
     admin1_stats.reset_index().set_index("admin1").join(admin_detectors).reset_index()
 )
 
-admin1_stats.columns = ["i", "s", "d", "n", "ds"]
-admin1_stats.to_json(json_dir / "admin1Species.json", orient="records")
+admin1_stats.columns = ["i", "s", "y", "m", "d", "n", "ds"]
+admin1_stats.to_json(json_dir / "admin1SpeciesTS.json", orient="records")
 
 
 # join in detector / site / species range information and output to JSON

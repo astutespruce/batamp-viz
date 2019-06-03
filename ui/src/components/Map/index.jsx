@@ -132,49 +132,64 @@ const Map = ({
       }
     })
 
-  //   map.on('mouseenter', 'clusters', e => {
-  //     map.getCanvas().style.cursor = 'pointer'
+    map.on('click', 'admin1-fill', e => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['admin1-fill'],
+      })
+      if (features) {
+        console.log(
+          'clicked admin features',
+          features,
+          features.map(({ properties }) => properties)
+        )
+        // TODO: process selected features and highlight
+        // onSelectFeature(feature.properties)
+      }
+    })
 
-  //     const [feature] = map.queryRenderedFeatures(e.point, {
-  //       layers: ['clusters'],
-  //     })
-  //     const clusterId = feature.properties.cluster_id
+    //   map.on('mouseenter', 'clusters', e => {
+    //     map.getCanvas().style.cursor = 'pointer'
 
-  //     // highlight
-  //     map.setFilter('points-highlight', [
-  //       '==',
-  //       ['get', 'cluster_id'],
-  //       clusterId,
-  //     ])
+    //     const [feature] = map.queryRenderedFeatures(e.point, {
+    //       layers: ['clusters'],
+    //     })
+    //     const clusterId = feature.properties.cluster_id
 
-  //     map
-  //       .getSource('points')
-  //       .getClusterLeaves(clusterId, Infinity, 0, (err, children) => {
-  //         if (err) return
+    //     // highlight
+    //     map.setFilter('points-highlight', [
+    //       '==',
+    //       ['get', 'cluster_id'],
+    //       clusterId,
+    //     ])
 
-  //         let names = children
-  //           .slice(0, 5)
-  //           .map(({ properties: { name } }) => name)
-  //           .join('<br/>')
-  //         if (children.length > 5) {
-  //           names += `<br/>and ${children.length - 5} more...`
-  //         }
+    //     map
+    //       .getSource('points')
+    //       .getClusterLeaves(clusterId, Infinity, 0, (err, children) => {
+    //         if (err) return
 
-  //         tooltip
-  //           .setLngLat(feature.geometry.coordinates)
-  //           .setHTML(names)
-  //           .addTo(map)
-  //       })
-  //   })
-  //   map.on('mouseleave', 'clusters', () => {
-  //     map.getCanvas().style.cursor = ''
-  //     map.setFilter('points-highlight', [
-  //       '==',
-  //       'id',
-  //       selectedFeatureRef.current || Infinity,
-  //     ])
-  //     tooltip.remove()
-  //   })
+    //         let names = children
+    //           .slice(0, 5)
+    //           .map(({ properties: { name } }) => name)
+    //           .join('<br/>')
+    //         if (children.length > 5) {
+    //           names += `<br/>and ${children.length - 5} more...`
+    //         }
+
+    //         tooltip
+    //           .setLngLat(feature.geometry.coordinates)
+    //           .setHTML(names)
+    //           .addTo(map)
+    //       })
+    //   })
+    //   map.on('mouseleave', 'clusters', () => {
+    //     map.getCanvas().style.cursor = ''
+    //     map.setFilter('points-highlight', [
+    //       '==',
+    //       'id',
+    //       selectedFeatureRef.current || Infinity,
+    //     ])
+    //     tooltip.remove()
+    //   })
 
     return () => {
       map.remove()
@@ -199,6 +214,16 @@ const Map = ({
 
   const styleDetectors = () => {
     const { current: map } = mapRef
+
+    // cannot interpolate if total <= 1
+    if (maxValue <= 1) {
+      map.setPaintProperty('detectors-clusters', 'circle-radius', MINRADIUS)
+      map.setPaintProperty('detectors-clusters', 'circle-color', LIGHTESTCOLOR)
+      map.setPaintProperty('detectors-points', 'circle-radius', MINRADIUS)
+      map.setPaintProperty('detectors-points', 'circle-color', LIGHTESTCOLOR)
+
+      return
+    }
 
     if (valueField === 'id') {
       // how to find the max cluster size?
@@ -253,6 +278,10 @@ const Map = ({
   }
 
   const getLegend = () => {
+    if (maxValue === 0) {
+      return []
+    }
+
     const radiusInterpolator = interpolate(MINRADIUS, MAXRADIUS)
     const colorInterpolator = interpolateRgb(LIGHTESTCOLOR, DARKESTCOLOR)
 
@@ -328,7 +357,11 @@ const Map = ({
       <Legend
         entries={getLegend()}
         title={`Number of ${valueField === 'id' ? 'detectors' : valueField}`}
-        note="Map shows detector locations.  They may be clustered together if near each other."
+        note={
+          maxValue
+            ? 'Map shows detector locations.  They may be clustered together if near each other.'
+            : 'No detector locations visible.'
+        }
       />
 
       {mapRef.current && (
@@ -381,6 +414,13 @@ Map.defaultProps = {
 
 export default Map
 // Working notes
+
+// rendering admin units, use setFeatureState (example: https://jsfiddle.net/mapbox/gortd715/)
+// on load of tiles:
+// ids.forEach(id => map.setFeatureState({id, source: 'admin', sourceLayer:'admin1'}, {total: 0}))
+// totals = sumBy(d, 'id', 'detections')
+// totals.entrySeq().forEach(([id, total]) => map.setFeatureState({id, source: 'admin', sourceLayer:'admin1'}, {total}))
+
 // get max for rendering clusters and points, on update of detectors
 // max = Math.max(...map.queryRenderedFeatures({layers: ['detectors-clusters', 'detectors-points']}).map(({properties: {total}}) => total))
 // or

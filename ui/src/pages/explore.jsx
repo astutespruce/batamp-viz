@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { List, fromJS } from 'immutable'
+import { List, Set, fromJS } from 'immutable'
 
 import FiltersList from 'components/FiltersList'
+import { Switch } from 'components/Form'
 import Layout from 'components/Layout'
 import { Text, HelpText } from 'components/Text'
 import {
@@ -11,12 +12,13 @@ import {
   Provider as CrossfilterProvider,
   FilteredMap as Map,
 } from 'components/Crossfilter'
-// import Map from 'components/Map'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import { withinBounds } from 'components/Map/util'
 import { Flex, Box } from 'components/Grid'
 import styled, { themeGet } from 'style'
+import { createIndex } from 'util/data'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
+import { MONTHS, MONTH_LABELS } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -24,10 +26,35 @@ const Wrapper = styled(Flex)`
 
 const Help = styled(HelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
-const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
-  const species = extractNodes(allSpeciesJson)
+const ExplorePage = ({
+  data: { allDetectorsJson, allDetectorTsJson, allSpeciesJson },
+}) => {
+  const [filterByBounds, setFilterByBounds] = useState(true)
 
-  const valueField = 'detections'
+  const handleToggleBoundsFilter = () => {
+    setFilterByBounds(prev => !prev)
+  }
+
+
+  const allSpecies = extractNodes(allSpeciesJson)
+  const detectors = fromJS(extractNodes(allDetectorsJson))
+  const detectorIndex = createIndex(detectors, 'id')
+
+  // join detector locations to detector occurrences by species and timestamp
+  const data = fromJS(
+    extractNodes(allDetectorTsJson).map(d => {
+      const detector = detectorIndex.get(d.id)
+      return {
+        occurrences: 1, // each record is an occurrence for this timestep / species
+        lat: detector.get('lat'),
+        lon: detector.get('lon'),
+        ...d,
+      }
+    })
+  )
+
+  const years = Array.from(Set(data.map(d => d.get('year'))).values()).sort()
+  const valueField = 'occurrences'
 
   const filters = [
     {
@@ -45,28 +72,39 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
         withinBounds({ lat, lon }, mapBounds),
     },
     {
-      field: 'speciesPresent',
+      field: 'species',
       title: 'Species Detected',
       isOpen: true,
       hideEmpty: true,
       filterFunc: hasValue,
-      sortByCount: true,
-      isArray: true,
-      values: species.map(({ species: spp }) => spp),
-      labels: species.map(
+      sort: true,
+      values: allSpecies.map(({ species: spp }) => spp),
+      labels: allSpecies.map(
         ({ commonName, sciName }) => `${commonName} (${sciName})`
       ),
     },
+    {
+      field: 'month',
+      title: 'Month',
+      isOpen: false,
+      filterFunc: hasValue,
+      values: MONTHS,
+      labels: MONTH_LABELS,
+    },
+    {
+      field: 'year',
+      title: 'Year',
+      isOpen: false,
+      filterFunc: hasValue,
+      values: years,
+    },
   ]
-
-  const detectors = fromJS(extractNodes(allDetectorsJson))
-  const data = detectors
 
   // filter out internal filters
   const visibleFilters = filters.filter(({ internal }) => !internal)
 
   return (
-    <Layout title="Explore data">
+    <Layout title="Explore Species Occurrences">
       <Wrapper>
         <CrossfilterProvider
           data={data}
@@ -75,13 +113,21 @@ const ExplorePage = ({ data: { allDetectorsJson, allSpeciesJson } }) => {
         >
           <Sidebar allowScroll={false}>
             <Box flex={0}>
-              <SidebarHeader title="Explore Data" icon="slidersH" />
-              <Help>Under development...</Help>
+              <SidebarHeader title="Species Occurrences" icon="slidersH" />
+              <Help>An occurrence is anytime a species was detected by an acoustic detector at a given location for a given month and year.  Use the following filters to select specific species or time periods that you are interested in.</Help>
+            </Box>
+
+            <Box m="1rem">
+              <Switch
+                label="filter occurrences by map extent?"
+                enabled={filterByBounds}
+                onChange={handleToggleBoundsFilter}
+              />
             </Box>
 
             <FiltersList filters={visibleFilters} />
           </Sidebar>
-          <Map detectors={detectors} />
+          <Map detectors={detectors} filterByBounds={filterByBounds} />
         </CrossfilterProvider>
       </Wrapper>
     </Layout>
@@ -92,12 +138,20 @@ ExplorePage.propTypes = {
   data: PropTypes.shape({
     allDetectorsJson: GraphQLArrayPropType(
       PropTypes.shape({
-        detector: PropTypes.number.isRequired,
+        id: PropTypes.number.isRequired,
         lat: PropTypes.number.isRequired,
         lon: PropTypes.number.isRequired,
-        species_present: PropTypes.arrayOf(PropTypes.string).isRequired,
+        // species: PropTypes.arrayOf(PropTypes.string).isRequired,
       })
     ).isRequired,
+    allDetectorTsJson: GraphQLArrayPropType(
+      PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        species: PropTypes.string.isRequired,
+        year: PropTypes.number.isRequired,
+        month: PropTypes.number.isRequired,
+      })
+    ),
     allSpeciesJson: GraphQLArrayPropType(
       PropTypes.shape({
         species: PropTypes.string.isRequired,
@@ -116,9 +170,16 @@ export const pageQuery = graphql`
           id: detector
           lat
           lon
-          speciesPresent
-          detections
-          nights
+        }
+      }
+    }
+    allDetectorTsJson {
+      edges {
+        node {
+          id: i
+          species: s
+          year: y
+          month: m
         }
       }
     }

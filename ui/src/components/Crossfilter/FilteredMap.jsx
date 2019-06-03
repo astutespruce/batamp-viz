@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import { Set, Map as ImmutableMap } from 'immutable'
 
+import { sumBy } from 'util/data'
 import Map from 'components/Map'
 import { SET_FILTER } from './Crossfilter'
 import { Context } from './Context'
@@ -17,12 +18,12 @@ const FilteredMap = ({
 }) => {
   const { state, dispatch } = useContext(Context)
   const filterByBoundsRef = useRef(filterByBounds)
+
+  // TODO: should use bounds after map first loads
   const boundsRef = useRef(null)
 
   useEffect(() => {
     filterByBoundsRef.current = filterByBounds
-
-    console.log('filter by bounds?', filterByBounds)
 
     // reset existing bounds filter if needed, or enable it to the last bounds
     dispatch({
@@ -39,11 +40,6 @@ const FilteredMap = ({
 
     onBoundsChange(bounds)
 
-    console.log(
-      'filter by bounds handleBoundsChange?',
-      filterByBoundsRef.current
-    )
-
     // do not filter if this is not enabled
     if (!filterByBoundsRef.current) return
 
@@ -57,23 +53,32 @@ const FilteredMap = ({
   }
 
   // total of current valueField by ID
-  const totals = state.get('dimensionTotals').get('id')
-  const totalByID = state
-    .get('dimensionTotalsById', ImmutableMap())
-    .get('timestep', ImmutableMap())
+  // const totals = state.get('dimensionTotals').get('id')
+  // const totalByID = state
+  //   .get('dimensionTotalsById', ImmutableMap())
+  //   .get('timestep', ImmutableMap())
+
   const valueField = state.get('valueField')
+
+  // NOTE: this is only the total for all applied filters
+  // TODO: this assumes timestep is not split out as a separate filter when
+  // animating time!
+  const totalById = sumBy(state.get('data'), 'id', valueField)
+  window.t = totalById
 
   let maxValue = 0
   if (valueField === 'id') {
-    maxValue = totalByID.size
+    maxValue = totalById.size
   } else {
-    maxValue = Math.max(...Array.from(totalByID.values()))
+    maxValue = totalById.size ? Math.max(...Array.from(totalById.values())) : 0
   }
 
   const keys = Set(['id', 'lat', 'lon'])
   const detectors = rawDetectors
     .map(d =>
-      d.filter((v, k) => keys.has(k)).merge({ total: totals.get(d.get('id')) })
+      d
+        .filter((_, k) => keys.has(k))
+        .merge({ total: totalById.get(d.get('id')) })
     )
     .filter(d => d.get('total') > 0)
 
@@ -81,7 +86,7 @@ const FilteredMap = ({
 
   return (
     <Map
-      data={state.get('data')}
+      // data={state.get('data')}
       detectors={detectors}
       // totals={totals}
       valueField={valueField}

@@ -22,7 +22,9 @@ const Wrapper = styled.div`
 
 const Title = styled(Text).attrs({
   fontSize: ['0.8rem', '0.8rem', '1rem'],
-})``
+})`
+  line-height: 1.2;
+`
 
 const Entry = styled(Flex).attrs({
   alignItems: 'center',
@@ -99,7 +101,7 @@ Circle.defaultProps = {
 }
 
 const Legend = ({ title, entries, note }) => {
-  if (!entries.length) return null
+  if (!(entries.length || note)) return null
 
   const [isClosed, setIsClosed] = useState(false)
   const toggle = () => setIsClosed(prevIsClosed => !prevIsClosed)
