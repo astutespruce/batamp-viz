@@ -57,7 +57,7 @@ const RightColumn = styled(Column)`
   text-align: right;
 `
 
-const filterByBounds = mapBounds => ({ lat, lon }) =>
+const boundsFilterFunc = mapBounds => ({ lat, lon }) =>
 withinBounds({ lat, lon }, mapBounds)
 
 
@@ -132,7 +132,7 @@ const SpeciesTemplate = ({
       getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
   
       // TODO: use rbush or spatial filter?
-      filterFunc: filterByBounds,
+      filterFunc: boundsFilterFunc,
     },
   ]
   const visibleFilters = filters.filter(({ internal }) => !internal)

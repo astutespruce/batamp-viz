@@ -22,6 +22,8 @@ const FilteredMap = ({
   useEffect(() => {
     filterByBoundsRef.current = filterByBounds
 
+    console.log('filter by bounds?', filterByBounds)
+
     // reset existing bounds filter if needed, or enable it to the last bounds
     dispatch({
       type: SET_FILTER,
@@ -37,8 +39,13 @@ const FilteredMap = ({
 
     onBoundsChange(bounds)
 
+    console.log(
+      'filter by bounds handleBoundsChange?',
+      filterByBoundsRef.current
+    )
+
     // do not filter if this is not enabled
-    if (!filterByBounds.current) return
+    if (!filterByBoundsRef.current) return
 
     dispatch({
       type: SET_FILTER,
