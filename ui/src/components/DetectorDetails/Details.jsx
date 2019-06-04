@@ -7,20 +7,27 @@ import Tabs, { Tab as BaseTab } from 'components/Tabs'
 import { OutboundLink } from 'components/Link'
 import { Column, Columns, Box, Flex } from 'components/Grid'
 import styled, { themeGet } from 'style'
-import { formatNumber } from 'util/format'
+import { formatNumber, quantityLabel } from 'util/format'
 import { COUNTRIES } from '../../../config/constants'
 
 const Wrapper = styled.div``
 
-const Header = styled.div``
+const Header = styled.div`
+  padding: 0.5rem 1rem;
+  background-color: ${themeGet('colors.highlight.100')};
+  line-height: 1.2;
+  border-bottom: 2px solid ${themeGet('colors.grey.500')};
+`
 
-const Title = styled(Text).attrs({
-  fontSize: ['1rem', '1rem', '1.5rem'],
-})``
+const Title = styled(Text).attrs({ as: 'h1' })`
+  margin: 0 0 0.25rem 0;
+  font-weight: normal;
+`
 
-const Subtitle = styled(Text).attrs({
-  fontSize: ['0.8rem', '0.8rem', '1rem'],
-})``
+const Location = styled(Text)`
+  font-size: 0.9rem;
+  color: ${themeGet('colors.grey.700')};
+`
 
 const Stats = styled(Box)`
   border-top: 1px solid ${themeGet('colors.grey.400')};
@@ -62,7 +69,19 @@ const FieldHeader = styled.h4`
 
 const FieldValue = styled.div``
 
-const FieldValueList = styled.ul``
+const FieldValueList = styled.ul`
+  margin-bottom: 0.5rem;
+
+  li {
+    margin-bottom: 0;
+  }
+`
+
+const FieldHelp = styled.p`
+  color: ${themeGet('colors.grey.700')};
+  font-size: smaller;
+  line-height: 1.2;
+`
 
 const formatDateRange = dateRange => {
   if (dateRange.length === 1) return dateRange[0]
@@ -71,13 +90,13 @@ const formatDateRange = dateRange => {
 }
 
 const Details = ({
-  id,
   lat,
   lon,
-  micHeight,
+  name,
+  micHt,
   detections,
   nights,
-  dateRange,
+  // dateRange,
   contributors,
   mfg,
   model,
@@ -85,11 +104,11 @@ const Details = ({
   reflType,
   idMethods,
   datasets,
-  adminName,
+  admin1Name,
   country,
-  species,
-  speciesPresent,
-  speciesRanges,
+  // species,
+  // speciesPresent,
+  // speciesRanges,
   onClose,
 }) => {
   return (
@@ -97,27 +116,31 @@ const Details = ({
       <Header>
         <Columns>
           <Column flex={1}>
-            <Title>
-              Detector at {lat}°N / {lon}° E <br />
-              {micHeight} meters high.
-            </Title>
+            <Title>{name}</Title>
           </Column>
           <Column flex={0}>
             <CloseIcon onClick={onClose} />
           </Column>
         </Columns>
-        <Subtitle>
-          {adminName}, {COUNTRIES[country]}
-        </Subtitle>
-        <Stats>
+        <Location>
+          {admin1Name}, {country} ({formatNumber(lat, 2)}° N /{' '}
+          {formatNumber(lon, 2)}° E)
+          <br />
+          microphone height: {micHt} meters
+        </Location>
+        {/* <Stats>
           <b>{detections}</b> detections on <b>{nights}</b> nights during{' '}
           <b>{formatDateRange(dateRange)}</b>.
-        </Stats>
+        </Stats> */}
       </Header>
 
       <TabContainer>
         <Tab id="species" label="Species Detections">
-          TODO Also TODO: highlight if any species are out of their ranges
+          TODO: stats
+          <br/>
+          TODO: time series data
+          <br/>
+          TODO: highlight if any species are out of their ranges
         </Tab>
         <Tab id="overview" label="Detector Information">
           <Field>
@@ -161,20 +184,47 @@ const Details = ({
           ) : null}
 
           <Field>
-            <FieldHeader>Source datasets:</FieldHeader>
-            <FieldValueList>
-              {datasets.map(dataset => (
-                <li>
-                  <OutboundLink
-                    from="/"
-                    to={`https://batamp.databasin.org/datasets/${dataset}`}
-                    target="_blank"
-                  >
-                    {dataset}
-                  </OutboundLink>
-                </li>
-              ))}
-            </FieldValueList>
+            <FieldHeader>
+              Source {quantityLabel('datasets', datasets.length)} on{' '}
+              <OutboundLink
+                from="/"
+                to="https://batamp.databasin.org/"
+                target="_blank"
+              >
+                BatAMP
+              </OutboundLink>
+              :
+            </FieldHeader>
+            {datasets.length === 1 ? (
+              <FieldValue>
+                <OutboundLink
+                  from="/"
+                  to={`https://batamp.databasin.org/datasets/${datasets[0]}`}
+                  target="_blank"
+                >
+                  {datasets[0]}
+                </OutboundLink>
+              </FieldValue>
+            ) : (
+              <FieldValueList>
+                {datasets.map(dataset => (
+                  <li key={dataset}>
+                    <OutboundLink
+                      from="/"
+                      to={`https://batamp.databasin.org/datasets/${dataset}`}
+                      target="_blank"
+                    >
+                      {dataset}
+                    </OutboundLink>
+                  </li>
+                ))}
+              </FieldValueList>
+            )}
+            <FieldHelp>
+              The dataset page on BatAMP may contain additional information
+              about this detector and the methods used to detect species at this
+              location.
+            </FieldHelp>
           </Field>
         </Tab>
       </TabContainer>
@@ -183,13 +233,13 @@ const Details = ({
 }
 
 Details.propTypes = {
-  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
   lat: PropTypes.number.isRequired,
   lon: PropTypes.number.isRequired,
-  micHeight: PropTypes.number.isRequired,
+  micHt: PropTypes.number.isRequired,
   detections: PropTypes.number.isRequired,
   nights: PropTypes.number.isRequired,
-  dateRange: PropTypes.arrayOf(PropTypes.string).isRequired,
+  // dateRange: PropTypes.arrayOf(PropTypes.string).isRequired,
   contributors: PropTypes.number.isRequired,
   mfg: PropTypes.string,
   model: PropTypes.string,
@@ -199,7 +249,7 @@ Details.propTypes = {
   datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
   speciesPresent: PropTypes.arrayOf(PropTypes.string).isRequired,
   speciesRanges: PropTypes.arrayOf(PropTypes.string).isRequired,
-  adminName: PropTypes.string.isRequired,
+  admin1Name: PropTypes.string.isRequired,
   country: PropTypes.string.isRequired,
   species: PropTypes.string,
   onClose: PropTypes.func.isRequired,

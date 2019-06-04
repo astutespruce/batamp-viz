@@ -75,6 +75,7 @@ DETECTOR_FIELDS = [
     "refl_type",
     "call_id_1",
     "call_id_2",
+    "det_name"
     # "orig_site_id",
     # "orig_det_id",
     # source_dataset omitted since there may be multiple per detector

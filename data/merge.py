@@ -40,9 +40,8 @@ print("Cleaning raw data...")
 # drop group activity columns and raw coordinate columns
 # TODO: revisit dropping site / detector ID (we assign our own, but do we need this info?)
 
-df = df.drop(
-    columns=["x_coord", "y_coord", "site_id", "det_id"] + GROUP_ACTIVITY_COLUMNS
-).rename(
+# , "site_id", "det_id"
+df = df.drop(columns=["x_coord", "y_coord"] + GROUP_ACTIVITY_COLUMNS).rename(
     columns={
         "db_longitude": "lon",
         "db_latitude": "lat",
@@ -84,12 +83,18 @@ for col in [
     "refl_type",
     "call_id_1",
     "call_id_2",
-    # "orig_site_id",
-    # "orig_det_id",
+    "site_id",
+    "det_id",
     "wthr_prof",
 ]:
     df[col] = df[col].fillna("").str.strip()
     df.loc[df[col] == "none", [col]] = ""
+
+# create site name
+df["det_name"] = df.site_id
+index = df.det_id != ""
+df.loc[index, "det_name"] = df.loc[index].det_name + " - " + df.loc[index].det_id
+df = df.drop(columns=["site_id", "det_id"])
 
 # TODO: beware, this is not filled out for all
 # TODO: fill with "Not provided" on frontend
@@ -130,7 +135,10 @@ print("Extracting information for sites and detectors...")
 # Note: some detectors have variation in det_model, etc that doesn't make sense
 # just get detector / mic properties from the first record for each site / mic_ht combination
 detectors = (
-    df.groupby(location_fields + ["mic_ht"])[DETECTOR_FIELDS].first().reset_index()
+    df.groupby(location_fields + ["mic_ht"])[DETECTOR_FIELDS]
+    .first()
+    .reset_index()
+    .rename(columns={"det_name": "name"})
 )
 detectors["detector"] = detectors.index
 

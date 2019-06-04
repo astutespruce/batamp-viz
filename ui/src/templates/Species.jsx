@@ -17,6 +17,7 @@ import {
 import Sidebar from 'components/Sidebar'
 import { Box, Column, Columns, Flex } from 'components/Grid'
 import FiltersList from 'components/FiltersList'
+import DetectorDetails from 'components/DetectorDetails'
 import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
@@ -58,9 +59,7 @@ const RightColumn = styled(Column)`
 `
 
 const boundsFilterFunc = mapBounds => ({ lat, lon }) =>
-withinBounds({ lat, lon }, mapBounds)
-
-
+  withinBounds({ lat, lon }, mapBounds)
 
 const SpeciesTemplate = ({
   data: {
@@ -75,40 +74,56 @@ const SpeciesTemplate = ({
     },
     allDetectorsJson,
     allDetectorTsJson,
-    allAdmin1SpeciesTsJson
+    allAdmin1SpeciesTsJson,
   },
 }) => {
   const valueField = 'detections'
-  const [selectedFeatures, setSelectedFeatures] = useState(Set())
+  const [selected, setSelected] = useState({features: Set(), feature: null})
   const [filterByBounds, setFilterByBounds] = useState(true)
 
-  const handleToggleBoundsFilter = () => {
-    setFilterByBounds(prev => !prev)
-  }
-
-  const handleSelectFeatures = (features) => {
-    setSelectedFeatures(features)
-  }
-
-  const detectors = fromJS(extractNodes(allDetectorsJson))
+  const detectors = fromJS(extractNodes(allDetectorsJson).map(d => ({
+    // note: detector height is multiplied by 10 to make into integer,
+    // reverse that here
+    ...d,
+    micHt: d.micHt / 10,
+  })))
   const detectorIndex = createIndex(detectors, 'id')
 
-  // Note: only adding detectors field to detectors, will come in with data for other units
-
-  // TODO: write generic join / splice routine
   const data = fromJS(
     extractNodes(allDetectorTsJson).map(d => {
       const detector = detectorIndex.get(d.id)
       return {
-        detectors: 1,
         lat: detector.get('lat'),
         lon: detector.get('lon'),
+        name: detector.get('name'),
         ...d,
       }
     })
   )
 
-  const years = Array.from(Set(data.map(d => d.get('year'))).values()).sort()
+  const handleToggleBoundsFilter = () => {
+    setFilterByBounds(prev => !prev)
+  }
+
+  const handleSelectFeatures = ids => {
+    const features = detectorIndex.filter((_, k)=> ids.has(k)).toList()
+    window.features = features
+    setSelected({
+      features,
+      feature: features.size ? features.first().get('id') : null
+    })
+  }
+
+  const handleSetFeature = feature => {
+    setSelected({
+      features: selected.features,
+      feature
+    })
+  }
+
+  const handleDetailsClose = () => {
+    setSelected({features: Set(), feature: null})
+  }
 
   const filters = [
     {
@@ -130,13 +145,13 @@ const SpeciesTemplate = ({
       title: 'Year',
       isOpen: false,
       filterFunc: hasValue,
-      values: years,
+      values: Array.from(Set(data.map(d => d.get('year'))).values()).sort(),
     },
     {
       field: 'bounds', // note: constructed field!
       internal: true,
       getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
-  
+
       // TODO: use rbush or spatial filter?
       filterFunc: boundsFilterFunc,
     },
@@ -152,52 +167,63 @@ const SpeciesTemplate = ({
           valueField={valueField}
         >
           <Sidebar>
-            <Header>
-              <CommonName>{commonName}</CommonName>
-              <ScientificName>{sciName}</ScientificName>
-            </Header>
+            {selected.features.size > 0 ? (
+              <DetectorDetails species={species} detectors={selected.features} onSetDetector={handleSetFeature} onClose={handleDetailsClose}></DetectorDetails>
+            ) : (
+              <>
+                <Header>
+                  <CommonName>{commonName}</CommonName>
+                  <ScientificName>{sciName}</ScientificName>
+                </Header>
 
-            <Stats>
-              <Column>
-                {formatNumber(totalDetections, 0)} detections
-                <br />
-                {formatNumber(totalNights, 0)} nights
-              </Column>
-              <RightColumn>
-                {totalDetectors} detectors
-                <br />
-                {contributors ? (
-                  <>
-                    {contributors.length}{' '}
-                    {contributors.length === 1 ? 'contributor' : 'contributors'}
-                  </>
-                ) : null}
-              </RightColumn>
-            </Stats>
+                <Stats>
+                  <Column>
+                    {formatNumber(totalDetections, 0)} detections
+                    <br />
+                    {formatNumber(totalNights, 0)} nights
+                  </Column>
+                  <RightColumn>
+                    {totalDetectors} detectors
+                    <br />
+                    {contributors ? (
+                      <>
+                        {contributors.length}{' '}
+                        {contributors.length === 1
+                          ? 'contributor'
+                          : 'contributors'}
+                      </>
+                    ) : null}
+                  </RightColumn>
+                </Stats>
+                <Box m="1rem">
+                  <Switch
+                    label="filter detectors by map extent?"
+                    enabled={filterByBounds}
+                    onChange={handleToggleBoundsFilter}
+                  />
+                </Box>
 
-            <Box m="1rem">
-              <Switch
-                label="filter detectors by map extent?"
-                enabled={filterByBounds}
-                onChange={handleToggleBoundsFilter}
-              />
-            </Box>
+                <Box my="1rem">
+                  <ValueFieldSelector fields={['detections', 'nights', 'id']} />
+                </Box>
 
-            <Box my="1rem">
-              <ValueFieldSelector fields={['detections', 'nights', 'id']} />
-            </Box>
+                <Box my="1rem">
+                  <TimePlayer
+                    timesteps={MONTHS}
+                    timestepLabels={MONTH_LABELS}
+                  />
+                </Box>
 
-            <Box my="1rem">
-              <TimePlayer timesteps={MONTHS} timestepLabels={MONTH_LABELS} />
-            </Box>
-
-            <FiltersList filters={visibleFilters} />
+                <FiltersList filters={visibleFilters} />
+              </>
+            )}
           </Sidebar>
           <Map
             filterByBounds={filterByBounds}
             detectors={detectors}
             species={species}
-            selectedFeatures={selectedFeatures}
+            // selectedFeatures={selectedFeatures}
+            selectedFeature={selected.feature}
             onSelectFeatures={handleSelectFeatures}
           />
         </CrossfilterProvider>
@@ -222,6 +248,14 @@ SpeciesTemplate.propTypes = {
         id: PropTypes.number.isRequired,
         lat: PropTypes.number.isRequired,
         lon: PropTypes.number.isRequired,
+        micHt: PropTypes.number.isRequired,
+        micType: PropTypes.string,
+        reflType: PropTypes.string,
+        mfg: PropTypes.string,
+        model: PropTypes.string,
+callId: PropTypes.arrayOf(PropTypes.string),
+datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
+contributors: PropTypes.arrayOf(PropTypes.string).isRequired,
       })
     ).isRequired,
     allDetectorTsJson: GraphQLArrayPropType(
@@ -251,8 +285,20 @@ export const pageQuery = graphql`
       edges {
         node {
           id: detector
+          name
           lat
           lon
+          micHt
+          micType
+          reflType
+          mfg
+          model
+          callId
+          datasets
+          contributors
+          admin1
+          admin1Name
+          country
         }
       }
     }
@@ -267,14 +313,14 @@ export const pageQuery = graphql`
         }
       }
     }
-    allAdmin1SpeciesTsJson(filter: {s: {eq: $species}}) {
+    allAdmin1SpeciesTsJson(filter: { s: { eq: $species } }) {
       edges {
         node {
           id: i
           species: s
           year: y
           month: m
-          detections: d,
+          detections: d
           nights: n
         }
       }

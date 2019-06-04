@@ -15,13 +15,17 @@ export const range = (start, stop) =>
  *
  * @param {Array or ImmutableJS List} data
  * @param {String} field
+ * @param {Boolean} drop - if true, will drop the key from the value for each entry
  */
-export const createIndex = (data, field) => {
+export const createIndex = (data, field, drop=false) => {
   if (data.size) {
     // data are from a List of Map objects
-    return Map(data.map(d => [d.get(field), d.remove(field)]))
+    return Map(data.map(d => [d.get(field), drop ? d.remove(field) : d]))
   }
-  return Map(data.map(({ [field]: k, ...rest }) => [k, fromJS(rest)]))
+  if (drop) {
+    return Map(data.map(({ [field]: k, ...rest }) => [k, fromJS(rest)]))
+  }
+  return Map(data.map(d => [d[field], fromJS(d)]))
 }
 
 /**

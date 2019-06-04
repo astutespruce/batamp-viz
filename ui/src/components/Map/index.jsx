@@ -10,7 +10,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 
 import styled, { theme } from 'style'
 import { hasWindow } from 'util/dom'
-import { formatNumber } from 'util/format'
+import { formatNumber, quantityLabel } from 'util/format'
 import { niceNumber, flatzip } from 'util/data'
 
 import StyleSelector from './StyleSelector'
@@ -41,7 +41,7 @@ const Map = ({
   data,
   valueField,
   maxValue,
-  selectedFeatures,
+  selectedFeature,
   bounds,
   species,
   onSelectFeatures,
@@ -57,7 +57,7 @@ const Map = ({
   const mapNode = useRef(null)
   const mapRef = useRef(null)
   const baseStyleRef = useRef(null)
-  const selectedFeaturesRef = useRef(selectedFeatures)
+  const selectedFeatureRef = useRef(selectedFeature)
   const highlightFeatureRef = useRef(Set())
   const valueFieldRef = useRef(valueField)
 
@@ -165,19 +165,13 @@ const Map = ({
       const features = map.queryRenderedFeatures(e.point, {
         layers: ['detectors-points'],
       })
-      if (features) {
+      if (features && features.length) {
         console.log(
           'clicked features',
           features.map(({ id, properties }) => [id, properties])
         )
 
         const ids = Set(features.map(({ id }) => id))
-
-        // FIXME - temporary
-        // ids.forEach(id =>
-        //   map.setFeatureState({ source: 'detectors', id }, { selected: true })
-        // )
-
         onSelectFeatures(ids)
       }
     })
@@ -210,9 +204,10 @@ const Map = ({
         tooltip
           .setLngLat(features[0].geometry.coordinates)
           .setHTML(
-            `${formatNumber(features.length)} ${
-              features.length > 1 ? 'detectors' : 'detector'
-            } at this location<br />Click for more information.`
+            `${formatNumber(features.length)} ${quantityLabel(
+              'detectors',
+              features.length
+            )} at this location<br />Click for more information.`
           )
           .addTo(map)
 
@@ -238,9 +233,10 @@ const Map = ({
         tooltip
           .setLngLat(features[0].geometry.coordinates)
           .setHTML(
-            `${formatNumber(
+            `${formatNumber(values[0])} ${quantityLabel(
+              valueField,
               values[0]
-            )} ${valueField}<br />Click for more information.`
+            )}<br />Click for more information.`
           )
           .addTo(map)
       }
@@ -372,18 +368,29 @@ const Map = ({
     if (!(map && map.isStyleLoaded())) return
 
     // unhighlight previous selected
-    const prevSelected = selectedFeaturesRef.current
-    prevSelected.forEach(id => {
-      map.setFeatureState({ source: 'detectors', id }, { selected: false })
-    })
+    const prevSelected = selectedFeatureRef.current
+    // prevSelected.forEach(id => {
+    //   map.setFeatureState({ source: 'detectors', id }, { selected: false })
+    // })
+    if (prevSelected !== null) {
+      map.setFeatureState(
+        { source: 'detectors', id: prevSelected },
+        { selected: false }
+      )
+    }
 
     // highlight incoming
-    selectedFeatures.forEach(id =>
-      map.setFeatureState({ source: 'detectors', id }, { selected: true })
-    )
-    selectedFeaturesRef.current = selectedFeatures
-
-  }, [selectedFeatures])
+    if (selectedFeature !== null) {
+      map.setFeatureState(
+        { source: 'detectors', id: selectedFeature },
+        { selected: true }
+      )
+    }
+    // selectedFeatures.forEach(id =>
+    //   map.setFeatureState({ source: 'detectors', id }, { selected: true })
+    // )
+    selectedFeatureRef.current = selectedFeature
+  }, [selectedFeature])
 
   // Update when data change
   // useEffect(() => {
@@ -585,7 +592,8 @@ Map.propTypes = {
   valueField: PropTypes.string.isRequired,
   maxValue: PropTypes.number.isRequired,
   species: PropTypes.string,
-  selectedFeatures: ImmutablePropTypes.setOf(PropTypes.number),
+  // selectedFeatures: ImmutablePropTypes.setOf(PropTypes.number),
+  selectedFeature: PropTypes.number,
   onSelectFeatures: PropTypes.func,
   onBoundsChange: PropTypes.func,
 }
@@ -593,7 +601,8 @@ Map.propTypes = {
 Map.defaultProps = {
   bounds: List(),
   species: null,
-  selectedFeatures: Set(),
+  // selectedFeatures: Set(),
+  selectedFeature: null,
   onSelectFeatures: () => {},
   onBoundsChange: () => {},
 }

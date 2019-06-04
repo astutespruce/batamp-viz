@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { FaReply, FaShare } from 'react-icons/fa'
+import { FaAngleDoubleLeft, FaAngleDoubleRight } from 'react-icons/fa'
 
 import { Flex, Box } from 'components/Grid'
 import styled, { themeGet } from 'style'
@@ -8,31 +8,37 @@ import styled, { themeGet } from 'style'
 const Wrapper = styled(Flex).attrs({
   justifyContent: 'space-between',
   flex: 0,
+  px: '1rem',
 })`
+  background: ${themeGet('colors.grey.700')};
   font-size: 0.9rem;
 `
 
-const Label = styled(Box).attrs({px: '0.5em'})`
-color: ${themeGet('colors.grey.600')};
+const Label = styled(Box).attrs({ px: '0.5em', flex: 1 })`
+  color: #fff;
+  text-align: center;
 `
 
 const Back = styled(Flex).attrs({ flex: 1 })`
-  display: flex;
-  align-items: middle;
-  color: ${themeGet('colors.link')};
+  color: #fff;
+  line-height: 1;
 `
-const Forward = styled(Back)`
+const Forward = styled(Back).attrs({ justifyContent: 'flex-end' })`
   text-align: right;
 `
 
-const BackIcon = styled(FaReply)`
+const BackIcon = styled(FaAngleDoubleLeft)`
   width: 1em;
   height: 1em;
 `
 
-const ForwardIcon = styled(FaShare)`
+const ForwardIcon = styled(FaAngleDoubleRight)`
   width: 1em;
   height: 1em;
+`
+
+const Link = styled(Flex).attrs({ alignItems: 'center' })`
+  cursor: pointer;
 `
 
 const Iterator = ({ index, count, onChange }) => {
@@ -47,23 +53,23 @@ const Iterator = ({ index, count, onChange }) => {
     <Wrapper>
       <Back>
         {index > 0 ? (
-          <div onClick={handleBack}>
+          <Link onClick={handleBack}>
             <BackIcon />
             <div>previous</div>
-          </div>
+          </Link>
         ) : null}
       </Back>
 
       <Label>
-          detector {index + 1} of {count}
+        detector {index + 1} of {count}
       </Label>
 
       <Forward>
-        {index < count ? (
-          <div onClick={handleForward}>
-            <ForwardIcon />
+        {index < count - 1 ? (
+          <Link onClick={handleForward}>
             <div>next</div>
-          </div>
+            <ForwardIcon />
+          </Link>
         ) : null}
       </Forward>
     </Wrapper>
