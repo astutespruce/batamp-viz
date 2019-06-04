@@ -78,15 +78,16 @@ const SpeciesTemplate = ({
     allAdmin1SpeciesTsJson
   },
 }) => {
-  const [valueField, setValueField] = useState('detections')
+  const valueField = 'detections'
+  const [selectedFeatures, setSelectedFeatures] = useState(Set())
   const [filterByBounds, setFilterByBounds] = useState(true)
-
-
-  // window.d = fromJS(extractNodes(allAdmin1SpeciesTsJson))
-
 
   const handleToggleBoundsFilter = () => {
     setFilterByBounds(prev => !prev)
+  }
+
+  const handleSelectFeatures = (features) => {
+    setSelectedFeatures(features)
   }
 
   const detectors = fromJS(extractNodes(allDetectorsJson))
@@ -196,10 +197,8 @@ const SpeciesTemplate = ({
             filterByBounds={filterByBounds}
             detectors={detectors}
             species={species}
-            // bounds={nextBounds}
-            // selectedFeature={selectedId}
-            // onSelectFeature={handleSelect}
-            // onBoundsChange={handleBoundsChange}
+            selectedFeatures={selectedFeatures}
+            onSelectFeatures={handleSelectFeatures}
           />
         </CrossfilterProvider>
       </Wrapper>

@@ -56,19 +56,19 @@ export const layers = [
     paint: {
       'circle-opacity': [
         'case',
-        ['boolean', ['feature-state', 'highlight'], false],
+        ['boolean', ['feature-state', 'highlight-cluster'], false],
         1,
         0.75,
       ],
       'circle-stroke-width': [
         'case',
-        ['boolean', ['feature-state', 'highlight'], false],
+        ['boolean', ['feature-state', 'highlight-cluster'], false],
         2,
         1,
       ],
       'circle-stroke-color': [
         'case',
-        ['boolean', ['feature-state', 'highlight'], false],
+        ['boolean', ['feature-state', 'highlight-cluster'], false],
         theme.colors.highlight[500],
         '#FFF',
       ],
@@ -83,19 +83,31 @@ export const layers = [
     paint: {
       'circle-opacity': [
         'case',
-        ['boolean', ['feature-state', 'highlight'], false],
+        [
+          'any',
+          ['boolean', ['feature-state', 'highlight'], false],
+          ['boolean', ['feature-state', 'selected'], false],
+        ],
         1,
         0.75,
       ],
       'circle-stroke-width': [
         'case',
-        ['boolean', ['feature-state', 'highlight'], false],
+        [
+          'any',
+          ['boolean', ['feature-state', 'highlight'], false],
+          ['boolean', ['feature-state', 'selected'], false],
+        ],
         2,
         1,
       ],
       'circle-stroke-color': [
         'case',
-        ['boolean', ['feature-state', 'highlight'], false],
+        [
+          'any',
+          ['boolean', ['feature-state', 'highlight'], false],
+          ['boolean', ['feature-state', 'selected'], false],
+        ],
         theme.colors.highlight[500],
         '#FFF',
       ],

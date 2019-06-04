@@ -41,10 +41,10 @@ const Map = ({
   data,
   valueField,
   maxValue,
-  selectedFeature,
+  selectedFeatures,
   bounds,
   species,
-  onSelectFeature,
+  onSelectFeatures,
   onBoundsChange,
 }) => {
   // if there is no window, we cannot render this component
@@ -57,7 +57,7 @@ const Map = ({
   const mapNode = useRef(null)
   const mapRef = useRef(null)
   const baseStyleRef = useRef(null)
-  const selectedFeatureRef = useRef(selectedFeature)
+  const selectedFeaturesRef = useRef(selectedFeatures)
   const highlightFeatureRef = useRef(Set())
   const valueFieldRef = useRef(valueField)
 
@@ -146,20 +146,6 @@ const Map = ({
       onBoundsChange(lowerLeft.concat(upperRight))
     })
 
-    map.on('click', e => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['detectors-points', 'detectors-clusters'],
-      })
-      if (features) {
-        console.log(
-          'clicked features',
-          features.map(({ properties }) => properties)
-        )
-        // TODO: process selected features and highlight
-        // onSelectFeature(feature.properties)
-      }
-    })
-
     map.on('click', 'admin1-fill', e => {
       const features = map.queryRenderedFeatures(e.point, {
         layers: ['admin1-fill'],
@@ -172,6 +158,27 @@ const Map = ({
         )
         // TODO: process selected features and highlight
         // onSelectFeature(feature.properties)
+      }
+    })
+
+    map.on('click', e => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['detectors-points'],
+      })
+      if (features) {
+        console.log(
+          'clicked features',
+          features.map(({ id, properties }) => [id, properties])
+        )
+
+        const ids = Set(features.map(({ id }) => id))
+
+        // FIXME - temporary
+        // ids.forEach(id =>
+        //   map.setFeatureState({ source: 'detectors', id }, { selected: true })
+        // )
+
+        onSelectFeatures(ids)
       }
     })
 
@@ -252,6 +259,31 @@ const Map = ({
       tooltip.remove()
     })
 
+    // clicking on clusters zooms in
+    map.on('click', 'detectors-clusters', e => {
+      const [
+        {
+          geometry: { coordinates },
+          properties: { cluster_id: clusterId },
+        },
+      ] = map.queryRenderedFeatures(e.point, {
+        layers: ['detectors-clusters'],
+      })
+      map.getSource('detectors').getClusterExpansionZoom(
+        clusterId,
+        // feature.properties.cluster_id,
+        (err, targetZoom) => {
+          if (err) return
+
+          map.easeTo({
+            center: coordinates,
+            zoom: targetZoom + 1,
+          })
+        }
+      )
+    })
+
+    // hover highlights cluster and shows tooltip
     map.on('mousemove', 'detectors-clusters', e => {
       map.getCanvas().style.cursor = 'pointer'
 
@@ -265,14 +297,12 @@ const Map = ({
       const prevIds = highlightFeatureRef.current
       if (prevIds.size) {
         prevIds.forEach(id =>
-          map.setFeatureState({ source: 'detectors', id }, { highlight: false })
+          map.setFeatureState(
+            { source: 'detectors', id },
+            { highlight: false, 'highlight-cluster': false }
+          )
         )
       }
-
-      // ids.forEach(id => {
-      //   map.setFeatureState({ source: 'detectors', id }, { highlight: true })
-      // })
-      // highlightFeatureRef.current = ids
 
       // only highlight the first cluster or it gets confusing to interpret
       const {
@@ -280,15 +310,18 @@ const Map = ({
         properties: { point_count, total },
       } = features[0]
       highlightFeatureRef.current = Set([id])
-      map.setFeatureState({ source: 'detectors', id }, { highlight: true })
+      map.setFeatureState(
+        { source: 'detectors', id },
+        { 'highlight-cluster': true }
+      )
 
       let html = ''
       if (valueFieldRef.current === 'id') {
-        html = `${point_count} detectors at this location<br />Click for more information.`
+        html = `${point_count} detectors at this location<br />Click to zoom in.`
       } else {
         html = `${formatNumber(
           total
-        )} ${valueField} (${point_count} detectors)<br />Click for more information.`
+        )} ${valueField} (${point_count} detectors)<br />Click to zoom in.`
       }
       tooltip
         .setLngLat(features[0].geometry.coordinates)
@@ -302,7 +335,10 @@ const Map = ({
       const ids = highlightFeatureRef.current
       if (ids.size) {
         ids.forEach(id =>
-          map.setFeatureState({ source: 'detectors', id }, { highlight: false })
+          map.setFeatureState(
+            { source: 'detectors', id },
+            { highlight: false, 'highlight-cluster': false }
+          )
         )
       }
       highlightFeatureRef.current = Set()
@@ -330,6 +366,24 @@ const Map = ({
     source.setData(toGeoJSONPoints(detectors.toJS()))
     styleDetectors()
   }, [detectors, maxValue, valueField])
+
+  useEffect(() => {
+    const { current: map } = mapRef
+    if (!(map && map.isStyleLoaded())) return
+
+    // unhighlight previous selected
+    const prevSelected = selectedFeaturesRef.current
+    prevSelected.forEach(id => {
+      map.setFeatureState({ source: 'detectors', id }, { selected: false })
+    })
+
+    // highlight incoming
+    selectedFeatures.forEach(id =>
+      map.setFeatureState({ source: 'detectors', id }, { selected: true })
+    )
+    selectedFeaturesRef.current = selectedFeatures
+
+  }, [selectedFeatures])
 
   // Update when data change
   // useEffect(() => {
@@ -402,6 +456,7 @@ const Map = ({
     }
   }
 
+  // TODO: move to util
   const getLegend = () => {
     const radiusInterpolator = interpolate(MINRADIUS, MAXRADIUS)
     const colorInterpolator = interpolateRgb(LIGHTESTCOLOR, DARKESTCOLOR)
@@ -530,16 +585,16 @@ Map.propTypes = {
   valueField: PropTypes.string.isRequired,
   maxValue: PropTypes.number.isRequired,
   species: PropTypes.string,
-  selectedFeature: PropTypes.number,
-  onSelectFeature: PropTypes.func,
+  selectedFeatures: ImmutablePropTypes.setOf(PropTypes.number),
+  onSelectFeatures: PropTypes.func,
   onBoundsChange: PropTypes.func,
 }
 
 Map.defaultProps = {
   bounds: List(),
   species: null,
-  selectedFeature: null,
-  onSelectFeature: () => {},
+  selectedFeatures: Set(),
+  onSelectFeatures: () => {},
   onBoundsChange: () => {},
 }
 

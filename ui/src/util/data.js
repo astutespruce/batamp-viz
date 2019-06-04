@@ -82,5 +82,3 @@ export const sumBy = (records, groupField, valueField) =>
       ),
     Map()
   )
-
-// window.sumBy = sumBy
