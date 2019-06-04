@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
-import { List, fromJS } from 'immutable'
+import { List, Set, fromJS } from 'immutable'
 import { interpolate, interpolateRgb } from 'd3-interpolate'
 
 import mapboxgl from 'mapbox-gl'
@@ -58,8 +58,13 @@ const Map = ({
   const mapRef = useRef(null)
   const baseStyleRef = useRef(null)
   const selectedFeatureRef = useRef(selectedFeature)
+  const highlightFeatureRef = useRef(Set())
+  const valueFieldRef = useRef(valueField)
 
   useEffect(() => {
+    // set initial references to variables that update
+    valueFieldRef.current = valueField
+
     const { padding, bounds: initBounds } = config
     let { center, zoom } = config
 
@@ -94,6 +99,14 @@ const Map = ({
     window.map = map
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right')
+
+    // show tooltip on hover
+    const tooltip = new mapboxgl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      anchor: 'left',
+      offset: 20,
+    })
 
     // Construct GeoJSON points from detector locations
     sources.detectors.data = toGeoJSONPoints(detectors.toJS())
@@ -162,49 +175,138 @@ const Map = ({
       }
     })
 
-    //   map.on('mouseenter', 'clusters', e => {
-    //     map.getCanvas().style.cursor = 'pointer'
+    map.on('mousemove', 'detectors-points', e => {
+      map.getCanvas().style.cursor = 'pointer'
 
-    //     const [feature] = map.queryRenderedFeatures(e.point, {
-    //       layers: ['clusters'],
+      // const [feature] = map.queryRenderedFeatures(e.point, {
+      //   layers: ['detectors-points'],
+      // })
+
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['detectors-points'],
+      })
+
+      const ids = Set(features.map(({ id }) => id))
+
+      // console.log('all features hover', ids.toJS())
+
+      // unhighlight all previous
+      const unhighlightIds = highlightFeatureRef.current.subtract(ids)
+      if (unhighlightIds.size) {
+        unhighlightIds.forEach(id =>
+          map.setFeatureState({ source: 'detectors', id }, { highlight: false })
+        )
+      }
+
+      // const { id } = feature
+
+      // console.log('hover', id)
+      ids.forEach(id => {
+        map.setFeatureState({ source: 'detectors', id }, { highlight: true })
+      })
+      highlightFeatureRef.current = ids
+
+      if (valueFieldRef.current === 'id') {
+        tooltip
+          .setLngLat(features[0].geometry.coordinates)
+          .setHTML(
+            `${formatNumber(features.length)} ${
+              features.length > 1 ? 'detectors' : 'detector'
+            } at this location<br />Click for more information.`
+          )
+          .addTo(map)
+
+        return
+      }
+
+      const values = features.map(({ properties: { total } }) => total)
+      if (features.length > 1) {
+        const min = Math.min(...values)
+        const max = Math.max(...values)
+
+        tooltip
+          .setLngLat(features[0].geometry.coordinates)
+          .setHTML(
+            `${features.length} detectors at this location<br/>${formatNumber(
+              min
+            )} - ${formatNumber(
+              max
+            )} ${valueField}<br />Click for more information.`
+          )
+          .addTo(map)
+      } else {
+        tooltip
+          .setLngLat(features[0].geometry.coordinates)
+          .setHTML(
+            `${formatNumber(
+              values[0]
+            )} ${valueField}<br />Click for more information.`
+          )
+          .addTo(map)
+      }
+    })
+    map.on('mouseleave', 'detectors-points', () => {
+      map.getCanvas().style.cursor = ''
+
+      const ids = highlightFeatureRef.current
+      if (ids.size) {
+        ids.forEach(id =>
+          map.setFeatureState({ source: 'detectors', id }, { highlight: false })
+        )
+      }
+      highlightFeatureRef.current = Set()
+
+      tooltip.remove()
+    })
+
+    // map.on('mouseenter', 'detectors-clusters', e => {
+    //   map.getCanvas().style.cursor = 'pointer'
+
+    //   const [feature] = map.queryRenderedFeatures(e.point, {
+    //     layers: ['clusters'],
+    //   })
+    //   const clusterId = feature.properties.cluster_id
+
+    //   console.log('cluster', clusterId)
+
+    //   // highlight
+    //   // map.setFilter('points-highlight', [
+    //   //   '==',
+    //   //   ['get', 'cluster_id'],
+    //   //   clusterId,
+    //   // ])
+    //   highlightFeatureRef.current =
+
+    //   map
+    //     .getSource('detectors')
+    //     .getClusterLeaves(clusterId, Infinity, 0, (err, children) => {
+    //       if (err) return
+
+    //       console.log('children', children)
+
+    //       // let names = children
+    //       //   .slice(0, 5)
+    //       //   .map(({ properties: { name } }) => name)
+    //       //   .join('<br/>')
+    //       // if (children.length > 5) {
+    //       //   names += `<br/>and ${children.length - 5} more...`
+    //       // }
+
+    //       // tooltip
+    //       //   .setLngLat(feature.geometry.coordinates)
+    //       //   .setHTML(names)
+    //       //   .addTo(map)
     //     })
-    //     const clusterId = feature.properties.cluster_id
-
-    //     // highlight
-    //     map.setFilter('points-highlight', [
-    //       '==',
-    //       ['get', 'cluster_id'],
-    //       clusterId,
-    //     ])
-
-    //     map
-    //       .getSource('points')
-    //       .getClusterLeaves(clusterId, Infinity, 0, (err, children) => {
-    //         if (err) return
-
-    //         let names = children
-    //           .slice(0, 5)
-    //           .map(({ properties: { name } }) => name)
-    //           .join('<br/>')
-    //         if (children.length > 5) {
-    //           names += `<br/>and ${children.length - 5} more...`
-    //         }
-
-    //         tooltip
-    //           .setLngLat(feature.geometry.coordinates)
-    //           .setHTML(names)
-    //           .addTo(map)
-    //       })
-    //   })
-    //   map.on('mouseleave', 'clusters', () => {
-    //     map.getCanvas().style.cursor = ''
-    //     map.setFilter('points-highlight', [
-    //       '==',
-    //       'id',
-    //       selectedFeatureRef.current || Infinity,
-    //     ])
-    //     tooltip.remove()
-    //   })
+    // })
+    // map.on('mouseleave', 'detectors-clusters', () => {
+    //   map.getCanvas().style.cursor = ''
+    //   map.setFilter('points-highlight', [
+    //     '==',
+    //     'id',
+    //     selectedFeatureRef.current || Infinity,
+    //   ])
+    //   // tooltip.remove()
+    // })
 
     return () => {
       map.remove()
@@ -213,6 +315,9 @@ const Map = ({
 
   // Only update style for detectors when they change because of the valueField
   useEffect(() => {
+    // update refs
+    valueFieldRef.current = valueField
+
     const { current: map } = mapRef
     if (!(map && map.isStyleLoaded())) return
 
@@ -222,7 +327,7 @@ const Map = ({
 
     source.setData(toGeoJSONPoints(detectors.toJS()))
     styleDetectors()
-  }, [detectors, maxValue])
+  }, [detectors, maxValue, valueField])
 
   // Update when data change
   // useEffect(() => {
@@ -328,7 +433,9 @@ const Map = ({
 
     if (species) {
       entries.push({
-        color: `${theme.colors.highlight[500]}23`,
+        color: `${theme.colors.highlight[500]}33`,
+        borderColor: `${theme.colors.highlight[500]}33`,
+        borderWidth: 1,
         label: 'Species range',
       })
     }
@@ -436,6 +543,11 @@ Map.defaultProps = {
 
 export default Map
 // Working notes
+
+// highlight points on hover
+// store hover state in local ref?
+// map.setFeatureState({source: 'detectors', id: 303}, {highlight: true})
+// map.setPaintProperty('detectors-points', 'circle-color', ['case', ["boolean", ["feature-state", "highlight"], false], '#F00', ...<other rules>])
 
 // rendering admin units, use setFeatureState (example: https://jsfiddle.net/mapbox/gortd715/)
 // on load of tiles:
