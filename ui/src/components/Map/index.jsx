@@ -1,4 +1,4 @@
-/* eslint-disable max-len, no-underscore-dangle */
+/* eslint-disable max-len, no-underscore-dangle camelcase */
 import React, { useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
@@ -178,17 +178,13 @@ const Map = ({
     map.on('mousemove', 'detectors-points', e => {
       map.getCanvas().style.cursor = 'pointer'
 
-      // const [feature] = map.queryRenderedFeatures(e.point, {
-      //   layers: ['detectors-points'],
-      // })
-
       const features = map.queryRenderedFeatures(e.point, {
         layers: ['detectors-points'],
       })
 
-      const ids = Set(features.map(({ id }) => id))
+      if (!(features && features.length)) return
 
-      // console.log('all features hover', ids.toJS())
+      const ids = Set(features.map(({ id }) => id))
 
       // unhighlight all previous
       const unhighlightIds = highlightFeatureRef.current.subtract(ids)
@@ -198,9 +194,6 @@ const Map = ({
         )
       }
 
-      // const { id } = feature
-
-      // console.log('hover', id)
       ids.forEach(id => {
         map.setFeatureState({ source: 'detectors', id }, { highlight: true })
       })
@@ -259,54 +252,63 @@ const Map = ({
       tooltip.remove()
     })
 
-    // map.on('mouseenter', 'detectors-clusters', e => {
-    //   map.getCanvas().style.cursor = 'pointer'
+    map.on('mousemove', 'detectors-clusters', e => {
+      map.getCanvas().style.cursor = 'pointer'
 
-    //   const [feature] = map.queryRenderedFeatures(e.point, {
-    //     layers: ['clusters'],
-    //   })
-    //   const clusterId = feature.properties.cluster_id
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['detectors-clusters'],
+      })
 
-    //   console.log('cluster', clusterId)
+      if (!(features && features.length)) return
 
-    //   // highlight
-    //   // map.setFilter('points-highlight', [
-    //   //   '==',
-    //   //   ['get', 'cluster_id'],
-    //   //   clusterId,
-    //   // ])
-    //   highlightFeatureRef.current =
+      // unhighlight all previous
+      const prevIds = highlightFeatureRef.current
+      if (prevIds.size) {
+        prevIds.forEach(id =>
+          map.setFeatureState({ source: 'detectors', id }, { highlight: false })
+        )
+      }
 
-    //   map
-    //     .getSource('detectors')
-    //     .getClusterLeaves(clusterId, Infinity, 0, (err, children) => {
-    //       if (err) return
+      // ids.forEach(id => {
+      //   map.setFeatureState({ source: 'detectors', id }, { highlight: true })
+      // })
+      // highlightFeatureRef.current = ids
 
-    //       console.log('children', children)
+      // only highlight the first cluster or it gets confusing to interpret
+      const {
+        id,
+        properties: { point_count, total },
+      } = features[0]
+      highlightFeatureRef.current = Set([id])
+      map.setFeatureState({ source: 'detectors', id }, { highlight: true })
 
-    //       // let names = children
-    //       //   .slice(0, 5)
-    //       //   .map(({ properties: { name } }) => name)
-    //       //   .join('<br/>')
-    //       // if (children.length > 5) {
-    //       //   names += `<br/>and ${children.length - 5} more...`
-    //       // }
+      let html = ''
+      if (valueFieldRef.current === 'id') {
+        html = `${point_count} detectors at this location<br />Click for more information.`
+      } else {
+        html = `${formatNumber(
+          total
+        )} ${valueField} (${point_count} detectors)<br />Click for more information.`
+      }
+      tooltip
+        .setLngLat(features[0].geometry.coordinates)
+        .setHTML(html)
+        .addTo(map)
+    })
+    map.on('mouseleave', 'detectors-clusters', () => {
+      map.getCanvas().style.cursor = ''
 
-    //       // tooltip
-    //       //   .setLngLat(feature.geometry.coordinates)
-    //       //   .setHTML(names)
-    //       //   .addTo(map)
-    //     })
-    // })
-    // map.on('mouseleave', 'detectors-clusters', () => {
-    //   map.getCanvas().style.cursor = ''
-    //   map.setFilter('points-highlight', [
-    //     '==',
-    //     'id',
-    //     selectedFeatureRef.current || Infinity,
-    //   ])
-    //   // tooltip.remove()
-    // })
+      // TODO: unhighlight
+      const ids = highlightFeatureRef.current
+      if (ids.size) {
+        ids.forEach(id =>
+          map.setFeatureState({ source: 'detectors', id }, { highlight: false })
+        )
+      }
+      highlightFeatureRef.current = Set()
+
+      tooltip.remove()
+    })
 
     return () => {
       map.remove()

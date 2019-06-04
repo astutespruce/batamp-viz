@@ -35,7 +35,7 @@ export const sources = {
   detectors: {
     type: 'geojson',
     data: {},
-    // cluster: true,
+    cluster: true,
     clusterMaxZoom: 24, // show clusters at lowest zoom since there may be multiple detectors at a site
     clusterRadius: MAXRADIUS,
     clusterProperties: {
@@ -54,8 +54,24 @@ export const layers = [
     source: 'detectors',
     filter: ['has', 'point_count'], // point_count field added by mapbox GL
     paint: {
-      'circle-stroke-color': '#fff',
-      'circle-stroke-width': 1,
+      'circle-opacity': [
+        'case',
+        ['boolean', ['feature-state', 'highlight'], false],
+        1,
+        0.75,
+      ],
+      'circle-stroke-width': [
+        'case',
+        ['boolean', ['feature-state', 'highlight'], false],
+        2,
+        1,
+      ],
+      'circle-stroke-color': [
+        'case',
+        ['boolean', ['feature-state', 'highlight'], false],
+        theme.colors.highlight[500],
+        '#FFF',
+      ],
       // other props specified dynamically
     },
   },
@@ -65,7 +81,12 @@ export const layers = [
     source: 'detectors',
     filter: ['!has', 'point_count'],
     paint: {
-      'circle-opacity': 0.5,
+      'circle-opacity': [
+        'case',
+        ['boolean', ['feature-state', 'highlight'], false],
+        1,
+        0.75,
+      ],
       'circle-stroke-width': [
         'case',
         ['boolean', ['feature-state', 'highlight'], false],
