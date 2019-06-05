@@ -1,5 +1,6 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
+import ImmutablePropTypes from 'react-immutable-proptypes'
 import { FaRegTimesCircle } from 'react-icons/fa'
 
 import { Text } from 'components/Text'
@@ -94,8 +95,8 @@ const Details = ({
   lon,
   name,
   micHt,
-  detections,
-  nights,
+  // detections,
+  // nights,
   // dateRange,
   contributors,
   mfg,
@@ -106,7 +107,8 @@ const Details = ({
   datasets,
   admin1Name,
   country,
-  // species,
+  species,
+  ts,
   // speciesPresent,
   // speciesRanges,
   onClose,
@@ -137,9 +139,9 @@ const Details = ({
       <TabContainer>
         <Tab id="species" label="Species Detections">
           TODO: stats
-          <br/>
+          <br />
           TODO: time series data
-          <br/>
+          <br />
           TODO: highlight if any species are out of their ranges
         </Tab>
         <Tab id="overview" label="Detector Information">
@@ -237,8 +239,8 @@ Details.propTypes = {
   lat: PropTypes.number.isRequired,
   lon: PropTypes.number.isRequired,
   micHt: PropTypes.number.isRequired,
-  detections: PropTypes.number.isRequired,
-  nights: PropTypes.number.isRequired,
+  // detections: PropTypes.number.isRequired,
+  // nights: PropTypes.number.isRequired,
   // dateRange: PropTypes.arrayOf(PropTypes.string).isRequired,
   contributors: PropTypes.number.isRequired,
   mfg: PropTypes.string,
@@ -247,10 +249,16 @@ Details.propTypes = {
   reflType: PropTypes.string,
   idMethods: PropTypes.arrayOf(PropTypes.string),
   datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
-  speciesPresent: PropTypes.arrayOf(PropTypes.string).isRequired,
-  speciesRanges: PropTypes.arrayOf(PropTypes.string).isRequired,
+  // speciesPresent: PropTypes.arrayOf(PropTypes.string).isRequired,
+  // speciesRanges: PropTypes.arrayOf(PropTypes.string).isRequired,
   admin1Name: PropTypes.string.isRequired,
   country: PropTypes.string.isRequired,
+  ts: ImmutablePropTypes.mapContains({
+    detections: PropTypes.number.isRequired,
+    nights: PropTypes.number.isRequired,
+    month: PropTypes.number.isRequired,
+    year: PropTypes.number.isRequired,
+  }),
   species: PropTypes.string,
   onClose: PropTypes.func.isRequired,
 }

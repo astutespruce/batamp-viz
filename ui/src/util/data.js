@@ -1,4 +1,4 @@
-import { Map, fromJS } from 'immutable'
+import { Map, List, fromJS } from 'immutable'
 
 /**
  * Generates an monotonically increasing array from start to stop.
@@ -17,7 +17,7 @@ export const range = (start, stop) =>
  * @param {String} field
  * @param {Boolean} drop - if true, will drop the key from the value for each entry
  */
-export const createIndex = (data, field, drop=false) => {
+export const createIndex = (data, field, drop = false) => {
   if (data.size) {
     // data are from a List of Map objects
     return Map(data.map(d => [d.get(field), drop ? d.remove(field) : d]))
@@ -83,6 +83,22 @@ export const sumBy = (records, groupField, valueField) =>
         value.get(groupField),
         0,
         prevCount => prevCount + value.get(valueField)
+      ),
+    Map()
+  )
+
+/**
+ * Group an ImmutableJS List into a Map of Lists
+ * Returns Map where keys are each unique value of groupField.
+ *
+ * @param {Immutable List} records - list of Map objects
+ * @param {String} groupField - field to group by
+ */
+export const groupBy = (records, groupField) =>
+  records.reduce(
+    (prev, value) =>
+      prev.update(value.get(groupField), List(), prevList =>
+        prevList.push(value)
       ),
     Map()
   )

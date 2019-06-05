@@ -22,7 +22,7 @@ import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import { withinBounds } from 'components/Map/util'
-import { createIndex, filterIndex } from 'util/data'
+import { createIndex, filterIndex, groupBy } from 'util/data'
 import { NABounds, MONTHS, MONTH_LABELS } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
@@ -89,24 +89,25 @@ const SpeciesTemplate = ({
   })))
   const detectorIndex = createIndex(detectors, 'id')
 
-  const data = fromJS(
-    extractNodes(allDetectorTsJson).map(d => {
-      const detector = detectorIndex.get(d.id)
-      return {
+  const detectorTS = fromJS(extractNodes(allDetectorTsJson))
+
+  const data = detectorTS.filter(d => d.get('species') === species).map(d => {
+      const detector = detectorIndex.get(d.get('id'))
+      return d.merge({
         lat: detector.get('lat'),
         lon: detector.get('lon'),
         name: detector.get('name'),
-        ...d,
-      }
+      })
     })
-  )
 
   const handleToggleBoundsFilter = () => {
     setFilterByBounds(prev => !prev)
   }
 
   const handleSelectFeatures = ids => {
-    const features = detectorIndex.filter((_, k)=> ids.has(k)).toList()
+    const features = detectorIndex.filter((_, k)=> ids.has(k)).toList().map(d => d.merge({
+      ts: groupBy(detectorTS.filter(v => v.get('id') === d.get('id')), 'species')
+    }))
     window.features = features
     setSelected({
       features,
@@ -132,7 +133,7 @@ const SpeciesTemplate = ({
       filterFunc: hasValue,
     },
     {
-      field: 'timestep',
+      field: 'month',
       title: 'Month', // TODO: variable
       isOpen: true,
       values: MONTHS, // TODO: variable
@@ -262,7 +263,7 @@ contributors: PropTypes.arrayOf(PropTypes.string).isRequired,
       PropTypes.shape({
         id: PropTypes.number.isRequired,
         year: PropTypes.number.isRequired,
-        timestep: PropTypes.number.isRequired,
+        month: PropTypes.number.isRequired,
         detections: PropTypes.number.isRequired,
         nights: PropTypes.number.isRequired,
       })
@@ -302,12 +303,13 @@ export const pageQuery = graphql`
         }
       }
     }
-    allDetectorTsJson(filter: { s: { eq: $species } }) {
+    allDetectorTsJson {
       edges {
         node {
           id: i
+          species: s
           year: y
-          timestep: m
+          month: m
           detections: d
           nights: n
         }
@@ -327,5 +329,8 @@ export const pageQuery = graphql`
     }
   }
 `
+
+// (filter: { s: { eq: $species } })
+
 
 export default SpeciesTemplate
