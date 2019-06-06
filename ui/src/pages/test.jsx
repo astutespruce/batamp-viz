@@ -2,13 +2,15 @@ import React, { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
 import { List, fromJS, Set, Map as IMap } from 'immutable'
+import { scaleLinear } from 'd3-scale'
 
 import { Box } from 'components/Grid'
 import { Text } from 'components/Text'
 import Layout from 'components/Layout'
 import Sidebar from 'components/Sidebar'
-import { BarChart, HorizontalBarChart } from 'components/Chart'
+import { BarChart, HorizontalBarChart, TableChart } from 'components/Chart'
 import { createIndex, groupBy, sumBy, sum } from 'util/data'
+import { formatNumber, quantityLabel } from 'util/format'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import styled, { themeGet } from 'style'
 import { NABounds, MONTHS, MONTH_LABELS } from '../../config/constants'
@@ -17,9 +19,14 @@ const Section = styled(Box).attrs({ p: '1rem' })``
 
 const SectionHeader = styled(Text).attrs({ as: 'h3' })``
 
+const BarChartWrapper = styled.div`
+  &:not(:first-child) {
+    margin-top: 2rem;
+  }
+`
 
-const chartHeight = 100
-const minChartHeight = 20
+// const chartHeight = 100
+// const minChartHeight = 20
 
 const Test = ({ data: { allSpeciesJson, allDetectorTsJson } }) => {
   const valueField = 'detections'
@@ -50,20 +57,25 @@ const Test = ({ data: { allSpeciesJson, allDetectorTsJson } }) => {
   const monthlyData = grouped.map((v, k) => getTotalsByMonth(k))
   const monthlyMaxBySpp = monthlyData.map(d => Math.max(...d))
   const monthlyMax = Math.max(...Array.from(monthlyMaxBySpp.valueSeq()))
-//   const monthlyMax = Math.max(...Array.from(monthlyData.valueSeq().map(d => Math.max(...d))))
-
   console.log('monthly data', monthlyData.toJS(), monthlyMax)
 
   const getSpeciesLabel = species => {
     const spp = speciesIndex.get(species)
-    return `${spp.get('commonName')} (${spp.get('sciName')})`
+    // return `${spp.get('commonName')} (${spp.get('sciName')})`
+    return spp.get('commonName')
   }
+
+  const chartScale = scaleLinear()
+    .domain([1, monthlyMax])
+    .range([6, 100])
+  //   height={Math.max(minChartHeight, chartHeight * monthlyMaxBySpp.get(spp) / monthlyMax)}
+  // `${formatNumber(d)} ${quantityLabel(valueField, d)}`
 
   return (
     <Layout title="Chart test">
       <Sidebar>
         <Section>
-          <SectionHeader>Species present</SectionHeader>
+          <SectionHeader>Species present: (# detections)</SectionHeader>
           {totals.map(([spp, total]) => (
             <HorizontalBarChart
               key={spp}
@@ -75,12 +87,20 @@ const Test = ({ data: { allSpeciesJson, allDetectorTsJson } }) => {
         </Section>
 
         <Section>
-          <SectionHeader>Seasonality:</SectionHeader>
+          <SectionHeader>Seasonality: (# detections)</SectionHeader>
           {sortedSpp.map(spp => (
-            <div key={spp}>
-                <div>{getSpeciesLabel(spp)}</div>
-                <BarChart data={monthlyData.get(spp).map((d, i) => ({value: d, label: MONTH_LABELS[i].slice(0, 3)}))} height={Math.max(minChartHeight, chartHeight * monthlyMaxBySpp.get(spp) / monthlyMax)} />
-            </div>
+            <BarChartWrapper key={spp}>
+              <div>{getSpeciesLabel(spp)}</div>
+              <BarChart
+                data={monthlyData
+                  .get(spp)
+                  .map((d, i) => ({
+                    value: d,
+                    label: MONTH_LABELS[i].slice(0, 3),
+                  }))}
+                scale={chartScale}
+              />
+            </BarChartWrapper>
           ))}
         </Section>
       </Sidebar>

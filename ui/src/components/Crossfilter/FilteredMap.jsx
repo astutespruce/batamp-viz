@@ -64,7 +64,6 @@ const FilteredMap = ({
   // TODO: this assumes timestep is not split out as a separate filter when
   // animating time!
   const totalById = sumBy(state.get('data'), 'id', valueField)
-  window.t = totalById
 
   let maxValue = 0
   if (valueField === 'id') {

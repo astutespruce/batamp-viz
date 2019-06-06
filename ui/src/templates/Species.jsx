@@ -108,7 +108,6 @@ const SpeciesTemplate = ({
     const features = detectorIndex.filter((_, k)=> ids.has(k)).toList().map(d => d.merge({
       ts: groupBy(detectorTS.filter(v => v.get('id') === d.get('id')), 'species')
     }))
-    window.features = features
     setSelected({
       features,
       feature: features.size ? features.first().get('id') : null

@@ -7,7 +7,7 @@ import { formatNumber } from 'util/format'
 
 const Wrapper = styled.div`
   line-height: 1;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 `
 
 const Labels = styled(Columns).attrs({
@@ -20,7 +20,7 @@ const Labels = styled(Columns).attrs({
 const BarWrapper = styled(Flex).attrs({
   flexWrap: 'nowrap',
 })`
-  height: 0.5rem;
+  height: 1rem;
   background-color: ${themeGet('colors.grey.200')};
   border: 1px solid ${themeGet('colors.grey.200')};
   
@@ -36,7 +36,7 @@ const Filler = styled.div`
   transition: flex-grow 300ms;
 `
 
-const HorizontalBar = ({ label, quantity, max }) => {
+const HorizontalBarChart = ({ label, quantity, max }) => {
   const position = quantity / max
   const remainder = 1 - position
 
@@ -57,11 +57,11 @@ const HorizontalBar = ({ label, quantity, max }) => {
   )
 }
 
-HorizontalBar.propTypes = {
+HorizontalBarChart.propTypes = {
   label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   quantity: PropTypes.number.isRequired,
   max: PropTypes.number.isRequired,
 }
 
 
-export default memo(HorizontalBar)
+export default memo(HorizontalBarChart)
