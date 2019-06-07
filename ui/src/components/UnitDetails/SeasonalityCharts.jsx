@@ -2,8 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { scaleLinear } from 'd3-scale'
 
-import { BarChart } from 'components/Chart'
-import styled from 'style'
+// import { BarChart } from 'components/Chart'
+import BarChart, { Title as ChartTitle } from 'components/Chart/BarChart'
+import styled, { themeGet } from 'style'
 import { MONTH_LABELS } from '../../../config/constants'
 
 const Wrapper = styled.div``
@@ -11,6 +12,13 @@ const Wrapper = styled.div``
 const BarChartWrapper = styled.div`
   &:not(:first-child) {
     margin-top: 2rem;
+  }
+
+  ${ChartTitle} {
+    background-color: ${themeGet('colors.grey.100')};
+    text-align: center;
+    margin: 0 -1rem 1rem;
+    border-top: 1px solid ${themeGet('colors.grey.400')};
   }
 `
 
@@ -24,10 +32,11 @@ const SeasonalityCharts = ({ data, selectedSpecies }) => {
 
   return (
     <Wrapper>
-      {data.map(({ species, label, values }) => (
+      {data.map(({ species, commonName, sciName, values }) => (
         <BarChartWrapper key={species}>
           <BarChart
-            title={label}
+            title={commonName}
+            subtitle={`(${sciName})`}
             data={values.map((d, i) => ({
               value: d,
               label: MONTH_LABELS[i].slice(0, 3),
@@ -45,7 +54,8 @@ SeasonalityCharts.propTypes = {
   data: PropTypes.arrayOf(
     PropTypes.shape({
       species: PropTypes.string.isRequired,
-      label: PropTypes.string.isRequired,
+      commonName: PropTypes.string.isRequired,
+      sciName: PropTypes.string.isRequired,
       values: PropTypes.arrayOf(PropTypes.number).isRequired,
     })
   ).isRequired,

@@ -8,9 +8,15 @@ import styled, { themeGet } from 'style'
 
 const Wrapper = styled.div``
 
-const Title = styled(Text)`
+export const Title = styled(Text)`
   color: ${({ highlight }) =>
     highlight ? themeGet('colors.highlight.500') : themeGet('colors.grey.900')};
+`
+const Subtitle = styled.span`
+  margin-left: 0.5em;
+  font-size: 0.8rem;
+  color: ${({ highlight }) =>
+    highlight ? themeGet('colors.highlight.500') : themeGet('colors.grey.600')};
 `
 
 const Bars = styled(Flex).attrs({
@@ -98,13 +104,26 @@ const Tooltip = styled(Text)`
   }
 `
 
-const BarChart = ({ title, data, scale, highlight, showTooltips }) => {
+const BarChart = ({
+  title,
+  subtitle,
+  data,
+  scale,
+  highlight,
+  showTooltips,
+}) => {
   const max = Math.max(...data.map(({ value }) => value))
-  const maxHeight = scale(max) + 6 // FIXME
+  const maxHeight = scale(max) + 6
 
   return (
     <Wrapper>
-      <Title highlight={highlight}>{title}</Title>
+      <Title highlight={highlight}>
+        {title}
+
+        {subtitle ? (
+          <Subtitle highlight={highlight}>{subtitle}</Subtitle>
+        ) : null}
+      </Title>
       <Bars pt={showTooltips ? '1rem' : 0}>
         {data.map(({ label, value }) => (
           <Column key={label}>
@@ -128,6 +147,7 @@ const BarChart = ({ title, data, scale, highlight, showTooltips }) => {
 
 BarChart.propTypes = {
   title: PropTypes.string.isRequired,
+  subtitle: PropTypes.string,
   data: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string,
@@ -141,6 +161,7 @@ BarChart.propTypes = {
 }
 
 BarChart.defaultProps = {
+  subtitle: null,
   showTooltips: true,
   highlight: false,
 }

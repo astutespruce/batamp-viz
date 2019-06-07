@@ -46,6 +46,9 @@ df = df.drop(columns=["x_coord", "y_coord"]).rename(
     columns={"db_longitude": "lon", "db_latitude": "lat", "source_dataset": "dataset"}
 )
 
+# round coordinates to 4 decimal places (~11 meters at equator)
+df[location_fields] = df[location_fields].round(4)
+
 # Drop completely null records
 df = df.dropna(axis=0, how="all", subset=ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS)
 # drop columns with completely missing data.
@@ -360,7 +363,9 @@ detector_daterange = (
     df.groupby("detector")
     .night.agg(["min", "max"])
     .apply(lambda col: col.dt.strftime("%b %d, %Y"))
-    .apply(lambda row: " - ".join(row), axis=1)
+    .apply(
+        lambda row: row["min"] if row["min"] == row["max"] else " - ".join(row), axis=1
+    )
     .rename("date_range")
 )
 

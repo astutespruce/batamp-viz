@@ -1,22 +1,29 @@
-import React, { memo } from 'react'
+import React, { memo, useContext } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import { FaRegTimesCircle } from 'react-icons/fa'
+import { useStaticQuery, graphql } from 'gatsby'
 
 import { Text } from 'components/Text'
 import Tabs, { Tab as BaseTab } from 'components/Tabs'
-import { OutboundLink } from 'components/Link'
+import { Context } from 'components/Crossfilter'
 import { Column, Columns, RightColumn, Box, Flex } from 'components/Grid'
 import { SeasonalityCharts } from 'components/UnitDetails'
 import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
+import { extractNodes } from 'util/graphql'
 import { sumBy, groupBy } from 'util/data'
-import { MONTHS, COUNTRIES } from '../../../config/constants'
+import { MONTHS } from '../../../config/constants'
 
-const Wrapper = styled.div``
+import DetectorMetadata from './DetectorMetadata'
+
+const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
+  height: 100%;
+`
 
 const Header = styled.div`
-  padding: 0.5rem 1rem;
+  flex: 1;
+  padding: 1rem;
   background-color: ${themeGet('colors.highlight.100')};
   line-height: 1.2;
   border-bottom: 2px solid ${themeGet('colors.grey.500')};
@@ -50,6 +57,7 @@ const CloseIcon = styled(FaRegTimesCircle).attrs({ size: '1.5rem' })`
 `
 
 const TabContainer = styled(Tabs)`
+  flex: 1;
   height: 100%;
 `
 
@@ -59,69 +67,59 @@ const Tab = styled(BaseTab)`
   flex: 1 1 auto;
 `
 
-const Field = styled.section`
+const Section = styled(Box).attrs({ py: '1rem' })`
   &:not(:first-child) {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid ${themeGet('colors.grey.200')};
+    border-top: 1px solid ${themeGet('colors.grey.100')};
   }
 `
 
-const FieldHeader = styled.h4`
-  margin-bottom: 0;
+const SectionHeader = styled(Text).attrs({ as: 'h3' })``
+
+const Metric = styled.span`
+  font-size: 0.8rem;
+  color: ${themeGet('colors.grey.600')};
+  font-weight: normal;
 `
 
-const FieldValue = styled.div`
-  margin-left: 1rem;
-`
-
-const FieldValueList = styled.ul`
-  margin-bottom: 0.5rem;
-
-  li {
-    margin-bottom: 0;
-  }
-`
-
-const FieldHelp = styled.p`
-  color: ${themeGet('colors.grey.700')};
-  font-size: smaller;
-  line-height: 1.2;
-`
-
-const formatDateRange = dateRange => {
-  if (dateRange.length === 1) return dateRange[0]
-
-  return dateRange.join(' - ')
+const metricLabels = {
+  detections: 'detections',
+  nights: 'nights detected',
 }
 
 const Details = ({ detector, selectedSpecies, onClose }) => {
+  const { state } = useContext(Context)
+  const valueField = state.get('valueField')
+
   const {
-    lat,
-    lon,
     name,
-    micHt,
     detections,
-    // dateRange,
-    contributors,
-    mfg,
-    model,
-    micType,
-    reflType,
-    idMethods,
-    datasets,
     admin1Name,
     country,
     detectorNights,
-    detectionNights,
     dateRange,
     species: speciesPresent,
   } = detector.toJS()
 
   const ts = detector.get('ts')
 
-  // FIXME - make a prop
-  const valueField = 'detections'
+  const sppNames = extractNodes(
+    useStaticQuery(graphql`
+      query {
+        allSpeciesJson {
+          edges {
+            node {
+              species
+              sciName
+              commonName
+            }
+          }
+        }
+      }
+    `).allSpeciesJson
+  ).reduce((prev, { species, commonName, sciName }) => {
+    prev[species] = { commonName, sciName }
+    return prev
+  }, {})
 
   // calculate totals by species
   const sppTotals = sumBy(ts, 'species', valueField)
@@ -136,14 +134,16 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
   })
 
   const seasonalityData = sppTotals
-    .map(([species]) => ({
-      species,
-      label: species,
-      values: monthlyData.get(species),
-    }))
+    .map(([species]) => {
+      return {
+        species,
+        ...sppNames[species],
+        values: monthlyData.get(species),
+      }
+    })
     .toJS()
 
-    console.log(sppTotals.toJS(), monthlyData.toJS(), seasonalityData)
+  const metric = metricLabels[valueField]
 
   return (
     <Wrapper>
@@ -162,127 +162,34 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
               <b>
                 {admin1Name}, {country}
               </b>
+
+              <br />
+              {dateRange}
             </Column>
-            <RightColumn>{dateRange}</RightColumn>
+            <RightColumn>
+              {formatNumber(detections, 0)} detections
+              <br />
+              {detectorNights} nights monitored
+            </RightColumn>
           </Columns>
         </Summary>
       </Header>
 
       <TabContainer>
-        <Tab id="species" label="Species Detections">
-          <b>{formatNumber(detections, 0)}</b> detections of{' '}
-          <b>{speciesPresent.length}</b> species recorded on{' '}
-          {detectionNights < detectorNights ? (
-            <>
-              <b>{detectionNights}</b>
-              out of
-            </>
-          ) : null}{' '}
-          <b>{detectorNights}</b> nights monitored.
-          <br />
-          <SeasonalityCharts
-            data={seasonalityData}
-            selectedSpecies={selectedSpecies}
-          />
-          <br />
-          TODO: highlight if any species are out of their ranges
+        <Tab id="species" label={`${speciesPresent.length} Species Detected`}>
+          <Section>
+            <SectionHeader>
+              Seasonality <Metric>(number of {metric})</Metric>
+            </SectionHeader>
+            <SeasonalityCharts
+              data={seasonalityData}
+              selectedSpecies={selectedSpecies}
+            />
+          </Section>
         </Tab>
+
         <Tab id="overview" label="Detector Information">
-          <Field>
-            <FieldHeader>Location:</FieldHeader>
-            <FieldValue>
-              {formatNumber(lat, 2)}° North / {formatNumber(lon, 2)}° East
-            </FieldValue>
-          </Field>
-
-          <Field>
-            <FieldHeader>Microphone height:</FieldHeader>
-            <FieldValue>{micHt} meters</FieldValue>
-          </Field>
-
-          <Field>
-            <FieldHeader>Detector data contributed by:</FieldHeader>
-            <FieldValue>{contributors}</FieldValue>
-          </Field>
-
-          {mfg ? (
-            <Field>
-              <FieldHeader>Detector model:</FieldHeader>
-              <FieldValue>
-                {mfg}
-                {model ? `(${model})` : null}
-              </FieldValue>
-            </Field>
-          ) : null}
-
-          {micType ? (
-            <Field>
-              <FieldHeader>Microphone type:</FieldHeader>
-              <FieldValue>{micType}</FieldValue>
-            </Field>
-          ) : null}
-
-          {reflType ? (
-            <Field>
-              <FieldHeader>Reflector type:</FieldHeader>
-              <FieldValue>{reflType}</FieldValue>
-            </Field>
-          ) : null}
-
-          {idMethods && idMethods.length ? (
-            <Field>
-              <FieldHeader>How were species identified?</FieldHeader>
-              <FieldValueList>
-                {idMethods.map(method => (
-                  <li>{method}</li>
-                ))}
-              </FieldValueList>
-            </Field>
-          ) : null}
-
-          <Field>
-            <FieldHeader>
-              Source {quantityLabel('datasets', datasets.length)} on{' '}
-              <OutboundLink
-                from="/"
-                to="https://batamp.databasin.org/"
-                target="_blank"
-              >
-                BatAMP
-              </OutboundLink>
-              :
-            </FieldHeader>
-            {datasets.size === 1 ? (
-              <FieldValue>
-                <OutboundLink
-                  from="/"
-                  to={`https://batamp.databasin.org/datasets/${datasets.get(0)}`}
-                  target="_blank"
-                >
-                  {datasets.get(0)}
-                </OutboundLink>
-              </FieldValue>
-            ) : (
-              <FieldValueList>
-                {datasets.map(dataset => (
-                  <li key={dataset}>
-                    <OutboundLink
-                      from="/"
-                      to={`https://batamp.databasin.org/datasets/${dataset}`}
-                      target="_blank"
-                    >
-                      {dataset}
-                    </OutboundLink>
-                  </li>
-                ))}
-              </FieldValueList>
-            )}
-            <FieldHelp>
-              The dataset page on BatAMP may contain additional information
-              about this detector and the methods used to detect species at this
-              location.
-            </FieldHelp>
-          </Field>
+          <DetectorMetadata {...detector.toJS()} />
         </Tab>
       </TabContainer>
     </Wrapper>
@@ -296,8 +203,6 @@ Details.propTypes = {
     lon: PropTypes.number.isRequired,
     micHt: PropTypes.number.isRequired,
     detections: PropTypes.number.isRequired,
-    // nights: PropTypes.number.isRequired,
-    // dateRange: PropTypes.arrayOf(PropTypes.string).isRequired,
     contributors: PropTypes.string.isRequired,
     mfg: PropTypes.string,
     model: PropTypes.string,
@@ -306,7 +211,6 @@ Details.propTypes = {
     idMethods: PropTypes.arrayOf(PropTypes.string),
     datasets: ImmutablePropTypes.listOf(PropTypes.string).isRequired,
     species: PropTypes.arrayOf(PropTypes.string).isRequired,
-    // speciesRanges: PropTypes.arrayOf(PropTypes.string).isRequired,
     detectorNights: PropTypes.number.isRequired,
     detectionNights: PropTypes.number.isRequired,
     dateRange: PropTypes.string.isRequired,
