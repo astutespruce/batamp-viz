@@ -78,20 +78,24 @@ const SpeciesTemplate = ({
   },
 }) => {
   const valueField = 'detections'
-  const [selected, setSelected] = useState({features: Set(), feature: null})
+  const [selected, setSelected] = useState({ features: Set(), feature: null })
   const [filterByBounds, setFilterByBounds] = useState(true)
 
-  const detectors = fromJS(extractNodes(allDetectorsJson).map(d => ({
-    // note: detector height is multiplied by 10 to make into integer,
-    // reverse that here
-    ...d,
-    micHt: d.micHt / 10,
-  })))
+  const detectors = fromJS(
+    extractNodes(allDetectorsJson).map(d => ({
+      // note: detector height is multiplied by 10 to make into integer,
+      // reverse that here
+      ...d,
+      micHt: d.micHt / 10,
+    }))
+  )
   const detectorIndex = createIndex(detectors, 'id')
 
   const detectorTS = fromJS(extractNodes(allDetectorTsJson))
 
-  const data = detectorTS.filter(d => d.get('species') === species).map(d => {
+  const data = detectorTS
+    .filter(d => d.get('species') === species)
+    .map(d => {
       const detector = detectorIndex.get(d.get('id'))
       return d.merge({
         lat: detector.get('lat'),
@@ -105,24 +109,32 @@ const SpeciesTemplate = ({
   }
 
   const handleSelectFeatures = ids => {
-    const features = detectorIndex.filter((_, k)=> ids.has(k)).toList().map(d => d.merge({
-      ts: groupBy(detectorTS.filter(v => v.get('id') === d.get('id')), 'species')
-    }))
+    const features = detectorIndex
+      .filter((_, k) => ids.has(k))
+      .toList()
+      .map(d =>
+        d.merge({
+          ts: groupBy(
+            detectorTS.filter(v => v.get('id') === d.get('id')),
+            'species'
+          ),
+        })
+      )
     setSelected({
       features,
-      feature: features.size ? features.first().get('id') : null
+      feature: features.size ? features.first().get('id') : null,
     })
   }
 
   const handleSetFeature = feature => {
     setSelected({
       features: selected.features,
-      feature
+      feature,
     })
   }
 
   const handleDetailsClose = () => {
-    setSelected({features: Set(), feature: null})
+    setSelected({ features: Set(), feature: null })
   }
 
   const filters = [
@@ -168,7 +180,12 @@ const SpeciesTemplate = ({
         >
           <Sidebar>
             {selected.features.size > 0 ? (
-              <DetectorDetails species={species} detectors={selected.features} onSetDetector={handleSetFeature} onClose={handleDetailsClose}></DetectorDetails>
+              <DetectorDetails
+                species={species}
+                detectors={selected.features}
+                onSetDetector={handleSetFeature}
+                onClose={handleDetailsClose}
+              />
             ) : (
               <>
                 <Header>
@@ -241,7 +258,7 @@ SpeciesTemplate.propTypes = {
       detections: PropTypes.number.isRequired,
       nights: PropTypes.number.isRequired,
       detectors: PropTypes.number.isRequired,
-      contributors: PropTypes.arrayOf(PropTypes.string).isRequired,
+      contributors: PropTypes.number.isRequired,
     }).isRequired,
     allDetectorsJson: GraphQLArrayPropType(
       PropTypes.shape({
@@ -253,9 +270,9 @@ SpeciesTemplate.propTypes = {
         reflType: PropTypes.string,
         mfg: PropTypes.string,
         model: PropTypes.string,
-callId: PropTypes.arrayOf(PropTypes.string),
-datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
-contributors: PropTypes.arrayOf(PropTypes.string).isRequired,
+        callId: PropTypes.arrayOf(PropTypes.string),
+        datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
+        contributors: PropTypes.arrayOf(PropTypes.string).isRequired,
       })
     ).isRequired,
     allDetectorTsJson: GraphQLArrayPropType(
@@ -277,7 +294,7 @@ export const pageQuery = graphql`
       commonName
       sciName
       detections
-      nights
+      nights: detectionNights
       detectors
       contributors
     }
@@ -330,6 +347,5 @@ export const pageQuery = graphql`
 `
 
 // (filter: { s: { eq: $species } })
-
 
 export default SpeciesTemplate

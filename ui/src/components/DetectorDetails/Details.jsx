@@ -7,9 +7,11 @@ import { Text } from 'components/Text'
 import Tabs, { Tab as BaseTab } from 'components/Tabs'
 import { OutboundLink } from 'components/Link'
 import { Column, Columns, Box, Flex } from 'components/Grid'
+import { SeasonalityCharts } from 'components/UnitDetails'
 import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
-import { COUNTRIES } from '../../../config/constants'
+import {sumBy} from 'util/data'
+import { MONTHS, COUNTRIES } from '../../../config/constants'
 
 const Wrapper = styled.div``
 
@@ -27,7 +29,7 @@ const Title = styled(Text).attrs({ as: 'h1' })`
 
 const Location = styled(Text)`
   font-size: 0.9rem;
-  color: ${themeGet('colors.grey.700')};
+  color: ${themeGet('colors.grey.900')};
 `
 
 const Stats = styled(Box)`
@@ -113,6 +115,27 @@ const Details = ({
   // speciesRanges,
   onClose,
 }) => {
+//   console.log('ts', ts)
+//   window.ts = ts
+
+//   const valueField = 'detections'
+//   const totals = sumBy(ts, 'species', valueField)
+//   .entrySeq()
+//   .toList()
+//   .sort(([sppA, a], [sppB, b]) => (a < b ? 1 : -1))
+
+
+// const monthlyData = totals.map(([spp]) => {
+//   // group data by month
+//   const byMonth = sumBy(ts.get(spp), 'month', valueField)
+
+//   return {
+//     species,
+//     label: species, // speciesIndex.get(species).get('commonName'),
+//     values: MONTHS.map(month => byMonth.get(month, 0)),
+//   }
+// }).toJS()
+
   return (
     <Wrapper>
       <Header>
@@ -140,7 +163,7 @@ const Details = ({
         <Tab id="species" label="Species Detections">
           TODO: stats
           <br />
-          TODO: time series data
+          {/* <SeasonalityCharts data={monthlyData} selectedSpecies={species} /> */}
           <br />
           TODO: highlight if any species are out of their ranges
         </Tab>

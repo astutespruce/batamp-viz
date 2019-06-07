@@ -6,10 +6,14 @@ import { Text } from 'components/Text'
 import { formatNumber } from 'util/format'
 import styled, { themeGet } from 'style'
 
-// input is an array already sorted in the order we want to present it
-// [{label, value}, ...]
+const Wrapper = styled.div``
 
-const Wrapper = styled(Flex).attrs({
+const Title = styled(Text)`
+  color: ${({ highlight }) =>
+    highlight ? themeGet('colors.highlight.500') : themeGet('colors.grey.900')};
+`
+
+const Bars = styled(Flex).attrs({
   flexWrap: 'no-wrap',
   alignItems: 'baseline',
   justifyContent: 'space-evenly',
@@ -31,10 +35,18 @@ const BarWrapper = styled.div`
 
 // height set dynamically using style
 const Bar = styled.div`
-  background-color: ${themeGet('colors.primary.400')}aa;
-  border-top: 2px solid ${themeGet('colors.primary.500')};
+  background-color: ${({ highlight }) =>
+    highlight
+      ? themeGet('colors.highlight.500')
+      : themeGet('colors.primary.400')};
+  border-top: 2px solid ${({ highlight }) =>
+    highlight
+      ? themeGet('colors.highlight.600')
+      : themeGet('colors.primary.600')};
   border-left: 1px solid ${themeGet('colors.grey.200')};
   border-right: 1px solid ${themeGet('colors.grey.200')};
+
+  opacity: 0.6;
 
   position: absolute;
   bottom: 0;
@@ -42,7 +54,8 @@ const Bar = styled.div`
   right: 0;
 
   ${BarWrapper}:hover & {
-    background-color: ${themeGet('colors.primary.500')};
+    // background-color: ${themeGet('colors.primary.500')};
+    opacity: 1;
   }
 `
 
@@ -84,32 +97,36 @@ const Tooltip = styled(Text)`
   }
 `
 
-const BarChart = ({ data, scale, showTooltips }) => {
+const BarChart = ({ title, data, scale, highlight, showTooltips }) => {
   const max = Math.max(...data.map(({ value }) => value))
   const maxHeight = scale(max) + 6 // FIXME
 
   return (
-    <Wrapper pt={showTooltips ? '1rem' : 0}>
-      {data.map(({ label, value }) => (
-        <Column>
-          <BarWrapper key={label} height={maxHeight}>
-            {value > 0 ? (
-              <Bar style={{ height: scale(value) }} />
-            ) : (
-              <EmptyBar />
-            )}
+    <Wrapper>
+      <Title highlight={highlight}>{title}</Title>
+      <Bars pt={showTooltips ? '1rem' : 0}>
+        {data.map(({ label, value }) => (
+          <Column key={label}>
+            <BarWrapper height={maxHeight}>
+              {value > 0 ? (
+                <Bar highlight={highlight} style={{ height: scale(value) }} />
+              ) : (
+                <EmptyBar />
+              )}
 
-            <Tooltip>{formatNumber(value)}</Tooltip>
-            <TooltipLeader height={maxHeight} />
-          </BarWrapper>
-          {label ? <Label>{label}</Label> : null}
-        </Column>
-      ))}
+              <Tooltip>{formatNumber(value)}</Tooltip>
+              <TooltipLeader height={maxHeight} />
+            </BarWrapper>
+            {label ? <Label>{label}</Label> : null}
+          </Column>
+        ))}
+      </Bars>
     </Wrapper>
   )
 }
 
 BarChart.propTypes = {
+  title: PropTypes.string.isRequired,
   data: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string,
@@ -118,11 +135,13 @@ BarChart.propTypes = {
     })
   ).isRequired,
   scale: PropTypes.func.isRequired,
+  highlight: PropTypes.bool,
   showTooltips: PropTypes.bool,
 }
 
 BarChart.defaultProps = {
   showTooltips: true,
+  highlight: false,
 }
 
 export default BarChart

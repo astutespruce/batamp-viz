@@ -73,8 +73,9 @@ DETECTOR_FIELDS = [
     "det_model",
     "mic_type",
     "refl_type",
-    "call_id_1",
-    "call_id_2",
+    # "call_id_1",
+    # "call_id_2",
+    "call_id",
     "det_name"
     # "orig_site_id",
     # "orig_det_id",

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { List, fromJS, Set, Map as IMap } from 'immutable'
+import { List, fromJS, Set, Map as ImmutableMap } from 'immutable'
 import { scaleLinear } from 'd3-scale'
 
 import { Box } from 'components/Grid'
@@ -9,6 +9,7 @@ import { Text } from 'components/Text'
 import Layout from 'components/Layout'
 import Sidebar from 'components/Sidebar'
 import { BarChart, HorizontalBarChart, TableChart } from 'components/Chart'
+import { SeasonalityCharts } from 'components/UnitDetails'
 import { createIndex, groupBy, sumBy, sum } from 'util/data'
 import { formatNumber, quantityLabel } from 'util/format'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
@@ -30,6 +31,7 @@ const BarChartWrapper = styled.div`
 
 const Test = ({ data: { allSpeciesJson, allDetectorTsJson } }) => {
   const valueField = 'detections'
+  const selectedSpp = 'laci'
   const allSpecies = fromJS(extractNodes(allSpeciesJson))
   const detectorTS = fromJS(extractNodes(allDetectorTsJson))
 
@@ -41,35 +43,46 @@ const Test = ({ data: { allSpeciesJson, allDetectorTsJson } }) => {
   const totals = sumBy(detectorTS, 'species', valueField)
     .entrySeq()
     .toList()
-    .sort(([aSpp, a], [bSpp, b]) => (a < b ? 1 : -1))
-  //   console.log('totals', totals.toJS())
+    .sort(([sppA, a], [sppB, b]) => (a < b ? 1 : -1))
 
-  const sortedSpp = totals.map(([spp]) => spp)
 
-  const max = Math.max(...Array.from(totals.map(([spp, value]) => value)))
-  //   console.log('max', max)
-
-  const getTotalsByMonth = species => {
+  const monthlyData = totals.map(([species]) => {
+    // group data by month
     const byMonth = sumBy(grouped.get(species), 'month', valueField)
-    return MONTHS.map(month => byMonth.get(month, 0))
-  }
 
-  const monthlyData = grouped.map((v, k) => getTotalsByMonth(k))
-  const monthlyMaxBySpp = monthlyData.map(d => Math.max(...d))
-  const monthlyMax = Math.max(...Array.from(monthlyMaxBySpp.valueSeq()))
-  console.log('monthly data', monthlyData.toJS(), monthlyMax)
+    return {
+      species,
+      label: speciesIndex.get(species).get('commonName') + " (" + speciesIndex.get(species).get('sciName') + ')',
+      values: MONTHS.map(month => byMonth.get(month, 0)),
+    }
+  }).toJS()
+
+//   window.grouped = grouped
+//   window.totals = totals
+//   window.monthlyData = monthlyData
+
+  //   const sortedSpp = totals.map(([spp]) => spp)
+
+  const max = Math.max(...Array.from(totals.map(([_, value]) => value)))
+
+  //   const getTotalsByMonth = species => {
+  //     const byMonth = sumBy(grouped.get(species), 'month', valueField)
+  //     return MONTHS.map(month => byMonth.get(month, 0))
+  //   }
+
+  //   const monthlyData = grouped.map((v, k) => getTotalsByMonth(k))
+  //   const monthlyMaxBySpp = monthlyData.map(d => Math.max(...d))
+  //   const monthlyMax = Math.max(...Array.from(monthlyMaxBySpp.valueSeq()))
+  //   console.log('monthly data', monthlyData.toJS(), monthlyMax)
 
   const getSpeciesLabel = species => {
     const spp = speciesIndex.get(species)
-    // return `${spp.get('commonName')} (${spp.get('sciName')})`
     return spp.get('commonName')
   }
 
-  const chartScale = scaleLinear()
-    .domain([1, monthlyMax])
-    .range([6, 100])
-  //   height={Math.max(minChartHeight, chartHeight * monthlyMaxBySpp.get(spp) / monthlyMax)}
-  // `${formatNumber(d)} ${quantityLabel(valueField, d)}`
+  //   const chartScale = scaleLinear()
+  //     .domain([1, monthlyMax])
+  //     .range([6, 100])
 
   return (
     <Layout title="Chart test">
@@ -82,26 +95,29 @@ const Test = ({ data: { allSpeciesJson, allDetectorTsJson } }) => {
               label={getSpeciesLabel(spp)}
               quantity={total}
               max={max}
+              highlight={spp === selectedSpp}
             />
           ))}
         </Section>
 
         <Section>
           <SectionHeader>Seasonality: (# detections)</SectionHeader>
-          {sortedSpp.map(spp => (
+
+          <SeasonalityCharts selectedSpecies={selectedSpp} data={monthlyData} />
+
+          {/* {sortedSpp.map(spp => (
             <BarChartWrapper key={spp}>
-              <div>{getSpeciesLabel(spp)}</div>
               <BarChart
-                data={monthlyData
-                  .get(spp)
-                  .map((d, i) => ({
-                    value: d,
-                    label: MONTH_LABELS[i].slice(0, 3),
-                  }))}
+                title={getSpeciesLabel(spp)}
+                data={monthlyData.get(spp).map((d, i) => ({
+                  value: d,
+                  label: MONTH_LABELS[i].slice(0, 3),
+                }))}
                 scale={chartScale}
+                highlight={spp === selectedSpp}
               />
             </BarChartWrapper>
-          ))}
+          ))} */}
         </Section>
       </Sidebar>
     </Layout>
@@ -142,7 +158,7 @@ export const pageQuery = graphql`
           commonName
           sciName
           detections
-          nights
+          nights: detectionNights
           detectors
           contributors
         }

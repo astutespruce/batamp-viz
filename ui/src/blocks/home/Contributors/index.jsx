@@ -31,21 +31,21 @@ const Contributors = ({ contributors, totals }) => {
   const metric = metrics[sortIdx]
 
   // Convert species array to species count
-  const data = contributors.map(({ species, ...rest }) => ({
-    species: species && species.length ? species.length : 0,
-    ...rest,
-  }))
+  // const data = contributors.map(({ species, ...rest }) => ({
+  //   species: species && species.length ? species.length : 0,
+  //   ...rest,
+  // }))
 
-  data.sort((a, b) => (a[metric] < b[metric] ? 1 : -1))
+  contributors.sort((a, b) => (a[metric] < b[metric] ? 1 : -1))
 
   const total = totals[metric]
 
-  const topN = data
+  const topN = contributors
     .slice(0, 6)
     .map(d => ({ percent: (100 * d[metric]) / total, ...d }))
 
-  const remainder = data
-    .slice(6, data.length)
+  const remainder = contributors
+    .slice(6, contributors.length)
     .map(({ contributor }) => contributor)
 
   return (

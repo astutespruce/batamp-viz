@@ -65,7 +65,7 @@ const Contributor = ({
             {detectors} detectors
           </Metric>
           <br />
-          <Metric isActive={metric === 'species'}>{species} species</Metric>
+          <Metric isActive={metric === 'species'}>{species} species</Metric>{' '}
           detected
         </Stats>
       </Column>

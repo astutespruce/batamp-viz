@@ -55,7 +55,8 @@ IndexPage.propTypes = {
     headerImage: PropTypes.object.isRequired,
     summaryJson: PropTypes.shape({
       admin1: PropTypes.number.isRequired,
-      nights: PropTypes.number.isRequired,
+      detectorNights: PropTypes.number.isRequired,
+      detectionNights: PropTypes.number.isRequired,
       years: PropTypes.number.isRequired,
       contributors: PropTypes.number.isRequired,
     }),
@@ -65,7 +66,7 @@ IndexPage.propTypes = {
           node: PropTypes.shape({
             contributor: PropTypes.string.isRequired,
             detections: PropTypes.number.isRequired,
-            nights: PropTypes.number.isRequired,
+            detectorNights: PropTypes.number.isRequired,
             species: PropTypes.arrayOf(PropTypes.string),
           }),
         })
@@ -86,7 +87,7 @@ export const pageQuery = graphql`
     summaryJson {
       admin1
       contributors
-      nights
+      nights: detectorNights
       years
       detections
       detectors
@@ -97,7 +98,7 @@ export const pageQuery = graphql`
         node {
           contributor
           detections
-          nights
+          nights: detectorNights
           detectors
           species
         }

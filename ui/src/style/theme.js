@@ -32,6 +32,7 @@ const colors = {
     100: '#eeeaf4', // lightest violet
     // 500: '#84000b',
     500: '#ee7a14', // orange
+    600: '#bc600f',
   },
   grey: {
     100: '#f9f9f9',

@@ -57,7 +57,7 @@ export const pageQuery = graphql`
           commonName
           sciName
           detections
-          nights
+          nights: detectionNights
           contributors
         }
       }
