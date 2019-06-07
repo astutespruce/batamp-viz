@@ -15,7 +15,7 @@ import { niceNumber, flatzip } from 'util/data'
 
 import StyleSelector from './StyleSelector'
 import Legend from './Legend'
-import { getCenterAndZoom, toGeoJSONPoints } from './util'
+import { getCenterAndZoom, toGeoJSONPoints, calculateBounds } from './util'
 import {
   config,
   sources,
@@ -207,7 +207,7 @@ const Map = ({
             `${formatNumber(features.length)} ${quantityLabel(
               'detectors',
               features.length
-            )} at this location<br />Click for more information.`
+            )} at this location<br />Click to show details in the sidebar.`
           )
           .addTo(map)
 
@@ -226,7 +226,7 @@ const Map = ({
               min
             )} - ${formatNumber(
               max
-            )} ${valueField}<br />Click for more information.`
+            )} ${valueField}<br />Click to show details in the sidebar.`
           )
           .addTo(map)
       } else {
@@ -236,7 +236,7 @@ const Map = ({
             `${formatNumber(values[0])} ${quantityLabel(
               valueField,
               values[0]
-            )}<br />Click for more information.`
+            )}<br />Click to show details in the sidebar.`
           )
           .addTo(map)
       }
@@ -259,24 +259,25 @@ const Map = ({
     map.on('click', 'detectors-clusters', e => {
       const [
         {
-          geometry: { coordinates },
+          // geometry: { coordinates },
           properties: { cluster_id: clusterId },
         },
       ] = map.queryRenderedFeatures(e.point, {
         layers: ['detectors-clusters'],
       })
-      map.getSource('detectors').getClusterExpansionZoom(
-        clusterId,
-        // feature.properties.cluster_id,
-        (err, targetZoom) => {
+
+      map
+        .getSource('detectors')
+        .getClusterLeaves(clusterId, Infinity, 0, (err, children) => {
           if (err) return
 
-          map.easeTo({
-            center: coordinates,
-            zoom: targetZoom + 1,
+          const geometries = children.map(({ geometry }) => geometry)
+          const newBounds = calculateBounds(geometries)
+          map.fitBounds(newBounds, {
+            padding: 100,
+            maxZoom: 24,
           })
-        }
-      )
+        })
     })
 
     // hover highlights cluster and shows tooltip

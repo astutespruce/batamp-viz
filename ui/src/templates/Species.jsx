@@ -64,7 +64,7 @@ const boundsFilterFunc = mapBounds => ({ lat, lon }) =>
 const SpeciesTemplate = ({
   data: {
     speciesJson: {
-      species,
+      species: selectedSpecies,
       commonName,
       sciName,
       detections: totalDetections,
@@ -94,7 +94,7 @@ const SpeciesTemplate = ({
   const detectorTS = fromJS(extractNodes(allDetectorTsJson))
 
   const data = detectorTS
-    .filter(d => d.get('species') === species)
+    .filter(d => d.get('species') === selectedSpecies)
     .map(d => {
       const detector = detectorIndex.get(d.get('id'))
       return d.merge({
@@ -114,10 +114,7 @@ const SpeciesTemplate = ({
       .toList()
       .map(d =>
         d.merge({
-          ts: groupBy(
-            detectorTS.filter(v => v.get('id') === d.get('id')),
-            'species'
-          ),
+          ts: detectorTS.filter(v => v.get('id') === d.get('id'))
         })
       )
     setSelected({
@@ -170,6 +167,19 @@ const SpeciesTemplate = ({
   ]
   const visibleFilters = filters.filter(({ internal }) => !internal)
 
+// FIXME!
+// selected.features = detectorIndex
+// .filter((_, k) => k === 196)
+// .toList()
+// .map(d =>
+//   d.merge({
+//     ts:detectorTS.filter(v => v.get('id') === d.get('id')) 
+//   })
+// )
+// selected.feature = selected.features.first().get('id')
+
+
+
   return (
     <Layout title={`${commonName} (${sciName})`}>
       <Wrapper>
@@ -181,7 +191,7 @@ const SpeciesTemplate = ({
           <Sidebar>
             {selected.features.size > 0 ? (
               <DetectorDetails
-                species={species}
+                selectedSpecies={selectedSpecies}
                 detectors={selected.features}
                 onSetDetector={handleSetFeature}
                 onClose={handleDetailsClose}
@@ -238,7 +248,7 @@ const SpeciesTemplate = ({
           <Map
             filterByBounds={filterByBounds}
             detectors={detectors}
-            species={species}
+            species={selectedSpecies}
             // selectedFeatures={selectedFeatures}
             selectedFeature={selected.feature}
             onSelectFeatures={handleSelectFeatures}
@@ -270,9 +280,14 @@ SpeciesTemplate.propTypes = {
         reflType: PropTypes.string,
         mfg: PropTypes.string,
         model: PropTypes.string,
-        callId: PropTypes.arrayOf(PropTypes.string),
+        callId: PropTypes.string,
         datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
-        contributors: PropTypes.arrayOf(PropTypes.string).isRequired,
+        contributors: PropTypes.string.isRequired,
+        species: PropTypes.arrayOf(PropTypes.string).isRequired,
+        detections: PropTypes.number.isRequired,
+        detectorNights: PropTypes.number.isRequired,
+        detectionNights: PropTypes.number.isRequired,
+        dateRange: PropTypes.string.isRequired
       })
     ).isRequired,
     allDetectorTsJson: GraphQLArrayPropType(
@@ -298,7 +313,7 @@ export const pageQuery = graphql`
       detectors
       contributors
     }
-    allDetectorsJson(filter: { speciesPresent: { eq: $species } }) {
+    allDetectorsJson(filter: { species: { eq: $species } }) {
       edges {
         node {
           id: detector
@@ -316,6 +331,11 @@ export const pageQuery = graphql`
           admin1
           admin1Name
           country
+          detections
+          detectorNights
+          detectionNights
+          dateRange
+          species
         }
       }
     }

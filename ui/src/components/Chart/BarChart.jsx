@@ -65,6 +65,7 @@ const EmptyBar = styled(Bar)`
 
 const Label = styled(Text).attrs({ fontSize: '0.6rem' })`
   color: ${themeGet('colors.grey.600')};
+  text-align: center;
 `
 
 const TooltipLeader = styled.div`

@@ -80,3 +80,25 @@ export const createSteps = (entries, property) => {
   })
   return steps
 }
+
+/**
+ * Calculate the bounds that contain the points: [xmin, ymin, xmax, ymax].
+ * Note: only implemented for points!
+ *
+ * @param {Array} geometries - Array of point GeoJSON geometries
+ */
+export const calculateBounds = geometries => {
+  return geometries
+    .map(({ coordinates }) => coordinates)
+    .reduce(
+      ([xmin, ymin, xmax, ymax], [lng, lat]) => {
+        return [
+          xmin === null ? lng : Math.min(xmin, lng),
+          ymin === null ? lat : Math.min(ymin, lat),
+          xmax === null ? lng : Math.max(xmax, lng),
+          ymax === null ? lat : Math.max(ymax, lat),
+        ]
+      },
+      [null, null, null, null]
+    )
+}

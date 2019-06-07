@@ -6,11 +6,11 @@ import { FaRegTimesCircle } from 'react-icons/fa'
 import { Text } from 'components/Text'
 import Tabs, { Tab as BaseTab } from 'components/Tabs'
 import { OutboundLink } from 'components/Link'
-import { Column, Columns, Box, Flex } from 'components/Grid'
+import { Column, Columns, RightColumn, Box, Flex } from 'components/Grid'
 import { SeasonalityCharts } from 'components/UnitDetails'
 import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
-import {sumBy} from 'util/data'
+import { sumBy, groupBy } from 'util/data'
 import { MONTHS, COUNTRIES } from '../../../config/constants'
 
 const Wrapper = styled.div``
@@ -24,10 +24,11 @@ const Header = styled.div`
 
 const Title = styled(Text).attrs({ as: 'h1' })`
   margin: 0 0 0.25rem 0;
-  font-weight: normal;
+  font-size: 1.5rem;
 `
 
-const Location = styled(Text)`
+const Summary = styled(Box).attrs({ pt: '0.5rem', mt: '0.25rem' })`
+  border-top: 1px solid #fff;
   font-size: 0.9rem;
   color: ${themeGet('colors.grey.900')};
 `
@@ -70,7 +71,9 @@ const FieldHeader = styled.h4`
   margin-bottom: 0;
 `
 
-const FieldValue = styled.div``
+const FieldValue = styled.div`
+  margin-left: 1rem;
+`
 
 const FieldValueList = styled.ul`
   margin-bottom: 0.5rem;
@@ -92,49 +95,55 @@ const formatDateRange = dateRange => {
   return dateRange.join(' - ')
 }
 
-const Details = ({
-  lat,
-  lon,
-  name,
-  micHt,
-  // detections,
-  // nights,
-  // dateRange,
-  contributors,
-  mfg,
-  model,
-  micType,
-  reflType,
-  idMethods,
-  datasets,
-  admin1Name,
-  country,
-  species,
-  ts,
-  // speciesPresent,
-  // speciesRanges,
-  onClose,
-}) => {
-//   console.log('ts', ts)
-//   window.ts = ts
+const Details = ({ detector, selectedSpecies, onClose }) => {
+  const {
+    lat,
+    lon,
+    name,
+    micHt,
+    detections,
+    // dateRange,
+    contributors,
+    mfg,
+    model,
+    micType,
+    reflType,
+    idMethods,
+    datasets,
+    admin1Name,
+    country,
+    detectorNights,
+    detectionNights,
+    dateRange,
+    species: speciesPresent,
+  } = detector.toJS()
 
-//   const valueField = 'detections'
-//   const totals = sumBy(ts, 'species', valueField)
-//   .entrySeq()
-//   .toList()
-//   .sort(([sppA, a], [sppB, b]) => (a < b ? 1 : -1))
+  const ts = detector.get('ts')
 
+  // FIXME - make a prop
+  const valueField = 'detections'
 
-// const monthlyData = totals.map(([spp]) => {
-//   // group data by month
-//   const byMonth = sumBy(ts.get(spp), 'month', valueField)
+  // calculate totals by species
+  const sppTotals = sumBy(ts, 'species', valueField)
+    .entrySeq()
+    .toList()
+    .sort(([sppA, a], [sppB, b]) => (a < b ? 1 : -1))
 
-//   return {
-//     species,
-//     label: species, // speciesIndex.get(species).get('commonName'),
-//     values: MONTHS.map(month => byMonth.get(month, 0)),
-//   }
-// }).toJS()
+  // aggregate full monthly time series by species
+  const monthlyData = groupBy(ts, 'species').map(records => {
+    const byMonth = sumBy(records, 'month', valueField)
+    return MONTHS.map(month => byMonth.get(month, 0))
+  })
+
+  const seasonalityData = sppTotals
+    .map(([species]) => ({
+      species,
+      label: species,
+      values: monthlyData.get(species),
+    }))
+    .toJS()
+
+    console.log(sppTotals.toJS(), monthlyData.toJS(), seasonalityData)
 
   return (
     <Wrapper>
@@ -147,30 +156,53 @@ const Details = ({
             <CloseIcon onClick={onClose} />
           </Column>
         </Columns>
-        <Location>
-          {admin1Name}, {country} ({formatNumber(lat, 2)}° N /{' '}
-          {formatNumber(lon, 2)}° E)
-          <br />
-          microphone height: {micHt} meters
-        </Location>
-        {/* <Stats>
-          <b>{detections}</b> detections on <b>{nights}</b> nights during{' '}
-          <b>{formatDateRange(dateRange)}</b>.
-        </Stats> */}
+        <Summary>
+          <Columns>
+            <Column>
+              <b>
+                {admin1Name}, {country}
+              </b>
+            </Column>
+            <RightColumn>{dateRange}</RightColumn>
+          </Columns>
+        </Summary>
       </Header>
 
       <TabContainer>
         <Tab id="species" label="Species Detections">
-          TODO: stats
+          <b>{formatNumber(detections, 0)}</b> detections of{' '}
+          <b>{speciesPresent.length}</b> species recorded on{' '}
+          {detectionNights < detectorNights ? (
+            <>
+              <b>{detectionNights}</b>
+              out of
+            </>
+          ) : null}{' '}
+          <b>{detectorNights}</b> nights monitored.
           <br />
-          {/* <SeasonalityCharts data={monthlyData} selectedSpecies={species} /> */}
+          <SeasonalityCharts
+            data={seasonalityData}
+            selectedSpecies={selectedSpecies}
+          />
           <br />
           TODO: highlight if any species are out of their ranges
         </Tab>
         <Tab id="overview" label="Detector Information">
           <Field>
+            <FieldHeader>Location:</FieldHeader>
+            <FieldValue>
+              {formatNumber(lat, 2)}° North / {formatNumber(lon, 2)}° East
+            </FieldValue>
+          </Field>
+
+          <Field>
+            <FieldHeader>Microphone height:</FieldHeader>
+            <FieldValue>{micHt} meters</FieldValue>
+          </Field>
+
+          <Field>
             <FieldHeader>Detector data contributed by:</FieldHeader>
-            <FieldValue>{contributors.join(', ')}</FieldValue>
+            <FieldValue>{contributors}</FieldValue>
           </Field>
 
           {mfg ? (
@@ -220,14 +252,14 @@ const Details = ({
               </OutboundLink>
               :
             </FieldHeader>
-            {datasets.length === 1 ? (
+            {datasets.size === 1 ? (
               <FieldValue>
                 <OutboundLink
                   from="/"
-                  to={`https://batamp.databasin.org/datasets/${datasets[0]}`}
+                  to={`https://batamp.databasin.org/datasets/${datasets.get(0)}`}
                   target="_blank"
                 >
-                  {datasets[0]}
+                  {datasets.get(0)}
                 </OutboundLink>
               </FieldValue>
             ) : (
@@ -258,41 +290,41 @@ const Details = ({
 }
 
 Details.propTypes = {
-  name: PropTypes.string.isRequired,
-  lat: PropTypes.number.isRequired,
-  lon: PropTypes.number.isRequired,
-  micHt: PropTypes.number.isRequired,
-  // detections: PropTypes.number.isRequired,
-  // nights: PropTypes.number.isRequired,
-  // dateRange: PropTypes.arrayOf(PropTypes.string).isRequired,
-  contributors: PropTypes.number.isRequired,
-  mfg: PropTypes.string,
-  model: PropTypes.string,
-  micType: PropTypes.string,
-  reflType: PropTypes.string,
-  idMethods: PropTypes.arrayOf(PropTypes.string),
-  datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
-  // speciesPresent: PropTypes.arrayOf(PropTypes.string).isRequired,
-  // speciesRanges: PropTypes.arrayOf(PropTypes.string).isRequired,
-  admin1Name: PropTypes.string.isRequired,
-  country: PropTypes.string.isRequired,
-  ts: ImmutablePropTypes.mapContains({
+  detector: ImmutablePropTypes.mapContains({
+    name: PropTypes.string.isRequired,
+    lat: PropTypes.number.isRequired,
+    lon: PropTypes.number.isRequired,
+    micHt: PropTypes.number.isRequired,
     detections: PropTypes.number.isRequired,
-    nights: PropTypes.number.isRequired,
-    month: PropTypes.number.isRequired,
-    year: PropTypes.number.isRequired,
-  }),
-  species: PropTypes.string,
+    // nights: PropTypes.number.isRequired,
+    // dateRange: PropTypes.arrayOf(PropTypes.string).isRequired,
+    contributors: PropTypes.string.isRequired,
+    mfg: PropTypes.string,
+    model: PropTypes.string,
+    micType: PropTypes.string,
+    reflType: PropTypes.string,
+    idMethods: PropTypes.arrayOf(PropTypes.string),
+    datasets: ImmutablePropTypes.listOf(PropTypes.string).isRequired,
+    species: PropTypes.arrayOf(PropTypes.string).isRequired,
+    // speciesRanges: PropTypes.arrayOf(PropTypes.string).isRequired,
+    detectorNights: PropTypes.number.isRequired,
+    detectionNights: PropTypes.number.isRequired,
+    dateRange: PropTypes.string.isRequired,
+    admin1Name: PropTypes.string.isRequired,
+    country: PropTypes.string.isRequired,
+    ts: PropTypes.shape({
+      detections: PropTypes.number.isRequired,
+      nights: PropTypes.number.isRequired,
+      month: PropTypes.number.isRequired,
+      year: PropTypes.number.isRequired,
+    }).isRequired,
+  }).isRequired,
+  selectedSpecies: PropTypes.string,
   onClose: PropTypes.func.isRequired,
 }
 
 Details.defaultProps = {
-  species: null,
-  mfg: null,
-  model: null,
-  micType: null,
-  reflType: null,
-  idMethods: null,
+  selectedSpecies: null,
 }
 
 export default memo(Details)

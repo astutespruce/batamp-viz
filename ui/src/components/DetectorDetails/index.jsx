@@ -12,7 +12,12 @@ const Wrapper = styled(Flex).attrs({
   flexDirection: 'column',
 })``
 
-const DetectorDetails = ({ detectors, species, onSetDetector, onClose }) => {
+const DetectorDetails = ({
+  detectors,
+  selectedSpecies,
+  onSetDetector,
+  onClose,
+}) => {
   console.log('incoming detectors for details', detectors.toJS())
 
   const [index, setIndex] = useState(0)
@@ -31,8 +36,6 @@ const DetectorDetails = ({ detectors, species, onSetDetector, onClose }) => {
     onSetDetector(detectors.get(newIndex).get('id'))
   }
 
-  const detector = detectors.get(index)
-
   return (
     <Wrapper>
       {detectors.size > 1 ? (
@@ -43,7 +46,11 @@ const DetectorDetails = ({ detectors, species, onSetDetector, onClose }) => {
         />
       ) : null}
 
-      <Details {...detector.toJS()} species={species} onClose={onClose} />
+      <Details
+        detector={detectors.get(index)}
+        selectedSpecies={selectedSpecies}
+        onClose={onClose}
+      />
     </Wrapper>
   )
 }
@@ -56,11 +63,11 @@ DetectorDetails.propTypes = {
   ).isRequired,
   onSetDetector: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
-  species: PropTypes.string,
+  selectedSpecies: PropTypes.string,
 }
 
 DetectorDetails.defaultProps = {
-  species: null,
+  selectedSpecies: null,
 }
 
 // only rerender on updates to detectors

@@ -224,8 +224,9 @@ df = (
 )
 
 # Set "laci" field to "bat" value for records in Hawaii (only the one species present)
-index = df.laci.isnull() & (df.admin1_name == "Hawaii")
-df.loc[index, "laci"] = df.loc[index].bat
+# PENDING DECISION FROM CONTRIBUTOR
+# index = df.laci.isnull() & (df.admin1_name == "Hawaii")
+# df.loc[index, "laci"] = df.loc[index].bat
 
 
 # Write out merged data
@@ -246,12 +247,8 @@ summary = {
     "detections": int(df[ACTIVITY_COLUMNS].sum().sum().astype("uint")),
     # detector_nights are sampling activity
     "detectorNights": len(df),
-    # detection_nights are nights where at least one species or group of species was detected
-    "detectionNights": int(
-        (df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum(axis=1) > 0)
-        .sum()
-        .astype("uint")
-    ),
+    # detection_nights are nights where at least one species was detected
+    "detectionNights": int((df[ACTIVITY_COLUMNS].sum(axis=1) > 0).sum().astype("uint")),
     "years": df.year.unique().size,
 }
 
@@ -331,26 +328,51 @@ det_spps = (
     .groupby("detector")
     .level_1.unique()
     .apply(sorted)
-    .rename("species_present")
+    .rename("species")
 )
 
 # Calculate number of unique contributors per detector
 det_contributors = (
-    df.groupby("detector").contributor.unique().apply(sorted).rename("contributors")
+    df.groupby("detector")
+    .contributor.unique()
+    .apply(sorted)
+    .apply(lambda x: ", ".join(x))
+    .rename("contributors")
 )
 
 # Tally detections and nights
 det_g = df[["detector"] + ACTIVITY_COLUMNS].groupby("detector")
 # Note: detections will be 0 for nulls as well as true 0s
 det_detections = det_g.sum().sum(axis=1).astype("uint").rename("detections")
-detector_nights = det_g.size().rename("nights")
+detector_nights = det_g.size().rename("detector_nights")
+# detection nights are the sum of nights where there was activity in at least one activity column
+# NOTE: only for species activity columns
+detection_nights = (
+    ((df[["detector"] + ACTIVITY_COLUMNS].set_index("detector") > 0).sum(axis=1) > 0)
+    .groupby(level=0)
+    .sum()
+    .astype("uint")
+    .rename("detection_nights")
+)
+
+# date range to formatted strings
+detector_daterange = (
+    df.groupby("detector")
+    .night.agg(["min", "max"])
+    .apply(lambda col: col.dt.strftime("%b %d, %Y"))
+    .apply(lambda row: " - ".join(row), axis=1)
+    .rename("date_range")
+)
+
 
 detectors = (
     detectors.join(det_detections)
     .join(detector_nights)
+    .join(detection_nights)
     .join(detector_datasets)
     .join(det_spps)
     .join(det_contributors)
+    .join(detector_daterange)
 )
 
 detectors = detectors.rename(columns={"det_mfg": "mfg", "det_model": "model"})
@@ -381,7 +403,7 @@ detectors.to_json(json_dir / "detectors.json", orient="records")
 # Total activity by species
 spp_detections = df[ACTIVITY_COLUMNS].sum().astype("uint").rename("detections")
 
-# Count total nights of detections and nondetections
+# Count total nights of detections and nondetections - ONLY for species columns
 spp_detector_nights = (df[ACTIVITY_COLUMNS] >= 0).sum().rename("detector_nights")
 
 # Count of non-zero nights by species
