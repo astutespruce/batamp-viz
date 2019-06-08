@@ -8,6 +8,7 @@ import { Text } from 'components/Text'
 import Tabs, { Tab as BaseTab } from 'components/Tabs'
 import { Context } from 'components/Crossfilter'
 import { Column, Columns, RightColumn, Box, Flex } from 'components/Grid'
+import {HorizontalBarChart} from 'components/Chart'
 import { SeasonalityCharts } from 'components/UnitDetails'
 import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
@@ -22,8 +23,8 @@ const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
 `
 
 const Header = styled.div`
-  flex: 1;
-  padding: 1rem;
+  flex: 0;
+  padding: 1rem 1rem 0.5rem;
   background-color: ${themeGet('colors.highlight.100')};
   line-height: 1.2;
   border-bottom: 2px solid ${themeGet('colors.grey.500')};
@@ -38,12 +39,7 @@ const Summary = styled(Box).attrs({ pt: '0.5rem', mt: '0.25rem' })`
   border-top: 1px solid #fff;
   font-size: 0.9rem;
   color: ${themeGet('colors.grey.900')};
-`
-
-const Stats = styled(Box)`
-  border-top: 1px solid ${themeGet('colors.grey.400')};
-  border-bottom: 1px solid ${themeGet('colors.grey.400')};
-  font-size: 0.8rem;
+  line-height: 1.5;
 `
 
 const CloseIcon = styled(FaRegTimesCircle).attrs({ size: '1.5rem' })`
@@ -68,18 +64,26 @@ const Tab = styled(BaseTab)`
 `
 
 const Section = styled(Box).attrs({ py: '1rem' })`
-  &:not(:first-child) {
-    border-top: 1px solid ${themeGet('colors.grey.100')};
-  }
 `
 
-const SectionHeader = styled(Text).attrs({ as: 'h3' })``
+const SectionHeader = styled(Text).attrs({
+  as: 'h3',
+  py: '0.5rem',
+  px: '1rem',
+})`
+  background-color: ${themeGet('colors.grey.200')};
+  border-radius: 0.5rem;
+  text-align: center;
+  text-transform: capitalize;
+`
 
 const Metric = styled.span`
   font-size: 0.8rem;
-  color: ${themeGet('colors.grey.600')};
+  color: ${themeGet('colors.grey.700')};
   font-weight: normal;
+  text-transform: initial;
 `
+
 
 const metricLabels = {
   detections: 'detections',
@@ -126,6 +130,8 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     .entrySeq()
     .toList()
     .sort(([sppA, a], [sppB, b]) => (a < b ? 1 : -1))
+  
+    const max = Math.max(...Array.from(sppTotals.map(([_, value]) => value)))
 
   // aggregate full monthly time series by species
   const monthlyData = groupBy(ts, 'species').map(records => {
@@ -176,7 +182,21 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
       </Header>
 
       <TabContainer>
-        <Tab id="species" label={`${speciesPresent.length} Species Detected`}>
+        <Tab id="species" label='Species Detected'>
+          <Section>
+            <SectionHeader>{metric}</SectionHeader>
+            {sppTotals.map(([spp, total]) => (
+            <HorizontalBarChart
+              key={spp}
+              label={sppNames[spp].commonName}
+              sublabel={`(${sppNames[spp].sciName})`}
+              quantity={total}
+              max={max}
+              highlight={spp === selectedSpecies}
+            />
+          ))}
+          </Section>
+
           <Section>
             <SectionHeader>
               Seasonality <Metric>(number of {metric})</Metric>

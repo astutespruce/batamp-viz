@@ -11,14 +11,13 @@ const Wrapper = styled.div``
 
 const BarChartWrapper = styled.div`
   &:not(:first-child) {
-    margin-top: 2rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid ${themeGet('colors.grey.300')};
   }
 
   ${ChartTitle} {
-    background-color: ${themeGet('colors.grey.100')};
     text-align: center;
-    margin: 0 -1rem 1rem;
-    border-top: 1px solid ${themeGet('colors.grey.400')};
   }
 `
 

@@ -4,19 +4,27 @@ import PropTypes from 'prop-types'
 import { Flex, Box } from 'components/Grid'
 import { Text } from 'components/Text'
 import { formatNumber } from 'util/format'
-import styled, { themeGet } from 'style'
+import styled, { css, themeGet } from 'style'
 
 const Wrapper = styled.div``
 
 export const Title = styled(Text)`
   color: ${({ highlight }) =>
     highlight ? themeGet('colors.highlight.500') : themeGet('colors.grey.900')};
+
+  ${({ highlight }) =>
+    highlight &&
+    css`
+      ${Subtitle} {
+        color: ${themeGet('colors.highlight.500')}!important;
+      }
+    `}
 `
+
 const Subtitle = styled.span`
   margin-left: 0.5em;
   font-size: 0.8rem;
-  color: ${({ highlight }) =>
-    highlight ? themeGet('colors.highlight.500') : themeGet('colors.grey.600')};
+  color: ${themeGet('colors.grey.700')};
 `
 
 const Bars = styled(Flex).attrs({
@@ -45,10 +53,11 @@ const Bar = styled.div`
     highlight
       ? themeGet('colors.highlight.500')
       : themeGet('colors.primary.400')};
-  border-top: 2px solid ${({ highlight }) =>
-    highlight
-      ? themeGet('colors.highlight.600')
-      : themeGet('colors.primary.600')};
+  border-top: 2px solid
+    ${({ highlight }) =>
+      highlight
+        ? themeGet('colors.highlight.600')
+        : themeGet('colors.primary.600')};
   border-left: 1px solid ${themeGet('colors.grey.200')};
   border-right: 1px solid ${themeGet('colors.grey.200')};
 
@@ -60,7 +69,6 @@ const Bar = styled.div`
   right: 0;
 
   ${BarWrapper}:hover & {
-    // background-color: ${themeGet('colors.primary.500')};
     opacity: 1;
   }
 `
@@ -117,13 +125,6 @@ const BarChart = ({
 
   return (
     <Wrapper>
-      <Title highlight={highlight}>
-        {title}
-
-        {subtitle ? (
-          <Subtitle highlight={highlight}>{subtitle}</Subtitle>
-        ) : null}
-      </Title>
       <Bars pt={showTooltips ? '1rem' : 0}>
         {data.map(({ label, value }) => (
           <Column key={label}>
@@ -141,6 +142,11 @@ const BarChart = ({
           </Column>
         ))}
       </Bars>
+      <Title highlight={highlight}>
+        {title}
+
+        {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
+      </Title>
     </Wrapper>
   )
 }
