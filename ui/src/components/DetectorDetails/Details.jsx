@@ -11,7 +11,7 @@ import { Column, Columns, RightColumn, Box, Flex } from 'components/Grid'
 import {HorizontalBarChart} from 'components/Chart'
 import { SeasonalityCharts } from 'components/UnitDetails'
 import styled, { themeGet } from 'style'
-import { formatNumber, quantityLabel } from 'util/format'
+import { formatNumber } from 'util/format'
 import { extractNodes } from 'util/graphql'
 import { sumBy, groupBy } from 'util/data'
 import { MONTHS } from '../../../config/constants'
@@ -101,7 +101,6 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     country,
     detectorNights,
     dateRange,
-    species: speciesPresent,
   } = detector.toJS()
 
   const ts = detector.get('ts')
@@ -230,7 +229,6 @@ Details.propTypes = {
     reflType: PropTypes.string,
     idMethods: PropTypes.arrayOf(PropTypes.string),
     datasets: ImmutablePropTypes.listOf(PropTypes.string).isRequired,
-    species: PropTypes.arrayOf(PropTypes.string).isRequired,
     detectorNights: PropTypes.number.isRequired,
     detectionNights: PropTypes.number.isRequired,
     dateRange: PropTypes.string.isRequired,

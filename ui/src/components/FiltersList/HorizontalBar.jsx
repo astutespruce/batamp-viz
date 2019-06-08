@@ -50,7 +50,7 @@ const Filler = styled.div`
   transition: flex-grow 300ms;
 `
 
-const Bar = ({ isFiltered, isExcluded, label, quantity, max, onClick }) => {
+const HorizontalBar = ({ isFiltered, isExcluded, label, quantity, max, onClick }) => {
   const position = quantity / max
   const remainder = 1 - position
 
@@ -77,7 +77,7 @@ const Bar = ({ isFiltered, isExcluded, label, quantity, max, onClick }) => {
   )
 }
 
-Bar.propTypes = {
+HorizontalBar.propTypes = {
   isFiltered: PropTypes.bool, // true if filter is set on this bar
   isExcluded: PropTypes.bool, // true if filters are set on others but not this one
   label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
@@ -86,10 +86,10 @@ Bar.propTypes = {
   onClick: PropTypes.func.isRequired,
 }
 
-Bar.defaultProps = {
+HorizontalBar.defaultProps = {
   isFiltered: false,
   isExcluded: false,
 }
 
 // TODO: optimize for changes to the callback
-export default memo(Bar)
+export default memo(HorizontalBar)

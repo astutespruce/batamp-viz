@@ -120,6 +120,7 @@ FiltersList.propTypes = {
         PropTypes.oneOfType([PropTypes.string, PropTypes.number])
       ),
       labels: PropTypes.arrayOf(PropTypes.string),
+      vertical: PropTypes.bool
     })
   ).isRequired,
 }

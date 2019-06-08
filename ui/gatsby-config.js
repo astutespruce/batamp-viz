@@ -98,35 +98,5 @@ module.exports = {
         filter: node => !!node.path,
       },
     },
-
-    // TODO: hook up MDX pages?
-    // {
-    //   resolve: `gatsby-mdx`,
-    //   options: {
-    //     // defaultLayouts: {
-    //     //   default: require.resolve('./src/templates/MDXTemplate.jsx'),
-    //     // },
-    //     gatsbyRemarkPlugins: [
-    //       {
-    //         resolve: `gatsby-remark-images`,
-    //         options: {
-    //           showCaptions: true,
-    //           linkImagesToOriginal: false,
-    //           quality: 95,
-    //           maxWidth: 960,
-    //           withWebp: true,
-    //         },
-    //       },
-    //     ],
-    //   },
-    // },
-    // {
-    //   resolve: `gatsby-source-filesystem`,
-    //   options: {
-    //     name: `mdxpages`,
-    //     path: `${__dirname}/src/mdx`,
-    //   },
-    // },
-    //
   ],
 }

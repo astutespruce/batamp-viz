@@ -6,9 +6,12 @@ import { FaRegTimesCircle, FaCaretDown, FaCaretRight } from 'react-icons/fa'
 import { HelpText } from 'components/Text'
 import { Context as Crossfilter, SET_FILTER } from 'components/Crossfilter'
 import { Flex } from 'components/Grid'
+import { BarChart as VerticalBarChart } from 'components/Chart'
 
 import styled, { theme, themeGet } from 'style'
-import Bar from './Bar'
+import { MONTH_LABELS } from '../../../config/constants'
+import HorizontalBars from './HorizontalBars'
+import VerticalBars from './VerticalBars'
 
 const Wrapper = styled.div`
   padding-top: 0.25rem;
@@ -58,7 +61,7 @@ const CaretRight = styled(FaCaretRight).attrs({
   margin-right: 0.25rem;
 `
 
-const Bars = styled.div`
+const Container = styled.div`
   padding: 0.5rem 0 0 1rem;
 `
 
@@ -78,6 +81,7 @@ const Filter = ({
   isOpen: initIsOpen,
   hideEmpty,
   sort,
+  vertical,
 }) => {
   const [isOpen, setIsOpen] = useState(initIsOpen)
   const { state, dispatch } = useContext(Crossfilter)
@@ -107,7 +111,7 @@ const Filter = ({
     setIsOpen(prev => !prev)
   }
 
-  const handleFilterClick = value => {
+  const handleFilterToggle = value => {
     dispatch({
       type: SET_FILTER,
       payload: {
@@ -148,19 +152,23 @@ const Filter = ({
       {isOpen && (
         <>
           {data.length > 0 ? (
-            <Bars>
-              {data.map(({ value, ...props }) => (
-                <Bar
-                  key={value}
-                  value={value}
-                  {...props}
+            <Container>
+              {vertical ? (
+                <VerticalBars
+                  data={data}
                   max={max}
-                  onClick={() => handleFilterClick(value)}
+                  onToggleFilter={handleFilterToggle}
                 />
-              ))}
+              ) : (
+                <HorizontalBars
+                  data={data}
+                  max={max}
+                  onToggleFilter={handleFilterToggle}
+                />
+              )}
 
               {help && <HelpText>{help}</HelpText>}
-            </Bars>
+            </Container>
           ) : (
             <EmptyMessage>No data available</EmptyMessage>
           )}
@@ -179,6 +187,7 @@ Filter.propTypes = {
   isOpen: PropTypes.bool,
   hideEmpty: PropTypes.bool,
   sort: PropTypes.bool,
+  vertical: PropTypes.bool,
 }
 
 Filter.defaultProps = {
@@ -187,6 +196,7 @@ Filter.defaultProps = {
   isOpen: false,
   hideEmpty: false,
   sort: false,
+  vertical: false,
 }
 
 export default Filter

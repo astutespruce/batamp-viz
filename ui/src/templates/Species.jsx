@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { List, fromJS, Set, Map as IMap } from 'immutable'
+import { fromJS, Set } from 'immutable'
 
 import Layout from 'components/Layout'
 import { Switch } from 'components/Form'
@@ -13,7 +13,6 @@ import {
   ValueFieldSelector,
   TimePlayer,
 } from 'components/Crossfilter'
-// import Map from 'components/Map'
 import Sidebar from 'components/Sidebar'
 import { Box, Column, Columns, Flex } from 'components/Grid'
 import FiltersList from 'components/FiltersList'
@@ -22,8 +21,8 @@ import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import { withinBounds } from 'components/Map/util'
-import { createIndex, filterIndex, groupBy } from 'util/data'
-import { NABounds, MONTHS, MONTH_LABELS } from '../../config/constants'
+import { createIndex } from 'util/data'
+import { MONTHS, MONTH_LABELS } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -144,15 +143,17 @@ const SpeciesTemplate = ({
       field: 'month',
       title: 'Month', // TODO: variable
       isOpen: true,
+      vertical: true,
       values: MONTHS, // TODO: variable
-      labels: MONTH_LABELS,
+      labels: MONTH_LABELS.map(m => m.slice(0, 3)),
       aggregateById: true,
       filterFunc: hasValue,
     },
     {
       field: 'year',
       title: 'Year',
-      isOpen: false,
+      isOpen: true,
+      vertical: true,
       filterFunc: hasValue,
       values: Array.from(Set(data.map(d => d.get('year'))).values()).sort(),
     },

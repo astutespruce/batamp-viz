@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 
-import { Flex, Box } from 'components/Grid'
+import { Flex } from 'components/Grid'
 import { Text } from 'components/Text'
 import { formatNumber } from 'util/format'
 import styled, { css, themeGet } from 'style'

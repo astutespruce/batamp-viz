@@ -42,33 +42,6 @@ exports.onCreateNode = ({ node, actions: { createNodeField } }) => {
   }
 }
 
-// TODO: enable MDX?
-// exports.onCreateNode = ({ node, actions: { createNodeField }, getNode }) => {
-//   const {
-//     internal: { type },
-//   } = node
-
-//   if (type === `Mdx`) {
-//     createNodeField({
-//       name: 'slug',
-//       node,
-//       value: createFilePath({ node, getNode }),
-//     })
-//   }
-// }
-
-// MDX query:
-// allMdx {
-//   edges {
-//     node {
-//       id
-//       fields {
-//         slug
-//       }
-//     }
-//   }
-// }
-
 exports.createPages = ({ graphql, actions: { createPage } }) => {
   return new Promise((resolve, reject) => {
     resolve(
@@ -100,22 +73,6 @@ exports.createPages = ({ graphql, actions: { createPage } }) => {
             context: { species },
           })
         })
-
-        // const mdxTemplate = path.resolve(`./src/templates/MDXTemplate.jsx`)
-        // result.data.allMdx.edges.forEach(
-        //   ({
-        //     node: {
-        //       id,
-        //       fields: { slug },
-        //     },
-        //   }) => {
-        //     createPage({
-        //       path: slug,
-        //       component: mdxTemplate,
-        //       context: { id },
-        //     })
-        //   }
-        // )
       })
     )
   })
