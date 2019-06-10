@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { scaleLinear } from 'd3-scale'
 
 // import { BarChart } from 'components/Chart'
-import BarChart, { Title as ChartTitle } from 'components/Chart/BarChart'
+import BarChart from 'components/Chart/BarChart'
 import styled, { themeGet } from 'style'
 import { MONTH_LABELS } from '../../../config/constants'
 
@@ -13,11 +13,7 @@ const BarChartWrapper = styled.div`
   &:not(:first-child) {
     margin-top: 1.5rem;
     padding-top: 1rem;
-    border-top: 1px solid ${themeGet('colors.grey.300')};
-  }
-
-  ${ChartTitle} {
-    text-align: center;
+    border-top: 2px solid ${themeGet('colors.grey.200')};
   }
 `
 

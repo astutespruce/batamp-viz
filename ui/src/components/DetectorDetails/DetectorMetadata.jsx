@@ -20,6 +20,7 @@ const FieldHeader = styled.h4`
 
 const FieldValue = styled.div`
   margin-left: 1rem;
+  color: ${themeGet('colors.grey.900')};
 `
 
 const FieldValueList = styled.ul`
@@ -170,8 +171,8 @@ DetectorMetadata.propTypes = {
   model: PropTypes.string,
   micType: PropTypes.string,
   reflType: PropTypes.string,
-  idMethods: PropTypes.arrayOf(PropTypes.string),
-  datasets: ImmutablePropTypes.listOf(PropTypes.string).isRequired,
+  idMethods: PropTypes.string,
+  datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
   detectorNights: PropTypes.number.isRequired,
   detectionNights: PropTypes.number.isRequired,
 }

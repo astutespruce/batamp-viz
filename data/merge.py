@@ -247,11 +247,11 @@ summary = {
     "species": len(ACTIVITY_COLUMNS),
     "contributors": df.contributor.unique().size,
     "detectors": len(detectors),
-    "detections": int(df[ACTIVITY_COLUMNS].sum().sum().astype("uint")),
+    "detections": int(df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum().sum().astype("uint")),
     # detector_nights are sampling activity
     "detectorNights": len(df),
     # detection_nights are nights where at least one species was detected
-    "detectionNights": int((df[ACTIVITY_COLUMNS].sum(axis=1) > 0).sum().astype("uint")),
+    "detectionNights": int((df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum(axis=1) > 0).sum().astype("uint")),
     "years": df.year.unique().size,
 }
 
@@ -262,7 +262,7 @@ with open(json_dir / "summary.json", "w") as outfile:
 #### Calculate contributor summary statistics
 contributor_gb = df.groupby("contributor")
 contributor_detections = (
-    contributor_gb[ACTIVITY_COLUMNS]
+    contributor_gb[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS]
     .sum()
     .sum(axis=1)
     .astype("uint")
@@ -344,14 +344,14 @@ det_contributors = (
 )
 
 # Tally detections and nights
-det_g = df[["detector"] + ACTIVITY_COLUMNS].groupby("detector")
+det_g = df[["detector"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].groupby("detector")
 # Note: detections will be 0 for nulls as well as true 0s
 det_detections = det_g.sum().sum(axis=1).astype("uint").rename("detections")
 detector_nights = det_g.size().rename("detector_nights")
 # detection nights are the sum of nights where there was activity in at least one activity column
-# NOTE: only for species activity columns
+# NOTE: for species + group activity columns ("bats detected on X nights")
 detection_nights = (
-    ((df[["detector"] + ACTIVITY_COLUMNS].set_index("detector") > 0).sum(axis=1) > 0)
+    ((df[["detector"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].set_index("detector") > 0).sum(axis=1) > 0)
     .groupby(level=0)
     .sum()
     .astype("uint")

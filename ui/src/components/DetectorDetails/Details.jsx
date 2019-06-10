@@ -8,7 +8,7 @@ import { Text } from 'components/Text'
 import Tabs, { Tab as BaseTab } from 'components/Tabs'
 import { Context } from 'components/Crossfilter'
 import { Column, Columns, RightColumn, Box, Flex } from 'components/Grid'
-import {HorizontalBarChart} from 'components/Chart'
+import { HorizontalBarChart } from 'components/Chart'
 import { SeasonalityCharts } from 'components/UnitDetails'
 import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
@@ -60,11 +60,11 @@ const TabContainer = styled(Tabs)`
 const Tab = styled(BaseTab)`
   padding: 1rem;
   overflow-y: auto;
+  overflow-x: auto;
   flex: 1 1 auto;
 `
 
-const Section = styled(Box).attrs({ py: '1rem' })`
-`
+const Section = styled(Box).attrs({ py: '1rem' })``
 
 const SectionHeader = styled(Text).attrs({
   as: 'h3',
@@ -84,6 +84,9 @@ const Metric = styled.span`
   text-transform: initial;
 `
 
+const Highlight = styled(Text)`
+  color: ${themeGet('colors.highlight.500')};
+`
 
 const metricLabels = {
   detections: 'detections',
@@ -129,8 +132,8 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     .entrySeq()
     .toList()
     .sort(([sppA, a], [sppB, b]) => (a < b ? 1 : -1))
-  
-    const max = Math.max(...Array.from(sppTotals.map(([_, value]) => value)))
+
+  const max = Math.max(...Array.from(sppTotals.map(([_, value]) => value)))
 
   // aggregate full monthly time series by species
   const monthlyData = groupBy(ts, 'species').map(records => {
@@ -149,6 +152,8 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     .toJS()
 
   const metric = metricLabels[valueField]
+
+  const selectedSpeciesName = sppNames[selectedSpecies]
 
   return (
     <Wrapper>
@@ -181,19 +186,30 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
       </Header>
 
       <TabContainer>
-        <Tab id="species" label='Species Detected'>
+        <Tab id="species" label="Species Detected">
+          {selectedSpecies ? (
+            <Section>
+              <Highlight>
+                {`${selectedSpeciesName.commonName} (${
+                  selectedSpeciesName.sciName
+                })`}{' '}
+                is highlighted below.
+              </Highlight>
+            </Section>
+          ) : null}
+
           <Section>
             <SectionHeader>{metric}</SectionHeader>
             {sppTotals.map(([spp, total]) => (
-            <HorizontalBarChart
-              key={spp}
-              label={sppNames[spp].commonName}
-              sublabel={`(${sppNames[spp].sciName})`}
-              quantity={total}
-              max={max}
-              highlight={spp === selectedSpecies}
-            />
-          ))}
+              <HorizontalBarChart
+                key={spp}
+                label={sppNames[spp].commonName}
+                sublabel={`(${sppNames[spp].sciName})`}
+                quantity={total}
+                max={max}
+                highlight={spp === selectedSpecies}
+              />
+            ))}
           </Section>
 
           <Section>
@@ -234,12 +250,12 @@ Details.propTypes = {
     dateRange: PropTypes.string.isRequired,
     admin1Name: PropTypes.string.isRequired,
     country: PropTypes.string.isRequired,
-    ts: PropTypes.shape({
+    ts: ImmutablePropTypes.listOf(ImmutablePropTypes.mapContains({
       detections: PropTypes.number.isRequired,
       nights: PropTypes.number.isRequired,
       month: PropTypes.number.isRequired,
       year: PropTypes.number.isRequired,
-    }).isRequired,
+    })).isRequired,
   }).isRequired,
   selectedSpecies: PropTypes.string,
   onClose: PropTypes.func.isRequired,
