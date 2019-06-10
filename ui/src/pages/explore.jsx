@@ -117,13 +117,13 @@ const ExplorePage = ({
               <Help>An occurrence is anytime a species was detected by an acoustic detector at a given location for a given month and year.  Use the following filters to select specific species or time periods that you are interested in.</Help>
             </Box>
 
-            <Box m="1rem">
+            {/* <Box m="1rem">
               <Switch
                 label="filter occurrences by map extent?"
                 enabled={filterByBounds}
                 onChange={handleToggleBoundsFilter}
               />
-            </Box>
+            </Box> */}
 
             <FiltersList filters={visibleFilters} />
           </Sidebar>

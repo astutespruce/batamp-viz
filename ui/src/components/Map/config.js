@@ -1,7 +1,7 @@
 import { theme } from '../../style/theme'
 
-// const TILE_HOST = 'https://tiles.batamp.databasin.org'
-const TILE_HOST = 'http://localhost:8001'
+const TILE_HOST = 'https://tiles.batamp.databasin.org'
+// const TILE_HOST = 'http://localhost:8001'
 
 export const MINRADIUS = 4
 export const MAXRADIUS = 18

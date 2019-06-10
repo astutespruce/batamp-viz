@@ -95,7 +95,10 @@ const metricLabels = {
 
 const Details = ({ detector, selectedSpecies, onClose }) => {
   const { state } = useContext(Context)
-  const valueField = state.get('valueField')
+  let valueField = state.get('valueField')
+  if (valueField === 'id') {
+    valueField = 'nights'
+  }
 
   const {
     name,
@@ -166,6 +169,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
             <CloseIcon onClick={onClose} />
           </Column>
         </Columns>
+
         <Summary>
           <Columns>
             <Column>

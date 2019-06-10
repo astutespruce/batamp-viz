@@ -28,17 +28,14 @@ import {
   DARKESTCOLOR,
 } from './config'
 
-const TRANSPARENT = 'rgba(0,0,0,0)'
-
 const Wrapper = styled.div`
   position: relative;
   flex: 1 0 auto;
+  height: 100%;
 `
 
 const Map = ({
   detectors,
-  // totals,
-  data,
   valueField,
   maxValue,
   selectedFeature,
@@ -570,19 +567,7 @@ const Map = ({
 }
 
 Map.propTypes = {
-  // data: ImmutablePropTypes.listOf(
-  //   ImmutablePropTypes.mapContains({
-  //     detector: PropTypes.number.isRequired,
-  //     lat: PropTypes.number.isRequired,
-  //     lon: PropTypes.number.isRequired,
-  //   })
-  // ).isRequired,
   bounds: ImmutablePropTypes.listOf(PropTypes.number),
-  // detectors:
-  //   ImmutablePropTypes.mapContains({
-  //     lat: PropTypes.number.isRequired,
-  //     lon: PropTypes.number.isRequired,
-  //   }).isRequired,
   // List of detector locations, provided at map init
   detectors: ImmutablePropTypes.listOf(
     ImmutablePropTypes.mapContains({
@@ -593,7 +578,6 @@ Map.propTypes = {
   valueField: PropTypes.string.isRequired,
   maxValue: PropTypes.number.isRequired,
   species: PropTypes.string,
-  // selectedFeatures: ImmutablePropTypes.setOf(PropTypes.number),
   selectedFeature: PropTypes.number,
   onSelectFeatures: PropTypes.func,
   onBoundsChange: PropTypes.func,
@@ -602,7 +586,6 @@ Map.propTypes = {
 Map.defaultProps = {
   bounds: List(),
   species: null,
-  // selectedFeatures: Set(),
   selectedFeature: null,
   onSelectFeatures: () => {},
   onBoundsChange: () => {},

@@ -65,6 +65,7 @@ const Note = styled(Text)`
   font-size: 0.8rem;
   color: ${themeGet('colors.grey.600')};
   line-height: 1.1;
+  margin-top: 0.5rem;
 `
 
 const Circle = ({ radius, color, borderColor, borderWidth, scale }) => {

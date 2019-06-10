@@ -5,7 +5,7 @@ import { fromJS, Set } from 'immutable'
 
 import Layout from 'components/Layout'
 import { Switch } from 'components/Form'
-import { Text } from 'components/Text'
+import { Text, HelpText } from 'components/Text'
 import {
   hasValue,
   Provider as CrossfilterProvider,
@@ -18,9 +18,11 @@ import { Box, Column, Columns, Flex } from 'components/Grid'
 import FiltersList from 'components/FiltersList'
 import DetectorDetails from 'components/DetectorDetails'
 import styled, { themeGet } from 'style'
-import { formatNumber } from 'util/format'
+import { formatNumber, quantityLabel } from 'util/format'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import { withinBounds } from 'components/Map/util'
+import TopBar from 'components/Map/TopBar'
+import SpeciesFilters from 'components/SpeciesFilters'
 import { createIndex } from 'util/data'
 import { MONTHS, MONTH_LABELS } from '../../config/constants'
 
@@ -28,33 +30,10 @@ const Wrapper = styled(Flex)`
   height: 100%;
 `
 
-const Header = styled.div`
-  padding: 0.5rem 1rem;
-  background-color: ${themeGet('colors.highlight.100')};
-  line-height: 1.2;
-`
-
-const CommonName = styled(Text).attrs({ as: 'h1' })`
-  margin: 0;
-  font-weight: normal;
-`
-
-const ScientificName = styled(Text).attrs({ as: 'h3' })`
-  margin: 0;
-  font-weight: normal;
-  font-style: italic;
-  color: ${themeGet('colors.grey.700')};
-`
-
-const Stats = styled(Columns).attrs({ px: '1rem' })`
-  border-top: 1px solid ${themeGet('colors.grey.400')};
-  border-bottom: 1px solid ${themeGet('colors.grey.400')};
-  color: ${themeGet('colors.grey.800')};
-  font-size: 0.8rem;
-`
-
-const RightColumn = styled(Column)`
-  text-align: right;
+const MapContainer = styled.div`
+  position: relative;
+  flex: 1 0 auto;
+  height: 100%;
 `
 
 const boundsFilterFunc = mapBounds => ({ lat, lon }) =>
@@ -62,15 +41,7 @@ const boundsFilterFunc = mapBounds => ({ lat, lon }) =>
 
 const SpeciesTemplate = ({
   data: {
-    speciesJson: {
-      species: selectedSpecies,
-      commonName,
-      sciName,
-      detections: totalDetections,
-      nights: totalNights,
-      detectors: totalDetectors,
-      contributors,
-    },
+    speciesJson,
     allDetectorsJson,
     allDetectorTsJson,
     allAdmin1SpeciesTsJson,
@@ -79,6 +50,8 @@ const SpeciesTemplate = ({
   const valueField = 'detections'
   const [selected, setSelected] = useState({ features: Set(), feature: null })
   const [filterByBounds, setFilterByBounds] = useState(true)
+
+  const { species: selectedSpecies, commonName, sciName } = speciesJson
 
   const detectors = fromJS(
     extractNodes(allDetectorsJson).map(d => ({
@@ -99,6 +72,7 @@ const SpeciesTemplate = ({
       return d.merge({
         lat: detector.get('lat'),
         lon: detector.get('lon'),
+        admin1Name: detector.get('admin1Name'),
         name: detector.get('name'),
       })
     })
@@ -113,7 +87,7 @@ const SpeciesTemplate = ({
       .toList()
       .map(d =>
         d.merge({
-          ts: detectorTS.filter(v => v.get('id') === d.get('id'))
+          ts: detectorTS.filter(v => v.get('id') === d.get('id')),
         })
       )
     setSelected({
@@ -158,6 +132,18 @@ const SpeciesTemplate = ({
       values: Array.from(Set(data.map(d => d.get('year'))).values()).sort(),
     },
     {
+      field: 'admin1Name',
+      title: 'State / Province',
+      isOpen: true,
+      filterFunc: hasValue,
+      sort: true,
+      hideEmpty: true,
+      values: Array.from(
+        Set(data.map(d => d.get('admin1Name'))).values()
+      ).sort(),
+    },
+
+    {
       field: 'bounds', // note: constructed field!
       internal: true,
       getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
@@ -166,20 +152,19 @@ const SpeciesTemplate = ({
       filterFunc: boundsFilterFunc,
     },
   ]
+
+  // FIXME!
+  // selected.features = detectorIndex
+  // .filter((_, k) => k === 196)
+  // .toList()
+  // .map(d =>
+  //   d.merge({
+  //     ts:detectorTS.filter(v => v.get('id') === d.get('id'))
+  //   })
+  // )
+  // selected.feature = selected.features.first().get('id')
+
   const visibleFilters = filters.filter(({ internal }) => !internal)
-
-// FIXME!
-// selected.features = detectorIndex
-// .filter((_, k) => k === 196)
-// .toList()
-// .map(d =>
-//   d.merge({
-//     ts:detectorTS.filter(v => v.get('id') === d.get('id')) 
-//   })
-// )
-// selected.feature = selected.features.first().get('id')
-
-
 
   return (
     <Layout title={`${commonName} (${sciName})`}>
@@ -189,7 +174,7 @@ const SpeciesTemplate = ({
           filters={filters}
           valueField={valueField}
         >
-          <Sidebar>
+          <Sidebar allowScroll={false}>
             {selected.features.size > 0 ? (
               <DetectorDetails
                 selectedSpecies={selectedSpecies}
@@ -198,62 +183,23 @@ const SpeciesTemplate = ({
                 onClose={handleDetailsClose}
               />
             ) : (
-              <>
-                <Header>
-                  <CommonName>{commonName}</CommonName>
-                  <ScientificName>{sciName}</ScientificName>
-                </Header>
-
-                <Stats>
-                  <Column>
-                    {formatNumber(totalDetections, 0)} detections
-                    <br />
-                    {formatNumber(totalNights, 0)} nights
-                  </Column>
-                  <RightColumn>
-                    {totalDetectors} detectors
-                    <br />
-                    {contributors ? (
-                      <>
-                        {contributors.length}{' '}
-                        {contributors.length === 1
-                          ? 'contributor'
-                          : 'contributors'}
-                      </>
-                    ) : null}
-                  </RightColumn>
-                </Stats>
-                <Box m="1rem">
-                  <Switch
-                    label="filter detectors by map extent?"
-                    enabled={filterByBounds}
-                    onChange={handleToggleBoundsFilter}
-                  />
-                </Box>
-
-                <Box my="1rem">
-                  <ValueFieldSelector fields={['detections', 'nights', 'id']} />
-                </Box>
-
-                <Box my="1rem">
-                  <TimePlayer
-                    timesteps={MONTHS}
-                    timestepLabels={MONTH_LABELS}
-                  />
-                </Box>
-
-                <FiltersList filters={visibleFilters} />
-              </>
+              <SpeciesFilters filters={visibleFilters} {...speciesJson} />
             )}
           </Sidebar>
-          <Map
-            filterByBounds={filterByBounds}
-            detectors={detectors}
-            species={selectedSpecies}
-            // selectedFeatures={selectedFeatures}
-            selectedFeature={selected.feature}
-            onSelectFeatures={handleSelectFeatures}
-          />
+
+          <MapContainer>
+            <TopBar>
+              <ValueFieldSelector fields={['detections', 'nights', 'id']} />
+            </TopBar>
+
+            <Map
+              filterByBounds={filterByBounds}
+              detectors={detectors}
+              species={selectedSpecies}
+              selectedFeature={selected.feature}
+              onSelectFeatures={handleSelectFeatures}
+            />
+          </MapContainer>
         </CrossfilterProvider>
       </Wrapper>
     </Layout>
@@ -276,6 +222,7 @@ SpeciesTemplate.propTypes = {
         id: PropTypes.number.isRequired,
         lat: PropTypes.number.isRequired,
         lon: PropTypes.number.isRequired,
+        admin1Name: PropTypes.string.isRequired,
         micHt: PropTypes.number.isRequired,
         micType: PropTypes.string,
         reflType: PropTypes.string,
@@ -288,7 +235,7 @@ SpeciesTemplate.propTypes = {
         detections: PropTypes.number.isRequired,
         detectorNights: PropTypes.number.isRequired,
         detectionNights: PropTypes.number.isRequired,
-        dateRange: PropTypes.string.isRequired
+        dateRange: PropTypes.string.isRequired,
       })
     ).isRequired,
     allDetectorTsJson: GraphQLArrayPropType(

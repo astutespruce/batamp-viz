@@ -15,7 +15,7 @@ const Wrapper = styled(Flex).attrs({
 
 const Label = styled.div`
   margin-right: 0.5em;
-  color: ${themeGet('colors.grey.600')};
+  color: ${themeGet('colors.grey.900')};
 `
 
 const ToggleButton = styled(BaseButton)`
