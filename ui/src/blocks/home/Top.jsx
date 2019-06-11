@@ -34,6 +34,7 @@ const List = styled.ul`
 `
 
 const Top = ({
+  detectors,
   contributors,
   detections,
   nights,
@@ -68,10 +69,11 @@ const Top = ({
                 <b>{species}</b> species
               </li>
               <li>
-                <b>{formatNumber(nights, 0)}</b> nights across{' '}
-                <b>{years}</b> years
+                <b>{formatNumber(nights, 0)}</b> nights across <b>{years}</b>{' '}
+                years
               </li>
               <li>
+                <b>{formatNumber(detectors, 0)}</b> detectors operated by{' '}
                 <b>{contributors}</b> contributors across <b>{admin1}</b> states
                 and provinces
               </li>
@@ -111,6 +113,7 @@ const Top = ({
 
 Top.propTypes = {
   admin1: PropTypes.number.isRequired,
+  detectors: PropTypes.number.isRequired,
   detections: PropTypes.number.isRequired,
   nights: PropTypes.number.isRequired,
   species: PropTypes.number.isRequired,

@@ -73,15 +73,14 @@ const FilteredMap = ({
   }
 
   const keys = Set(['id', 'lat', 'lon'])
-  const detectors = rawDetectors
-    .map(d =>
-      d
-        .filter((_, k) => keys.has(k))
-        .merge({ total: totalById.get(d.get('id')) })
-    )
-    .filter(d => d.get('total') > 0)
+  const detectors = rawDetectors.map(d =>
+    d
+      .filter((_, k) => keys.has(k))
+      .merge({ total: totalById.get(d.get('id'), 0) })
+  )
+  // .filter(d => d.get('total') > 0)
 
-  // console.log('detectors', detectors)
+  // console.log('detectors', detectors.toJS())
 
   return (
     <Map

@@ -24,6 +24,7 @@ import {
   speciesLayers,
   MINRADIUS,
   MAXRADIUS,
+  NONDETECTIONCOLOR,
   LIGHTESTCOLOR,
   DARKESTCOLOR,
 } from './config'
@@ -175,7 +176,7 @@ const Map = ({
     })
 
     map.on('mousemove', 'detectors-points', e => {
-      const {current: metric} = valueFieldRef
+      const { current: metric } = valueFieldRef
       map.getCanvas().style.cursor = 'pointer'
 
       const features = map.queryRenderedFeatures(e.point, {
@@ -234,10 +235,9 @@ const Map = ({
         tooltip
           .setLngLat(features[0].geometry.coordinates)
           .setHTML(
-            `${formatNumber(values[0])} ${quantityLabel(
-              metric,
-              values[0]
-            )}${speciesLabel}.<br />Click to show details in the sidebar.`
+            `${formatNumber(values[0])} ${
+              METRIC_LABELS[metric]
+            }${speciesLabel}.<br />Click to show details in the sidebar.`
           )
           .addTo(map)
       }
@@ -283,7 +283,7 @@ const Map = ({
 
     // hover highlights cluster and shows tooltip
     map.on('mousemove', 'detectors-clusters', e => {
-      const {current: metric} = valueFieldRef
+      const { current: metric } = valueFieldRef
       map.getCanvas().style.cursor = 'pointer'
 
       const features = map.queryRenderedFeatures(e.point, {
@@ -403,14 +403,22 @@ const Map = ({
 
   const styleDetectors = () => {
     const { current: map } = mapRef
-    const {current: metric} = valueFieldRef
+    const { current: metric } = valueFieldRef
 
     // cannot interpolate if total <= 1
-    if (maxValue <= 1) {
+    if (maxValue === 0) {
       map.setPaintProperty('detectors-clusters', 'circle-radius', MINRADIUS)
-      map.setPaintProperty('detectors-clusters', 'circle-color', LIGHTESTCOLOR)
+      map.setPaintProperty(
+        'detectors-clusters',
+        'circle-color',
+        NONDETECTIONCOLOR
+      )
       map.setPaintProperty('detectors-points', 'circle-radius', MINRADIUS)
-      map.setPaintProperty('detectors-points', 'circle-color', LIGHTESTCOLOR)
+      map.setPaintProperty(
+        'detectors-points',
+        'circle-color',
+        NONDETECTIONCOLOR
+      )
 
       return
     }
@@ -421,7 +429,7 @@ const Map = ({
 
       // set upper bound to 1/5th of the number of detectors
       const upperValue = niceNumber(maxValue / 5)
-      const colors = flatzip([1, upperValue], [LIGHTESTCOLOR, DARKESTCOLOR])
+      const colors = flatzip([1, upperValue], [DARKESTCOLOR, LIGHTESTCOLOR])
       map.setPaintProperty('detectors-clusters', 'circle-radius', [
         'interpolate',
         ['linear'],
@@ -436,10 +444,10 @@ const Map = ({
         ...colors,
       ])
       map.setPaintProperty('detectors-points', 'circle-radius', MINRADIUS)
-      map.setPaintProperty('detectors-points', 'circle-color', LIGHTESTCOLOR)
+      map.setPaintProperty('detectors-points', 'circle-color', DARKESTCOLOR)
     } else {
       const upperValue = niceNumber(maxValue)
-      const colors = flatzip([1, upperValue], [LIGHTESTCOLOR, DARKESTCOLOR])
+      const colors = flatzip([1, upperValue], [DARKESTCOLOR, LIGHTESTCOLOR])
       map.setPaintProperty('detectors-clusters', 'circle-radius', [
         'interpolate',
         ['linear'],
@@ -450,6 +458,8 @@ const Map = ({
         'interpolate',
         ['linear'],
         ['get', 'total'],
+        0,
+        NONDETECTIONCOLOR,
         ...colors,
       ])
       map.setPaintProperty('detectors-points', 'circle-radius', [
@@ -462,6 +472,8 @@ const Map = ({
         'interpolate',
         ['linear'],
         ['get', 'total'],
+        0,
+        NONDETECTIONCOLOR,
         ...colors,
       ])
     }
@@ -469,15 +481,14 @@ const Map = ({
 
   // TODO: move to util
   const getLegend = () => {
-    const {current: metric} = valueFieldRef
     const radiusInterpolator = interpolate(MINRADIUS, MAXRADIUS)
-    const colorInterpolator = interpolateRgb(LIGHTESTCOLOR, DARKESTCOLOR)
+    const colorInterpolator = interpolateRgb(DARKESTCOLOR, LIGHTESTCOLOR)
 
     const entries = []
 
     if (maxValue > 0) {
       const upperValue =
-        metric === 'id' ? niceNumber(maxValue / 5) : niceNumber(maxValue)
+        valueField === 'id' ? niceNumber(maxValue / 5) : niceNumber(maxValue)
       let breaks = []
       if (upperValue - 1 > 4) {
         breaks = [0.66, 0.33]
@@ -488,7 +499,7 @@ const Map = ({
           type: 'circle',
           radius: MAXRADIUS,
           label: `≥ ${formatNumber(upperValue, 0)}`,
-          color: DARKESTCOLOR,
+          color: LIGHTESTCOLOR,
         },
         ...breaks.map(b => ({
           type: 'circle',
@@ -496,9 +507,16 @@ const Map = ({
           radius: radiusInterpolator(b),
           color: colorInterpolator(b),
         })),
-        { type: 'circle', radius: MINRADIUS, label: '1', color: LIGHTESTCOLOR }
+        { type: 'circle', radius: MINRADIUS, label: '1', color: DARKESTCOLOR }
       )
     }
+
+    entries.push({
+      type: 'circle',
+      radius: MINRADIUS,
+      label: 'Not detected',
+      color: NONDETECTIONCOLOR,
+    })
 
     if (species) {
       entries.push({
@@ -554,9 +572,9 @@ const Map = ({
 
       <Legend
         entries={getLegend()}
-        title={`Number of ${METRIC_LABELS[valueFieldRef.current]}`}
+        title={`Number of ${METRIC_LABELS[valueField]}`}
         note={
-          maxValue
+          detectors.size
             ? 'Map shows detector locations.  They may be clustered together if near each other.'
             : 'No detector locations visible.'
         }

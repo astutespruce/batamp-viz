@@ -1,7 +1,7 @@
 import React, { memo, useContext } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
-import { FaRegTimesCircle } from 'react-icons/fa'
+import { FaRegTimesCircle, FaExclamationTriangle } from 'react-icons/fa'
 
 import { Text } from 'components/Text'
 import Tabs, { Tab as BaseTab } from 'components/Tabs'
@@ -86,6 +86,11 @@ const Highlight = styled(Text)`
   color: ${themeGet('colors.highlight.500')};
 `
 
+const WarningIcon = styled(FaExclamationTriangle)`
+  width: 1.5em;
+  height: 1em;
+`
+
 const Details = ({ detector, selectedSpecies, onClose }) => {
   const { state } = useContext(Context)
   let valueField = state.get('valueField')
@@ -105,7 +110,9 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
   const ts = detector.get('ts')
 
   // calculate totals by species
-  const sppTotals = sumBy(ts, 'species', valueField)
+  const bySpp = sumBy(ts, 'species', valueField)
+
+  const sppTotals = bySpp
     .entrySeq()
     .toList()
     .sort(([sppA, a], [sppB, b]) => (a < b ? 1 : -1))
@@ -132,6 +139,8 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
       }
     })
     .toJS()
+
+  const selectedSpeciesMax = selectedSpecies ? bySpp.get(selectedSpecies, 0) : 0
 
   const metric = METRIC_LABELS[valueField]
 
@@ -160,9 +169,9 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
               {dateRange}
             </Column>
             <RightColumn>
-              {formatNumber(detections, 0)} detections
+              {formatNumber(detections, 0)} species detections
               <br />
-              {detectorNights} nights monitored
+              {formatNumber(detectorNights, 0)} nights monitored
             </RightColumn>
           </Columns>
         </Summary>
@@ -172,12 +181,22 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
         <Tab id="species" label="Species Detected">
           {selectedSpecies ? (
             <Section>
-              <Highlight>
-                {`${selectedSpeciesName.commonName} (${
-                  selectedSpeciesName.sciName
-                })`}{' '}
-                is highlighted below.
-              </Highlight>
+              {selectedSpeciesMax > 0 ? (
+                <Highlight>
+                  {`${selectedSpeciesName.commonName} (${
+                    selectedSpeciesName.sciName
+                  })`}{' '}
+                  is highlighted below.
+                </Highlight>
+              ) : (
+                <Highlight>
+                  <WarningIcon />
+                  {`${selectedSpeciesName.commonName} (${
+                    selectedSpeciesName.sciName
+                  })`}{' '}
+                  was not detected at this location.
+                </Highlight>
+              )}
             </Section>
           ) : null}
 

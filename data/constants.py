@@ -48,6 +48,56 @@ SPECIES = {
     "tabr": {"SNAME": "Tadarida brasiliensis", "CNAME": "Mexican Free-tailed Bat"},
 }
 
+# Species IDs for shorter reference in data
+# Must have a matching inverted map in JS tier
+# {spp: i for i, spp in enumerate(sorted(SPECIES.keys()))}
+
+SPECIES_ID = {
+    "anpa": 0,
+    "chme": 1,
+    "cora": 2,
+    "coto": 3,
+    "epfu": 4,
+    "eufl": 5,
+    "euma": 6,
+    "eupe": 7,
+    "euun": 8,
+    "idph": 9,
+    "labl": 10,
+    "labo": 11,
+    "laci": 12,
+    "laeg": 13,
+    "lain": 14,
+    "lano": 15,
+    "lase": 16,
+    "laxa": 17,
+    "lecu": 18,
+    "leni": 19,
+    "maca": 20,
+    "mome": 21,
+    "myar": 22,
+    "myau": 23,
+    "myca": 24,
+    "myci": 25,
+    "myev": 26,
+    "mygr": 27,
+    "myke": 28,
+    "myle": 29,
+    "mylu": 30,
+    "myoc": 31,
+    "myse": 32,
+    "myso": 33,
+    "myth": 34,
+    "myve": 35,
+    "myvo": 36,
+    "myyu": 37,
+    "nyfe": 38,
+    "nyhu": 39,
+    "nyma": 40,
+    "pahe": 41,
+    "pesu": 42,
+    "tabr": 43,
+}
 
 # Activity colum
 ACTIVITY_COLUMNS = list(SPECIES.keys())

@@ -234,10 +234,9 @@ ExplorePage.propTypes = {
     allDetectorTsJson: GraphQLArrayPropType(
       PropTypes.shape({
         id: PropTypes.number.isRequired,
-        species: PropTypes.string.isRequired,
-        year: PropTypes.number.isRequired,
-        month: PropTypes.number.isRequired,
-        nights: PropTypes.number.isRequired,
+        speciesId: PropTypes.number.isRequired,
+        timestamp: PropTypes.number.isRequired,
+        value: PropTypes.number.isRequired
       })
     ),
   }).isRequired,
@@ -275,10 +274,9 @@ export const pageQuery = graphql`
       edges {
         node {
           id: i
-          species: s
-          year: y
-          month: m
-          nights: n
+          speciesId: s
+          timestep: t
+          value: v          
         }
       }
     }

@@ -7,6 +7,7 @@ import styled, { themeGet } from 'style'
 
 import { SET_VALUE_FIELD } from './Crossfilter'
 import { Context } from './Context'
+import { METRIC_LABELS } from '../../../config/constants'
 
 const Wrapper = styled(Flex).attrs({
   alignItems: 'center',
@@ -38,7 +39,7 @@ const ValueFieldSelector = ({ fields }) => {
 
   const options = fields.map(f => ({
     value: f,
-    label: f === 'id' ? 'detectors' : f,
+    label: METRIC_LABELS[f],
   }))
 
   return (

@@ -10,7 +10,7 @@ from feather import read_dataframe
 from shapely.geometry import Point
 
 from geofeather import read_geofeather
-from constants import SPECIES, ACTIVITY_COLUMNS, GROUP_ACTIVITY_COLUMNS, DETECTOR_FIELDS
+from constants import SPECIES, ACTIVITY_COLUMNS, GROUP_ACTIVITY_COLUMNS, DETECTOR_FIELDS, SPECIES_ID
 from util import camelcase
 
 src_dir = Path("data/src")
@@ -20,7 +20,8 @@ json_dir = Path("ui/data")
 
 
 location_fields = ["lat", "lon"]
-time_fields = ["year", "month", "week"]
+# Due to size limits in Gatsby, just doing by month for now
+time_fields = ["year", "month"]
 
 #### Read raw source data from CSV ############################################
 print("Reading CSV data...")
@@ -247,11 +248,17 @@ summary = {
     "species": len(ACTIVITY_COLUMNS),
     "contributors": df.contributor.unique().size,
     "detectors": len(detectors),
-    "detections": int(df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum().sum().astype("uint")),
+    "detections": int(
+        df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum().sum().astype("uint")
+    ),
     # detector_nights are sampling activity
     "detectorNights": len(df),
     # detection_nights are nights where at least one species was detected
-    "detectionNights": int((df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum(axis=1) > 0).sum().astype("uint")),
+    "detectionNights": int(
+        (df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum(axis=1) > 0)
+        .sum()
+        .astype("uint")
+    ),
     "years": df.year.unique().size,
 }
 
@@ -323,8 +330,9 @@ detector_datasets = (
     df.groupby("detector").dataset.unique().apply(list).rename("datasets")
 )
 
-# Calculate list of unique species present per detector
-stacked = df[["detector"] + ACTIVITY_COLUMNS].set_index("detector").stack()
+# Calculate list of unique species present or targeted per detector
+# We are setting null data to -1 so we can filter it out
+stacked = df[["detector"] + ACTIVITY_COLUMNS].fillna(-1).set_index("detector").stack()
 det_spps = (
     stacked[stacked > 0]
     .reset_index()
@@ -332,6 +340,16 @@ det_spps = (
     .level_1.unique()
     .apply(sorted)
     .rename("species")
+)
+
+# NOTE: this includes species that were targeted but not detected at a detector!
+target_spps = (
+    stacked[stacked >= 0]
+    .reset_index()
+    .groupby("detector")
+    .level_1.unique()
+    .apply(sorted)
+    .rename("target_species")
 )
 
 # Calculate number of unique contributors per detector
@@ -346,12 +364,24 @@ det_contributors = (
 # Tally detections and nights
 det_g = df[["detector"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].groupby("detector")
 # Note: detections will be 0 for nulls as well as true 0s
-det_detections = det_g.sum().sum(axis=1).astype("uint").rename("detections")
+
+# Detections is limited to just species
+det_detections = det_g[ACTIVITY_COLUMNS].sum().sum(axis=1).astype("uint").rename("detections")
+
+
 detector_nights = det_g.size().rename("detector_nights")
 # detection nights are the sum of nights where there was activity in at least one activity column
 # NOTE: for species + group activity columns ("bats detected on X nights")
 detection_nights = (
-    ((df[["detector"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].set_index("detector") > 0).sum(axis=1) > 0)
+    (
+        (
+            df[["detector"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].set_index(
+                "detector"
+            )
+            > 0
+        ).sum(axis=1)
+        > 0
+    )
     .groupby(level=0)
     .sum()
     .astype("uint")
@@ -376,6 +406,7 @@ detectors = (
     .join(detection_nights)
     .join(detector_datasets)
     .join(det_spps)
+    .join(target_spps)
     .join(det_contributors)
     .join(detector_daterange)
 )
@@ -384,22 +415,6 @@ detectors = detectors.rename(columns={"det_mfg": "mfg", "det_model": "model"})
 detectors.columns = camelcase(detectors.columns)
 detectors[location_fields] = detectors[location_fields].round(5)
 detectors.to_json(json_dir / "detectors.json", orient="records")
-
-
-### NOT USED: Calculate species statistics by detector:
-# det = df[["detector"] + ACTIVITY_COLUMNS].set_index("detector").stack().reset_index()
-# det.columns = ["detector", "species", "detections"]
-# det_stats = det.groupby(["detector", "species"]).agg(["sum", "count"])
-# det_stats.columns = ["detections", "nights"]
-# det_stats.detections = det_stats.detections.astype("uint32")
-# det_stats.nights = det_stats.nights.astype("uint16")
-# det_stats = det_stats.reset_index()
-
-
-# # use short column names
-# det_stats.columns = ["i", "s", "d", "n"]
-# det_stats.to_json(json_dir / "detectorSpecies.json", orient="records")
-
 
 # TODO: figure out flat format for detectors
 # detectors.to_feather(derived_dir / "detectors.feather")
@@ -444,16 +459,20 @@ spp_stats = (
     .reset_index()
     .rename(columns={"index": "species"})
 )
+
+spp_stats["commonName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["CNAME"])
+spp_stats["sciName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["SNAME"])
+
 spp_stats.columns = camelcase(spp_stats.columns)
 spp_stats.to_json(json_dir / "species.json", orient="records")
 
 
-### Calculate detector - species stats per year, month, week
-# Due to size limits in Gatsby, just doing by month for now
-time_fields = ["year", "month"]
+### Calculate detector - species stats per year, month
 # transpose species columns to rows
+# NOTE: we are filling nodata as -1 so we can filter these out from true 0's below
 stacked = (
     df[["detector"] + ACTIVITY_COLUMNS + time_fields]
+    .fillna(-1)
     .set_index(["detector"] + time_fields)
     .stack()
 )
@@ -461,19 +480,41 @@ stacked = (
 # Only keep records where species was detected
 det = stacked[stacked > 0].reset_index()
 det.columns = ["detector"] + time_fields + ["species", "detections"]
+det_ts = det.groupby(["detector", "species"] + time_fields).agg(["count", "sum"])
+det_ts.columns = ["detection_nights", "detections"]
+# det_ts.detections = det_ts.detections.astype("uint32")
+# det_ts.detection_nights = det_ts.detection_nights.astype("uint16")
 
-det_ts = det.groupby(["detector", "species"] + time_fields).agg(["sum", "count"])
-det_ts.columns = ["detections", "nights"]
-det_ts.detections = det_ts.detections.astype("uint32")
-det_ts.nights = det_ts.nights.astype("uint16")
-det_ts = det_ts.reset_index()  # .set_index("detector")
+# Calculate where species COULD have been detected but wasn't
+# aka: true zeros (nondetections)
+totdet = stacked[stacked >= 0].reset_index()
+totdet.columns = ["detector"] + time_fields + ["species", "detections"]
+totdet_ts = totdet.groupby(["detector", "species"] + time_fields).count()
+totdet_ts.columns = ["detector_nights"]
 
-det_ts.to_feather(derived_dir / "detector_ts.feather")
+det_ts = totdet_ts.join(det_ts).reset_index()
+det_ts.detector_nights = det_ts.detector_nights.astype("uint")
+det_ts.detections = det_ts.detections.fillna(0).astype('uint')
+det_ts.detection_nights = det_ts.detection_nights.fillna(0).astype('uint')
+
+# det_ts.to_feather(derived_dir / "detector_ts.feather")
+
+# Calculate smaller fields for export
+det_ts.species = det_ts.species.map(SPECIES_ID).astype('uint')
+
+# path month and year into a single number: MYY
+# NOTE: this assumes all years are >= 2000
+# det_ts['timestamp'] = det_ts.apply(lambda row: '{0}{1}'.format(row.month, str(row.year)[-2:]), axis=1)
+det_ts['timestamp'] = (det_ts.month * 100) + (det_ts.year - 2000)
+
+# Path detector nights, detection nights, detections into a single value
+det_ts['value'] = det_ts.apply(lambda row: '{0}|{1}|{2}'.format(row.detector_nights, row.detection_nights, row.detections) if row.detection_nights or row.detections else str(row.detector_nights), axis=1)
+
+det_ts = det_ts[['detector', 'species', 'timestamp', 'value']]
+det_ts.columns = ['i', 's', 't', 'v']
 
 # use smaller column names
-# det_ts.columns = ["unitID", "s", "y", "m", "w", "d", "n"]
-# det_ts.columns = ["i", "s", "m", "d", "n"]
-det_ts.columns = ["i", "s", "y", "m", "d", "n"]
+# det_ts.columns = ["i", "s", "y", "m", "dn", "d", "n"]
 det_ts.to_json(json_dir / "detectorTS.json", orient="records")
 
 
@@ -665,3 +706,17 @@ admin1_stats.to_json(json_dir / "admin1SpeciesTS.json", orient="records")
 # # grouped first
 # apply(lambda row: {spp: {'detections': row[spp].sum().astype('uint')} for spp in ACTIVITY_COLUMNS if row[spp].sum() > 0})
 
+
+### NOT USED: Calculate species statistics by detector:
+# det = df[["detector"] + ACTIVITY_COLUMNS].set_index("detector").stack().reset_index()
+# det.columns = ["detector", "species", "detections"]
+# det_stats = det.groupby(["detector", "species"]).agg(["sum", "count"])
+# det_stats.columns = ["detections", "nights"]
+# det_stats.detections = det_stats.detections.astype("uint32")
+# det_stats.nights = det_stats.nights.astype("uint16")
+# det_stats = det_stats.reset_index()
+
+
+# # use short column names
+# det_stats.columns = ["i", "s", "d", "n"]
+# det_stats.to_json(json_dir / "detectorSpecies.json", orient="records")

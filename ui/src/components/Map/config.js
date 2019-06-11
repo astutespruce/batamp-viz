@@ -5,8 +5,9 @@ const TILE_HOST = 'https://tiles.batamp.databasin.org'
 
 export const MINRADIUS = 4
 export const MAXRADIUS = 18
-export const DARKESTCOLOR = '#74a9cf'
-export const LIGHTESTCOLOR = '#045a8d'
+export const NONDETECTIONCOLOR = '#49ac9f'
+export const LIGHTESTCOLOR = '#d2d5ea'
+export const DARKESTCOLOR = '#020d57'
 
 export const config = {
   // Mapbox public token.  TODO: migrate to .env setting
@@ -36,8 +37,8 @@ export const sources = {
     type: 'geojson',
     data: {},
     cluster: true,
-    clusterMaxZoom: 18, // show clusters at lowest zoom since there may be multiple detectors at a site
-    clusterRadius: MAXRADIUS,
+    clusterMaxZoom: 10, // show clusters at lowest zoom since there may be multiple detectors at a site
+    clusterRadius: 12,
     clusterProperties: {
       //   detections: ['+', ['get', 'detections']],
       //   nights: ['+', ['get', 'nights']],

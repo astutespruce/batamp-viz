@@ -24,7 +24,7 @@ import { withinBounds } from 'components/Map/util'
 import TopBar from 'components/Map/TopBar'
 import SpeciesFilters from 'components/SpeciesFilters'
 import { createIndex } from 'util/data'
-import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
+import { MONTHS, MONTH_LABELS, SPECIES, SPECIES_ID } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -63,7 +63,33 @@ const SpeciesTemplate = ({
   )
   const detectorIndex = createIndex(detectors, 'id')
 
-  const detectorTS = fromJS(extractNodes(allDetectorTsJson))
+
+  // TODO: memoize this
+  const detectorTS = fromJS(extractNodes(allDetectorTsJson).map(({id, speciesId, timestamp, value}) => {
+    // timstamp is MYY, divide by 100 and extract whole number to get month
+    const month = Math.trunc(timestamp / 100) 
+
+    // value is detectorNights|detectionNights|detections if detectionNights or detections are > 0, else
+    // it is just detectorNights
+    let detectionNights = 0
+    let detections = 0
+    let detectorNights = 0
+    if (value.includes('|')) {
+      [detectorNights, detectionNights, detections] = value.split('|').map(d => parseInt(d, 10))
+    } else {
+      detectorNights = parseInt(value, 10)
+    }
+
+    return {
+      id,
+      species: SPECIES_ID[speciesId],
+      month,
+      year: (timestamp - 100 * month) + 2000,
+      detectorNights,
+      nights: detectionNights, // TODO: detectionNights
+      detections
+    }
+  }))
 
   const data = detectorTS
     .filter(d => d.get('species') === selectedSpecies)
@@ -73,7 +99,6 @@ const SpeciesTemplate = ({
         lat: detector.get('lat'),
         lon: detector.get('lon'),
         admin1Name: detector.get('admin1Name'),
-        name: detector.get('name'),
       })
     })
 
@@ -108,11 +133,11 @@ const SpeciesTemplate = ({
   }
 
   const filters = [
-    {
-      field: 'id',
-      internal: true,
-      filterFunc: hasValue,
-    },
+    // {
+    //   field: 'id',
+    //   internal: true,
+    //   filterFunc: hasValue,
+    // },
     {
       field: 'month',
       title: 'Seasonality',
@@ -226,10 +251,9 @@ SpeciesTemplate.propTypes = {
     allDetectorTsJson: GraphQLArrayPropType(
       PropTypes.shape({
         id: PropTypes.number.isRequired,
-        year: PropTypes.number.isRequired,
-        month: PropTypes.number.isRequired,
-        detections: PropTypes.number.isRequired,
-        nights: PropTypes.number.isRequired,
+        speciesId: PropTypes.number.isRequired,
+        timestamp: PropTypes.number.isRequired,
+        value: PropTypes.number.isRequired
       })
     ).isRequired,
   }).isRequired,
@@ -244,7 +268,7 @@ export const pageQuery = graphql`
       detectors
       contributors
     }
-    allDetectorsJson(filter: { species: { eq: $species } }) {
+    allDetectorsJson(filter: { targetSpecies: { eq: $species } }) {
       edges {
         node {
           id: detector
@@ -274,11 +298,9 @@ export const pageQuery = graphql`
       edges {
         node {
           id: i
-          species: s
-          year: y
-          month: m
-          detections: d
-          nights: n
+          speciesId: s
+          timestamp: t
+          value: v
         }
       }
     }

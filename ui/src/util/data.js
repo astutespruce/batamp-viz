@@ -102,4 +102,3 @@ export const groupBy = (records, groupField) =>
       ),
     Map()
   )
-

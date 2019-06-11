@@ -9,6 +9,7 @@ import { Flex, Box, Columns, Column } from 'components/Grid'
 import { formatNumber } from 'util/format'
 import styled, { themeGet } from 'style'
 import Filter from './Filter'
+import { METRIC_LABELS } from '../../../config/constants'
 
 const Wrapper = styled(Flex).attrs({
   flexDirection: 'column',
@@ -81,11 +82,7 @@ const FiltersList = ({ filters }) => {
     })
   }
 
-  let valueField = state.get('valueField')
-  // TODO: generalize
-  if (valueField === 'id') {
-    valueField = 'detectors'
-  }
+  const metricLabel = METRIC_LABELS[state.get('valueField')]
 
   const filteredTotal = state.get('filteredTotal')
   const total = state.get('total')
@@ -96,7 +93,7 @@ const FiltersList = ({ filters }) => {
         <Count>
           <b>{formatNumber(filteredTotal, 0)}</b>{' '}
           {filteredTotal < total ? `of ${formatNumber(total, 0)}` : ''}{' '}
-          {valueField} are visible within the map.
+          {metricLabel} are visible within the map.
         </Count>
       </Header>
 
