@@ -36,7 +36,7 @@ export const sources = {
     type: 'geojson',
     data: {},
     cluster: true,
-    clusterMaxZoom: 24, // show clusters at lowest zoom since there may be multiple detectors at a site
+    clusterMaxZoom: 18, // show clusters at lowest zoom since there may be multiple detectors at a site
     clusterRadius: MAXRADIUS,
     clusterProperties: {
       //   detections: ['+', ['get', 'detections']],

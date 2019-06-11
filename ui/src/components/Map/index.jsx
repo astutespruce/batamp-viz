@@ -27,6 +27,7 @@ import {
   LIGHTESTCOLOR,
   DARKESTCOLOR,
 } from './config'
+import { SPECIES, METRIC_LABELS } from '../../../config/constants'
 
 const Wrapper = styled.div`
   position: relative;
@@ -174,6 +175,7 @@ const Map = ({
     })
 
     map.on('mousemove', 'detectors-points', e => {
+      const {current: metric} = valueFieldRef
       map.getCanvas().style.cursor = 'pointer'
 
       const features = map.queryRenderedFeatures(e.point, {
@@ -197,7 +199,7 @@ const Map = ({
       })
       highlightFeatureRef.current = ids
 
-      if (valueFieldRef.current === 'id') {
+      if (metric === 'id') {
         tooltip
           .setLngLat(features[0].geometry.coordinates)
           .setHTML(
@@ -212,6 +214,8 @@ const Map = ({
       }
 
       const values = features.map(({ properties: { total } }) => total)
+      const speciesLabel = species ? ` of ${SPECIES[species].commonName}` : ''
+
       if (features.length > 1) {
         const min = Math.min(...values)
         const max = Math.max(...values)
@@ -223,7 +227,7 @@ const Map = ({
               min
             )} - ${formatNumber(
               max
-            )} ${valueField}<br />Click to show details in the sidebar.`
+            )} ${metric}${speciesLabel}.<br />Click to show details in the sidebar.`
           )
           .addTo(map)
       } else {
@@ -231,9 +235,9 @@ const Map = ({
           .setLngLat(features[0].geometry.coordinates)
           .setHTML(
             `${formatNumber(values[0])} ${quantityLabel(
-              valueField,
+              metric,
               values[0]
-            )}<br />Click to show details in the sidebar.`
+            )}${speciesLabel}.<br />Click to show details in the sidebar.`
           )
           .addTo(map)
       }
@@ -272,13 +276,14 @@ const Map = ({
           const newBounds = calculateBounds(geometries)
           map.fitBounds(newBounds, {
             padding: 100,
-            maxZoom: 24,
+            maxZoom: 18.5,
           })
         })
     })
 
     // hover highlights cluster and shows tooltip
     map.on('mousemove', 'detectors-clusters', e => {
+      const {current: metric} = valueFieldRef
       map.getCanvas().style.cursor = 'pointer'
 
       const features = map.queryRenderedFeatures(e.point, {
@@ -310,12 +315,12 @@ const Map = ({
       )
 
       let html = ''
-      if (valueFieldRef.current === 'id') {
+      if (metric === 'id') {
         html = `${point_count} detectors at this location<br />Click to zoom in.`
       } else {
         html = `${formatNumber(
           total
-        )} ${valueField} (${point_count} detectors)<br />Click to zoom in.`
+        )} ${metric} (${point_count} detectors)<br />Click to zoom in.`
       }
       tooltip
         .setLngLat(features[0].geometry.coordinates)
@@ -398,6 +403,7 @@ const Map = ({
 
   const styleDetectors = () => {
     const { current: map } = mapRef
+    const {current: metric} = valueFieldRef
 
     // cannot interpolate if total <= 1
     if (maxValue <= 1) {
@@ -409,7 +415,7 @@ const Map = ({
       return
     }
 
-    if (valueField === 'id') {
+    if (metric === 'id') {
       // how to find the max cluster size?
       // visible, but filtered: Math.max(...map.querySourceFeatures("detectors").map(({properties: {point_count}}) => point_count).filter(v => !isNaN(v)))
 
@@ -463,6 +469,7 @@ const Map = ({
 
   // TODO: move to util
   const getLegend = () => {
+    const {current: metric} = valueFieldRef
     const radiusInterpolator = interpolate(MINRADIUS, MAXRADIUS)
     const colorInterpolator = interpolateRgb(LIGHTESTCOLOR, DARKESTCOLOR)
 
@@ -470,7 +477,7 @@ const Map = ({
 
     if (maxValue > 0) {
       const upperValue =
-        valueField === 'id' ? niceNumber(maxValue / 5) : niceNumber(maxValue)
+        metric === 'id' ? niceNumber(maxValue / 5) : niceNumber(maxValue)
       let breaks = []
       if (upperValue - 1 > 4) {
         breaks = [0.66, 0.33]
@@ -547,7 +554,7 @@ const Map = ({
 
       <Legend
         entries={getLegend()}
-        title={`Number of ${valueField === 'id' ? 'detectors' : valueField}`}
+        title={`Number of ${METRIC_LABELS[valueFieldRef.current]}`}
         note={
           maxValue
             ? 'Map shows detector locations.  They may be clustered together if near each other.'

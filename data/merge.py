@@ -444,9 +444,6 @@ spp_stats = (
     .reset_index()
     .rename(columns={"index": "species"})
 )
-spp_stats["commonName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["CNAME"])
-spp_stats["sciName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["SNAME"])
-
 spp_stats.columns = camelcase(spp_stats.columns)
 spp_stats.to_json(json_dir / "species.json", orient="records")
 

@@ -6,18 +6,18 @@ import { fromJS } from 'immutable'
 import Layout from 'components/Layout'
 import { Container } from 'components/Grid'
 import SpeciesList from 'components/SpeciesList'
+import { extractNodes } from 'util/graphql'
 import styled from 'style'
+import { SPECIES } from '../../config/constants'
 
 const Title = styled.h1`
   text-align: center;
 `
 
-const SpeciesPage = ({
-  data: {
-    allSpeciesJson: { edges },
-  },
-}) => {
-  const species = fromJS(edges.map(({ node }) => node))
+const SpeciesPage = ({ data: { allSpeciesJson } }) => {
+  const species = fromJS(
+    extractNodes(allSpeciesJson).map(d => ({ ...d, ...SPECIES[d.species] }))
+  )
 
   return (
     <Layout title="Explore Bat Species">
@@ -36,11 +36,9 @@ SpeciesPage.propTypes = {
         PropTypes.shape({
           node: PropTypes.shape({
             species: PropTypes.string.isRequired,
-            commonName: PropTypes.string.isRequired,
-            sciName: PropTypes.string.isRequired,
             detections: PropTypes.number.isRequired,
             nights: PropTypes.number.isRequired,
-            contributors: PropTypes.arrayOf(PropTypes.string).isRequired,
+            contributors: PropTypes.number.isRequired,
           }).isRequired,
         })
       ).isRequired,
@@ -54,8 +52,6 @@ export const pageQuery = graphql`
       edges {
         node {
           species
-          commonName
-          sciName
           detections
           nights: detectionNights
           contributors

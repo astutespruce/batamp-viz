@@ -151,7 +151,7 @@ const Filter = ({
 
       {isOpen && (
         <>
-          {data.length > 0 ? (
+          {data.length > 0 && max > 0 ? (
             <Container>
               {vertical ? (
                 <VerticalBars

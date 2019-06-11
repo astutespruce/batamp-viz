@@ -6,6 +6,10 @@ import styled, { themeGet } from 'style'
 const Wrapper = styled.div`
   cursor: pointer;
   line-height: 1.2;
+
+  p {
+    margin: 0;
+  }
 `
 
 const Snippet = styled.p``

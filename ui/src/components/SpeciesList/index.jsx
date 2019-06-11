@@ -9,6 +9,7 @@ import { SortBar, SearchBar } from 'components/List'
 import styled, { themeGet } from 'style'
 import ListItem from './ListItem'
 
+
 const sortOptions = [
   {
     label: 'name',
@@ -25,7 +26,7 @@ const sortOptions = [
   { label: 'nights', sortFunc: (a, b) => b.get('nights') - a.get('nights') },
   {
     label: 'contributors',
-    sortFunc: (a, b) => b.get('contributors').size - a.get('contributors').size,
+    sortFunc: (a, b) => b.get('contributors') - a.get('contributors'),
   },
 ]
 

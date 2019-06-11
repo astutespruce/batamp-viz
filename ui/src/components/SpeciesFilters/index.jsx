@@ -1,20 +1,19 @@
-import React, { useContext } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
-import { graphql } from 'gatsby'
-import { fromJS, Set } from 'immutable'
 
-import { PrimaryButton as Button } from 'components/Button'
-import Layout from 'components/Layout'
-import { Switch } from 'components/Form'
-import { Text, HelpText } from 'components/Text'
-import { Context } from 'components/Crossfilter'
-import Sidebar from 'components/Sidebar'
-import { Box, Column, Columns, Flex } from 'components/Grid'
+// import { Switch } from 'components/Form'
+import {
+  Text,
+  HelpText,
+  ExpandableParagraph,
+} from 'components/Text'
+import { Box, Flex } from 'components/Grid'
 import FiltersList from 'components/FiltersList'
 import styled, { themeGet } from 'style'
+import { SPECIES } from '../../../config/constants'
 
 const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
-height: 100%;
+  height: 100%;
 `
 
 const Header = styled(Flex).attrs({ p: '0.5rem' })`
@@ -59,15 +58,15 @@ const ScientificName = styled(Text).attrs({ as: 'h3' })`
 // `
 
 const index = ({
+  species,
   filters,
-  commonName,
-  sciName,
+
   //   detectors,
   //   detections,
   //   nights,
   //   contributors,
 }) => {
-  // const {state, dispatch} = useContext(Context)
+  const { commonName, sciName } = SPECIES[species]
 
   return (
     <Wrapper>
@@ -113,26 +112,33 @@ const index = ({
                   />
                 </Box> */}
 
-        <Box m="1rem">
-          <HelpText>
-            Use the charts below to select a subset of detectors. Detectors are
-            also filtered by the extent of your map.
-          </HelpText>
-        </Box>
+      <Box m="1rem">
+        <HelpText>
+          <ExpandableParagraph
+            snippet="Use the filter charts below to select a subset of detectors. Detectors are
+            also filtered by the extent of your map.  You can select..."
+          >
+            Use the filter charts below to select a subset of detectors.
+            Detectors are also filtered by the extent of your map. You can
+            select multiple values in each filter chart and combine multiple
+            filters, such as selecting September and October in 2014 in
+            California.
+          </ExpandableParagraph>
+        </HelpText>
+      </Box>
 
-        <FiltersList filters={filters} />
+      <FiltersList filters={filters} />
     </Wrapper>
   )
 }
 
 index.propTypes = {
+  species: PropTypes.string.isRequired,
   filters: PropTypes.arrayOf(
     PropTypes.shape({
       field: PropTypes.string.isRequired,
     })
   ).isRequired,
-  commonName: PropTypes.string.isRequired,
-  sciName: PropTypes.string.isRequired,
   //   detections: PropTypes.number.isRequired,
   //   nights: PropTypes.number.isRequired,
   //   detectors: PropTypes.number.isRequired,

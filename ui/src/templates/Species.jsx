@@ -24,7 +24,7 @@ import { withinBounds } from 'components/Map/util'
 import TopBar from 'components/Map/TopBar'
 import SpeciesFilters from 'components/SpeciesFilters'
 import { createIndex } from 'util/data'
-import { MONTHS, MONTH_LABELS } from '../../config/constants'
+import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -44,14 +44,14 @@ const SpeciesTemplate = ({
     speciesJson,
     allDetectorsJson,
     allDetectorTsJson,
-    allAdmin1SpeciesTsJson,
   },
 }) => {
   const valueField = 'detections'
   const [selected, setSelected] = useState({ features: Set(), feature: null })
   const [filterByBounds, setFilterByBounds] = useState(true)
 
-  const { species: selectedSpecies, commonName, sciName } = speciesJson
+  const { species: selectedSpecies} = speciesJson
+  const {commonName, sciName} = SPECIES[selectedSpecies]
 
   const detectors = fromJS(
     extractNodes(allDetectorsJson).map(d => ({
@@ -115,10 +115,10 @@ const SpeciesTemplate = ({
     },
     {
       field: 'month',
-      title: 'Month', // TODO: variable
+      title: 'Seasonality',
       isOpen: true,
       vertical: true,
-      values: MONTHS, // TODO: variable
+      values: MONTHS,
       labels: MONTH_LABELS.map(m => m.slice(0, 3)),
       aggregateById: true,
       filterFunc: hasValue,
@@ -147,22 +147,9 @@ const SpeciesTemplate = ({
       field: 'bounds', // note: constructed field!
       internal: true,
       getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
-
-      // TODO: use rbush or spatial filter?
       filterFunc: boundsFilterFunc,
     },
   ]
-
-  // FIXME!
-  // selected.features = detectorIndex
-  // .filter((_, k) => k === 196)
-  // .toList()
-  // .map(d =>
-  //   d.merge({
-  //     ts:detectorTS.filter(v => v.get('id') === d.get('id'))
-  //   })
-  // )
-  // selected.feature = selected.features.first().get('id')
 
   const visibleFilters = filters.filter(({ internal }) => !internal)
 
@@ -183,7 +170,7 @@ const SpeciesTemplate = ({
                 onClose={handleDetailsClose}
               />
             ) : (
-              <SpeciesFilters filters={visibleFilters} {...speciesJson} />
+              <SpeciesFilters species={selectedSpecies} filters={visibleFilters} />
             )}
           </Sidebar>
 
@@ -210,8 +197,6 @@ SpeciesTemplate.propTypes = {
   data: PropTypes.shape({
     speciesJson: PropTypes.shape({
       species: PropTypes.string.isRequired,
-      commonName: PropTypes.string.isRequired,
-      sciName: PropTypes.string.isRequired,
       detections: PropTypes.number.isRequired,
       nights: PropTypes.number.isRequired,
       detectors: PropTypes.number.isRequired,
@@ -254,8 +239,6 @@ export const pageQuery = graphql`
   query SpeciesPageQuery($species: String!) {
     speciesJson(species: { eq: $species }) {
       species
-      commonName
-      sciName
       detections
       nights: detectionNights
       detectors
@@ -299,21 +282,7 @@ export const pageQuery = graphql`
         }
       }
     }
-    allAdmin1SpeciesTsJson(filter: { s: { eq: $species } }) {
-      edges {
-        node {
-          id: i
-          species: s
-          year: y
-          month: m
-          detections: d
-          nights: n
-        }
-      }
-    }
   }
 `
-
-// (filter: { s: { eq: $species } })
 
 export default SpeciesTemplate

@@ -73,11 +73,11 @@ const DetectorMetadata = ({
       <Field>
         <FieldHeader>Detector effort:</FieldHeader>
         <FieldValue>
-          Operated for {detectorNights} nights.
+          Operated for {formatNumber(detectorNights, 0)} nights.
           <br />
           {detectionNights === detectorNights
             ? 'Bats detected on all nights.'
-            : `Bats detected on ${detectionNights} nights.`}
+            : `Bats detected on ${formatNumber(detectionNights, 0)} nights.`}
         </FieldValue>
       </Field>
 

@@ -105,7 +105,7 @@ ListItem.propTypes = {
     sciName: PropTypes.string.isRequired,
     detections: PropTypes.number.isRequired,
     nights: PropTypes.number.isRequired,
-    contributors: ImmutablePropTypes.listOf(PropTypes.string).isRequired,
+    contributors: PropTypes.number.isRequired,
   }).isRequired,
   metric: PropTypes.string.isRequired,
 }

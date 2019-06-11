@@ -6,52 +6,89 @@ import { List, Set, fromJS } from 'immutable'
 import FiltersList from 'components/FiltersList'
 import { Switch } from 'components/Form'
 import Layout from 'components/Layout'
-import { Text, HelpText } from 'components/Text'
+import {
+  Text,
+  HelpText as BaseHelpText,
+  ExpandableParagraph,
+} from 'components/Text'
 import {
   hasValue,
   Provider as CrossfilterProvider,
   FilteredMap as Map,
 } from 'components/Crossfilter'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
+import DetectorDetails from 'components/DetectorDetails'
 import { withinBounds } from 'components/Map/util'
 import { Flex, Box } from 'components/Grid'
 import styled, { themeGet } from 'style'
 import { createIndex } from 'util/data'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
-import { MONTHS, MONTH_LABELS } from '../../config/constants'
+import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
 `
 
-const Help = styled(HelpText).attrs({ mx: '1rem', mb: '1rem' })``
+const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
 const ExplorePage = ({
-  data: { allDetectorsJson, allDetectorTsJson, allSpeciesJson },
+  data: { allDetectorsJson, allDetectorTsJson },
 }) => {
+  const [selected, setSelected] = useState({ features: Set(), feature: null })
   const [filterByBounds, setFilterByBounds] = useState(true)
+  
 
   const handleToggleBoundsFilter = () => {
     setFilterByBounds(prev => !prev)
   }
 
+  const handleSelectFeatures = ids => {
+    const features = detectorIndex
+      .filter((_, k) => ids.has(k))
+      .toList()
+      .map(d =>
+        d.merge({
+          ts: detectorTS.filter(v => v.get('id') === d.get('id')),
+        })
+      )
+    setSelected({
+      features,
+      feature: features.size ? features.first().get('id') : null,
+    })
+  }
 
-  const allSpecies = extractNodes(allSpeciesJson)
+  const handleSetFeature = feature => {
+    setSelected({
+      features: selected.features,
+      feature,
+    })
+  }
+
+  const handleDetailsClose = () => {
+    setSelected({ features: Set(), feature: null })
+  }
+
+const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({species, ...v}))
+
   const detectors = fromJS(extractNodes(allDetectorsJson))
   const detectorIndex = createIndex(detectors, 'id')
 
-  // join detector locations to detector occurrences by species and timestamp
-  const data = fromJS(
-    extractNodes(allDetectorTsJson).map(d => {
-      const detector = detectorIndex.get(d.id)
-      return {
-        occurrences: 1, // each record is an occurrence for this timestep / species
+  window.detectorIndex = detectorIndex
+
+  const detectorTS = fromJS(extractNodes(allDetectorTsJson)).map(d => d.merge({
+    occurrences: d.get('nights'), // we are redefining nights as occurrences when merged across species
+  }))
+
+  // splice in location-based information for use in the map and filters
+  const data = detectorTS.map(d => {
+      const detector = detectorIndex.get(d.get('id'))
+      return d.merge({
         lat: detector.get('lat'),
         lon: detector.get('lon'),
-        ...d,
-      }
+        admin1Name: detector.get('admin1Name'),
+      })
     })
-  )
+
 
   const years = Array.from(Set(data.map(d => d.get('year'))).values()).sort()
   const valueField = 'occurrences'
@@ -66,15 +103,13 @@ const ExplorePage = ({
       field: 'bounds', // note: constructed field!
       internal: true,
       getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
-
-      // TODO: use rbush or spatial filter?
       filterFunc: mapBounds => ({ lat, lon }) =>
         withinBounds({ lat, lon }, mapBounds),
     },
     {
       field: 'species',
       title: 'Species Detected',
-      isOpen: true,
+      isOpen: false,
       hideEmpty: true,
       filterFunc: hasValue,
       sort: true,
@@ -85,18 +120,32 @@ const ExplorePage = ({
     },
     {
       field: 'month',
-      title: 'Month',
+      title: 'Seasonality',
       isOpen: false,
+      vertical: true,
       filterFunc: hasValue,
       values: MONTHS,
-      labels: MONTH_LABELS,
+      labels: MONTH_LABELS.map(m => m.slice(0, 3)),
     },
     {
       field: 'year',
       title: 'Year',
       isOpen: false,
+      vertical: true,
       filterFunc: hasValue,
       values: years,
+      labels: years.map(y => `'${y.toString().slice(2)}`)
+    },
+    {
+      field: 'admin1Name',
+      title: 'State / Province',
+      isOpen: false,
+      filterFunc: hasValue,
+      sort: true,
+      hideEmpty: true,
+      values: Array.from(
+        Set(data.map(d => d.get('admin1Name'))).values()
+      ).sort(),
     },
   ]
 
@@ -112,9 +161,31 @@ const ExplorePage = ({
           valueField={valueField}
         >
           <Sidebar allowScroll={false}>
+          {selected.features.size > 0 ? (
+              <DetectorDetails
+                detectors={selected.features}
+                onSetDetector={handleSetFeature}
+                onClose={handleDetailsClose}
+              />) : (
+                <>
             <Box flex={0}>
               <SidebarHeader title="Species Occurrences" icon="slidersH" />
-              <Help>An occurrence is anytime a species was detected by an acoustic detector at a given location for a given month and year.  Use the following filters to select specific species or time periods that you are interested in.</Help>
+              <HelpText>
+                <ExpandableParagraph
+                  snippet="An occurrence is anytime a species was detected by an acoustic
+                detector at a given location during a given night. Use the
+                following filters to select specific species or time periods
+                that you are interested in."
+                >
+                  An occurrence is anytime a species was detected by an acoustic
+                  detector at a given location for a given month and year. Use
+                  the following filters to select specific species or time
+                  periods that you are interested in.
+                  <br />
+                  <br />
+                  TODO
+                </ExpandableParagraph>
+              </HelpText>
             </Box>
 
             {/* <Box m="1rem">
@@ -126,8 +197,11 @@ const ExplorePage = ({
             </Box> */}
 
             <FiltersList filters={visibleFilters} />
+</>
+              )}
           </Sidebar>
-          <Map detectors={detectors} filterByBounds={filterByBounds} />
+          <Map detectors={detectors} filterByBounds={filterByBounds} selectedFeature={selected.feature}
+              onSelectFeatures={handleSelectFeatures}/>
         </CrossfilterProvider>
       </Wrapper>
     </Layout>
@@ -141,7 +215,20 @@ ExplorePage.propTypes = {
         id: PropTypes.number.isRequired,
         lat: PropTypes.number.isRequired,
         lon: PropTypes.number.isRequired,
-        // species: PropTypes.arrayOf(PropTypes.string).isRequired,
+        admin1Name: PropTypes.string.isRequired,
+        micHt: PropTypes.number.isRequired,
+        micType: PropTypes.string,
+        reflType: PropTypes.string,
+        mfg: PropTypes.string,
+        model: PropTypes.string,
+        callId: PropTypes.string,
+        datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
+        contributors: PropTypes.string.isRequired,
+        species: PropTypes.arrayOf(PropTypes.string).isRequired,
+        detections: PropTypes.number.isRequired,
+        detectorNights: PropTypes.number.isRequired,
+        detectionNights: PropTypes.number.isRequired,
+        dateRange: PropTypes.string.isRequired,
       })
     ).isRequired,
     allDetectorTsJson: GraphQLArrayPropType(
@@ -150,26 +237,37 @@ ExplorePage.propTypes = {
         species: PropTypes.string.isRequired,
         year: PropTypes.number.isRequired,
         month: PropTypes.number.isRequired,
+        nights: PropTypes.number.isRequired,
       })
     ),
-    allSpeciesJson: GraphQLArrayPropType(
-      PropTypes.shape({
-        species: PropTypes.string.isRequired,
-        commonName: PropTypes.string.isRequired,
-        sciName: PropTypes.string.isRequired,
-      })
-    ).isRequired,
   }).isRequired,
 }
 
 export const pageQuery = graphql`
   query ExplorePageQuery {
-    allDetectorsJson {
+    allDetectorsJson(filter: {species: {ne: null}}) {
       edges {
         node {
           id: detector
+          name
           lat
           lon
+          micHt
+          micType
+          reflType
+          mfg
+          model
+          callId
+          datasets
+          contributors
+          admin1
+          admin1Name
+          country
+          detections
+          detectorNights
+          detectionNights
+          dateRange
+          species
         }
       }
     }
@@ -180,15 +278,7 @@ export const pageQuery = graphql`
           species: s
           year: y
           month: m
-        }
-      }
-    }
-    allSpeciesJson(sort: { fields: [commonName], order: ASC }) {
-      edges {
-        node {
-          species
-          commonName
-          sciName
+          nights: n
         }
       }
     }
