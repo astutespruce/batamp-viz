@@ -215,7 +215,6 @@ const Map = ({
       }
 
       const values = features.map(({ properties: { total } }) => total)
-      const speciesLabel = species ? ` of ${SPECIES[species].commonName}` : ''
 
       if (features.length > 1) {
         const min = Math.min(...values)
@@ -228,16 +227,19 @@ const Map = ({
               min
             )} - ${formatNumber(
               max
-            )} ${metric}${speciesLabel}.<br />Click to show details in the sidebar.`
+            )} ${metric}.<br />Click to show details in the sidebar.`
           )
           .addTo(map)
       } else {
+
+
+
         tooltip
           .setLngLat(features[0].geometry.coordinates)
           .setHTML(
             `${formatNumber(values[0])} ${
               METRIC_LABELS[metric]
-            }${speciesLabel}.<br />Click to show details in the sidebar.`
+            }.<br />Click to show details in the sidebar.`
           )
           .addTo(map)
       }
@@ -327,10 +329,10 @@ const Map = ({
         .setHTML(html)
         .addTo(map)
     })
+
     map.on('mouseleave', 'detectors-clusters', () => {
       map.getCanvas().style.cursor = ''
 
-      // TODO: unhighlight
       const ids = highlightFeatureRef.current
       if (ids.size) {
         ids.forEach(id =>
@@ -372,9 +374,6 @@ const Map = ({
 
     // unhighlight previous selected
     const prevSelected = selectedFeatureRef.current
-    // prevSelected.forEach(id => {
-    //   map.setFeatureState({ source: 'detectors', id }, { selected: false })
-    // })
     if (prevSelected !== null) {
       map.setFeatureState(
         { source: 'detectors', id: prevSelected },
@@ -389,17 +388,9 @@ const Map = ({
         { selected: true }
       )
     }
-    // selectedFeatures.forEach(id =>
-    //   map.setFeatureState({ source: 'detectors', id }, { selected: true })
-    // )
     selectedFeatureRef.current = selectedFeature
   }, [selectedFeature])
 
-  // Update when data change
-  // useEffect(() => {
-  //   const { current: map } = mapRef
-  //   if (!(map && map.isStyleLoaded())) return
-  // }, [data])
 
   const styleDetectors = () => {
     const { current: map } = mapRef
@@ -637,135 +628,3 @@ export default Map
 // map.setPaintProperty('detectors-clusters', 'circle-radius', ['interpolate', ['linear'], ['get', 'total'], 1,minRadius, max, maxRadius])
 // map.setPaintProperty('detectors-points', 'circle-radius', ['interpolate', ['linear'], ['get', 'total'], 1,minRadius, max, maxRadius])
 
-// in map load:
-// add layers
-// layers.forEach(layer => {
-//   // add highlight layer for each
-//   const highlightLayer = fromJS(layer)
-//     .merge({
-//       id: `${layer.id}-highlight`,
-//       type: 'fill',
-//       layout: {},
-//       paint: {
-//         'fill-color': TRANSPARENT,
-//         'fill-opacity': 0.5,
-//       },
-//     })
-//     .toJS()
-//   map.addLayer(highlightLayer)
-
-//   // add layer last so that outlines are on top of highlight
-//   /* eslint-disable no-param-reassign */
-//   layer.layout.visibility = grid === layer.id ? 'visible' : 'none'
-//   map.addLayer(layer)
-// })
-
-// map.on('click', e => {
-//   const { current: curGrid } = gridRef
-
-//   if (!curGrid) return
-//   const [feature] = map.queryRenderedFeatures(e.point, {
-//     layers: [`${curGrid}-highlight`],
-//   })
-//   if (feature) {
-//     const { id } = feature.properties
-//     updateHighlight(curGrid, id)
-
-//     onSelectFeature(feature.properties)
-//   }
-// })
-
-// map.on('zoomend', () => {
-//   console.log('zoom', map.getZoom())
-
-//   if (gridRef.current === 'na_grts' && map.getZoom() < 5) {
-//     noteNode.current.innerHTML = 'Zoom in further to see GRTS grid...'
-//   } else {
-//     noteNode.current.innerHTML = ''
-//   }
-// })
-
-// useEffect(() => {
-//   const { current: map } = mapRef
-//   const { current: marker } = markerRef
-
-//   if (!map.loaded()) return
-
-//   if (location !== null) {
-//     onSelectFeature(null)
-//     const { latitude, longitude } = location
-//     map.flyTo({ center: [longitude, latitude], zoom: 10 })
-
-//     map.once('moveend', () => {
-//       const point = map.project([longitude, latitude])
-//       const feature = getFeatureAtPoint(point)
-//       // source may still be loading, try again in 1 second
-//       if (!feature) {
-//         setTimeout(() => {
-//           getFeatureAtPoint(point)
-//         }, 1000)
-//       }
-//     })
-
-//     if (!marker) {
-//       markerRef.current = new mapboxgl.Marker()
-//         .setLngLat([longitude, latitude])
-//         .addTo(map)
-//     } else {
-//       marker.setLngLat([longitude, latitude])
-//     }
-//   } else if (marker) {
-//     marker.remove()
-//     markerRef.current = null
-//   }
-// }, [location])
-
-// useEffect(() => {
-//   console.log('grid changed', grid)
-
-//   const { current: map } = mapRef
-//   if (!map.loaded()) return
-
-//   // clear out any previous highlights
-//   layers.forEach(({ id }) => {
-//     updateHighlight(id, null)
-//   })
-
-//   layers.forEach(({ id }) => {
-//     map.setLayoutProperty(id, 'visibility', grid === id ? 'visible' : 'none')
-//   })
-// }, [grid])
-
-// const updateHighlight = (gridID, id) => {
-//   const { current: map } = mapRef
-//   const layer = `${gridID}-highlight`
-
-//   if (id !== null) {
-//     map.setPaintProperty(layer, 'fill-color', [
-//       'match',
-//       ['get', 'id'],
-//       id,
-//       '#b5676d',
-//       TRANSPARENT,
-//     ])
-//   } else {
-//     map.setPaintProperty(layer, 'fill-color', TRANSPARENT)
-//   }
-// }
-
-// const getFeatureAtPoint = point => {
-//   const { current: map } = mapRef
-//   const { current: curGrid } = gridRef
-
-//   if (!(map && curGrid)) return null
-
-//   const [feature] = map.queryRenderedFeatures(point, {
-//     layers: [`${curGrid}-highlight`],
-//   })
-//   if (feature) {
-//     console.log('got feature at point', feature)
-//     updateHighlight(curGrid, feature.properties.id)
-//     onSelectFeature(feature.properties)
-//   }
-//   return feature
-// }

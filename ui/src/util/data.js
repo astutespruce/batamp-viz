@@ -71,6 +71,7 @@ export const flatzip = (a, b) => {
 /**
  * SUM values within each group.
  * Returns Map where keys are each unique value of groupField.
+ * NOTE: if the sum is 0, the key is absent from the resulting Map.
  *
  * @param {Immutable List} records - list of Map objects
  * @param {String} groupField - field to group by
@@ -78,11 +79,10 @@ export const flatzip = (a, b) => {
  */
 export const sumBy = (records, groupField, valueField) =>
   records.reduce(
-    (prev, value) =>
-      prev.update(
+    (prev, value) => prev.update(
         value.get(groupField),
         0,
-        prevCount => prevCount + value.get(valueField)
+        prevCount => prevCount + value.get(valueField, 0)
       ),
     Map()
   )

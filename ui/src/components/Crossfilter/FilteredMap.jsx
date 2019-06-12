@@ -63,7 +63,8 @@ const FilteredMap = ({
   // NOTE: this is only the total for all applied filters
   // TODO: this assumes timestep is not split out as a separate filter when
   // animating time!
-  const totalById = sumBy(state.get('data'), 'id', valueField)
+  const data = state.get('data')
+  const totalById = sumBy(data, 'id', valueField)
 
   let maxValue = 0
   if (valueField === 'id') {
@@ -72,15 +73,14 @@ const FilteredMap = ({
     maxValue = totalById.size ? Math.max(...Array.from(totalById.values())) : 0
   }
 
+  // Only show the detectors that currently meet the applied filters
+  const filteredIds = Set(data.map(d => d.get('id')))
   const keys = Set(['id', 'lat', 'lon'])
-  const detectors = rawDetectors.map(d =>
+  const detectors = rawDetectors.filter(d => filteredIds.has(d.get('id'))).map(d =>
     d
       .filter((_, k) => keys.has(k))
       .merge({ total: totalById.get(d.get('id'), 0) })
   )
-  // .filter(d => d.get('total') > 0)
-
-  // console.log('detectors', detectors.toJS())
 
   return (
     <Map
