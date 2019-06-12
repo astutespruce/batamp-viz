@@ -23,7 +23,12 @@ import { Flex, Box } from 'components/Grid'
 import styled, { themeGet } from 'style'
 import { createIndex } from 'util/data'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
-import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
+import {
+  MONTHS,
+  MONTH_LABELS,
+  SPECIES,
+  SPECIES_ID,
+} from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -31,12 +36,9 @@ const Wrapper = styled(Flex)`
 
 const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
-const ExplorePage = ({
-  data: { allDetectorsJson, allDetectorTsJson },
-}) => {
+const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
   const [selected, setSelected] = useState({ features: Set(), feature: null })
   const [filterByBounds, setFilterByBounds] = useState(true)
-  
 
   const handleToggleBoundsFilter = () => {
     setFilterByBounds(prev => !prev)
@@ -68,37 +70,65 @@ const ExplorePage = ({
     setSelected({ features: Set(), feature: null })
   }
 
-const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({species, ...v}))
+  const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
+    species,
+    ...v,
+  }))
 
   const detectors = fromJS(extractNodes(allDetectorsJson))
   const detectorIndex = createIndex(detectors, 'id')
 
-  window.detectorIndex = detectorIndex
 
-  const detectorTS = fromJS(extractNodes(allDetectorTsJson)).map(d => d.merge({
-    occurrences: d.get('nights'), // we are redefining nights as occurrences when merged across species
-  }))
+  const detectorTS = fromJS(
+    extractNodes(allDetectorTsJson).map(
+      ({ id, speciesId, timestamp, value }) => {
+        // timstamp is MYY, divide by 100 and extract whole number to get month
+        const month = Math.trunc(timestamp / 100)
+
+        // value is detectorNights|detectionNights|detections if detectionNights or detections are > 0, else
+        // it is just detectorNights
+        let detectionNights = 0
+        let detections = 0
+        let detectorNights = 0
+        if (value.includes('|')) {
+          [detectorNights, detectionNights, detections] = value
+            .split('|')
+            .map(d => parseInt(d, 10))
+        } else {
+          detectorNights = parseInt(value, 10)
+        }
+
+        return {
+          id,
+          species: SPECIES_ID[speciesId],
+          month,
+          year: timestamp - 100 * month + 2000,
+          detectorNights,
+          nights: detectionNights, // TODO: detectionNights
+          detections,
+          // we are redefining nights as occurrences when merged across species
+          occurrences: detectionNights,
+        }
+      }
+    )
+  )
+
 
   // splice in location-based information for use in the map and filters
   const data = detectorTS.map(d => {
-      const detector = detectorIndex.get(d.get('id'))
-      return d.merge({
-        lat: detector.get('lat'),
-        lon: detector.get('lon'),
-        admin1Name: detector.get('admin1Name'),
-      })
+    const detector = detectorIndex.get(d.get('id'))
+    return d.merge({
+      lat: detector.get('lat'),
+      lon: detector.get('lon'),
+      admin1Name: detector.get('admin1Name'),
     })
-
-
+  })
+  
   const years = Array.from(Set(data.map(d => d.get('year'))).values()).sort()
+
   const valueField = 'occurrences'
 
   const filters = [
-    {
-      field: 'id',
-      internal: true,
-      filterFunc: hasValue,
-    },
     {
       field: 'bounds', // note: constructed field!
       internal: true,
@@ -134,7 +164,7 @@ const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({species, ...v
       vertical: true,
       filterFunc: hasValue,
       values: years,
-      labels: years.map(y => `'${y.toString().slice(2)}`)
+      labels: years.map(y => `'${y.toString().slice(2)}`),
     },
     {
       field: 'admin1Name',
@@ -161,47 +191,44 @@ const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({species, ...v
           valueField={valueField}
         >
           <Sidebar allowScroll={false}>
-          {selected.features.size > 0 ? (
+            {selected.features.size > 0 ? (
               <DetectorDetails
                 detectors={selected.features}
                 onSetDetector={handleSetFeature}
                 onClose={handleDetailsClose}
-              />) : (
-                <>
-            <Box flex={0}>
-              <SidebarHeader title="Species Occurrences" icon="slidersH" />
-              <HelpText>
-                <ExpandableParagraph
-                  snippet="An occurrence is anytime a species was detected by an acoustic
+              />
+            ) : (
+              <>
+                <Box flex={0}>
+                  <SidebarHeader title="Species Occurrences" icon="slidersH" />
+                  <HelpText>
+                    <ExpandableParagraph
+                      snippet="An occurrence is anytime a species was detected by an acoustic
                 detector at a given location during a given night. Use the
                 following filters to select specific species or time periods
                 that you are interested in."
-                >
-                  An occurrence is anytime a species was detected by an acoustic
-                  detector at a given location for a given month and year. Use
-                  the following filters to select specific species or time
-                  periods that you are interested in.
-                  <br />
-                  <br />
-                  TODO
-                </ExpandableParagraph>
-              </HelpText>
-            </Box>
+                    >
+                      An occurrence is anytime a species was detected by an
+                      acoustic detector at a given location for a given month
+                      and year. Use the following filters to select specific
+                      species or time periods that you are interested in.
+                      <br />
+                      <br />
+                      TODO
+                    </ExpandableParagraph>
+                  </HelpText>
+                </Box>
 
-            {/* <Box m="1rem">
-              <Switch
-                label="filter occurrences by map extent?"
-                enabled={filterByBounds}
-                onChange={handleToggleBoundsFilter}
-              />
-            </Box> */}
-
-            <FiltersList filters={visibleFilters} />
-</>
-              )}
+                <FiltersList filters={visibleFilters} />
+              </>
+            )}
           </Sidebar>
-          <Map detectors={detectors} filterByBounds={filterByBounds} selectedFeature={selected.feature}
-              onSelectFeatures={handleSelectFeatures}/>
+          <Map
+            detectors={detectors}
+            filterByBounds={filterByBounds}
+            selectedFeature={selected.feature}
+            onSelectFeatures={handleSelectFeatures}
+          />
         </CrossfilterProvider>
       </Wrapper>
     </Layout>
@@ -224,7 +251,8 @@ ExplorePage.propTypes = {
         callId: PropTypes.string,
         datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
         contributors: PropTypes.string.isRequired,
-        species: PropTypes.arrayOf(PropTypes.string).isRequired,
+        species: PropTypes.arrayOf(PropTypes.string),
+        targetSpecies: PropTypes.arrayOf(PropTypes.string),
         detections: PropTypes.number.isRequired,
         detectorNights: PropTypes.number.isRequired,
         detectionNights: PropTypes.number.isRequired,
@@ -236,7 +264,7 @@ ExplorePage.propTypes = {
         id: PropTypes.number.isRequired,
         speciesId: PropTypes.number.isRequired,
         timestamp: PropTypes.number.isRequired,
-        value: PropTypes.number.isRequired
+        value: PropTypes.string.isRequired,
       })
     ),
   }).isRequired,
@@ -244,7 +272,7 @@ ExplorePage.propTypes = {
 
 export const pageQuery = graphql`
   query ExplorePageQuery {
-    allDetectorsJson(filter: {species: {ne: null}}) {
+    allDetectorsJson {
       edges {
         node {
           id: detector
@@ -275,8 +303,8 @@ export const pageQuery = graphql`
         node {
           id: i
           speciesId: s
-          timestep: t
-          value: v          
+          timestamp: t
+          value: v
         }
       }
     }

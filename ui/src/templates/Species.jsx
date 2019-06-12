@@ -241,7 +241,7 @@ SpeciesTemplate.propTypes = {
         callId: PropTypes.string,
         datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
         contributors: PropTypes.string.isRequired,
-        species: PropTypes.arrayOf(PropTypes.string).isRequired,
+        species: PropTypes.arrayOf(PropTypes.string),
         detections: PropTypes.number.isRequired,
         detectorNights: PropTypes.number.isRequired,
         detectionNights: PropTypes.number.isRequired,
@@ -253,7 +253,7 @@ SpeciesTemplate.propTypes = {
         id: PropTypes.number.isRequired,
         speciesId: PropTypes.number.isRequired,
         timestamp: PropTypes.number.isRequired,
-        value: PropTypes.number.isRequired
+        value: PropTypes.string.isRequired
       })
     ).isRequired,
   }).isRequired,

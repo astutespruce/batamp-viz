@@ -10,7 +10,13 @@ from feather import read_dataframe
 from shapely.geometry import Point
 
 from geofeather import read_geofeather
-from constants import SPECIES, ACTIVITY_COLUMNS, GROUP_ACTIVITY_COLUMNS, DETECTOR_FIELDS, SPECIES_ID
+from constants import (
+    SPECIES,
+    ACTIVITY_COLUMNS,
+    GROUP_ACTIVITY_COLUMNS,
+    DETECTOR_FIELDS,
+    SPECIES_ID,
+)
 from util import camelcase
 
 src_dir = Path("data/src")
@@ -330,9 +336,21 @@ detector_datasets = (
     df.groupby("detector").dataset.unique().apply(list).rename("datasets")
 )
 
+
+
+# NOTE: we are dropping any detectors that did not target species
+print('{} detectors'.format(len(detectors)))
+detectors = detectors.loc[detectors.index.isin(df.dropna(axis=0, how="all", subset=ACTIVITY_COLUMNS).detector.unique())]
+print('{} detectors have species records'.format(len(detectors)))
+
 # Calculate list of unique species present or targeted per detector
 # We are setting null data to -1 so we can filter it out
-stacked = df[["detector"] + ACTIVITY_COLUMNS].fillna(-1).set_index("detector").stack()
+stacked = (
+    df[["detector"] + ACTIVITY_COLUMNS]
+    .fillna(-1)
+    .set_index("detector")
+    .stack()
+)
 det_spps = (
     stacked[stacked > 0]
     .reset_index()
@@ -366,7 +384,9 @@ det_g = df[["detector"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].groupby("de
 # Note: detections will be 0 for nulls as well as true 0s
 
 # Detections is limited to just species
-det_detections = det_g[ACTIVITY_COLUMNS].sum().sum(axis=1).astype("uint").rename("detections")
+det_detections = (
+    det_g[ACTIVITY_COLUMNS].sum().sum(axis=1).astype("uint").rename("detections")
+)
 
 
 detector_nights = det_g.size().rename("detector_nights")
@@ -494,24 +514,28 @@ totdet_ts.columns = ["detector_nights"]
 
 det_ts = totdet_ts.join(det_ts).reset_index()
 det_ts.detector_nights = det_ts.detector_nights.astype("uint")
-det_ts.detections = det_ts.detections.fillna(0).astype('uint')
-det_ts.detection_nights = det_ts.detection_nights.fillna(0).astype('uint')
+det_ts.detections = det_ts.detections.fillna(0).astype("uint")
+det_ts.detection_nights = det_ts.detection_nights.fillna(0).astype("uint")
 
 # det_ts.to_feather(derived_dir / "detector_ts.feather")
 
 # Calculate smaller fields for export
-det_ts.species = det_ts.species.map(SPECIES_ID).astype('uint')
+det_ts.species = det_ts.species.map(SPECIES_ID).astype("uint")
 
 # path month and year into a single number: MYY
 # NOTE: this assumes all years are >= 2000
 # det_ts['timestamp'] = det_ts.apply(lambda row: '{0}{1}'.format(row.month, str(row.year)[-2:]), axis=1)
-det_ts['timestamp'] = (det_ts.month * 100) + (det_ts.year - 2000)
+det_ts["timestamp"] = (det_ts.month * 100) + (det_ts.year - 2000)
 
 # Path detector nights, detection nights, detections into a single value
-det_ts['value'] = det_ts.apply(lambda row: '{0}|{1}|{2}'.format(row.detector_nights, row.detection_nights, row.detections) if row.detection_nights or row.detections else str(row.detector_nights), axis=1)
+index = det_ts.loc[det_ts.detections > 0].index
+det_ts['value'] = det_ts.detector_nights.astype('str')
+det_ts.loc[index, 'value'] = det_ts.loc[index].apply(lambda row: "{0}|{1}|{2}".format(
+        row.detector_nights, row.detection_nights, row.detections
+    ), axis=1)
 
-det_ts = det_ts[['detector', 'species', 'timestamp', 'value']]
-det_ts.columns = ['i', 's', 't', 'v']
+det_ts = det_ts[["detector", "species", "timestamp", "value"]]
+det_ts.columns = ["i", "s", "t", "v"]
 
 # use smaller column names
 # det_ts.columns = ["i", "s", "y", "m", "dn", "d", "n"]
