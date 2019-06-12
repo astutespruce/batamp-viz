@@ -7,7 +7,7 @@ import { Set, Map as ImmutableMap } from 'immutable'
 
 import { sumBy } from 'util/data'
 import Map from 'components/Map'
-import { SET_FILTER } from './Crossfilter'
+import { SET_SPATIAL_FILTER } from './Crossfilter'
 import { Context } from './Context'
 
 const FilteredMap = ({
@@ -27,10 +27,9 @@ const FilteredMap = ({
 
     // reset existing bounds filter if needed, or enable it to the last bounds
     dispatch({
-      type: SET_FILTER,
+      type: SET_SPATIAL_FILTER,
       payload: {
-        field: 'bounds',
-        filterValue: filterByBounds ? boundsRef.current : null,
+        bounds: filterByBounds ? boundsRef.current : null,
       },
     })
   }, [filterByBounds])
@@ -44,10 +43,9 @@ const FilteredMap = ({
     if (!filterByBoundsRef.current) return
 
     dispatch({
-      type: SET_FILTER,
+      type: SET_SPATIAL_FILTER,
       payload: {
-        field: 'bounds',
-        filterValue: bounds,
+        bounds,
       },
     })
   }

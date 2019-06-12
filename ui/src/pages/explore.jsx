@@ -130,11 +130,12 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
 
   const filters = [
     {
-      field: 'bounds', // note: constructed field!
+      field: 'lat',
       internal: true,
-      getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
-      filterFunc: mapBounds => ({ lat, lon }) =>
-        withinBounds({ lat, lon }, mapBounds),
+    },
+    {
+      field: 'lon',
+      internal: true,
     },
     {
       field: 'species',

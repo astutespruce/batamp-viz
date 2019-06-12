@@ -133,11 +133,14 @@ const SpeciesTemplate = ({
   }
 
   const filters = [
-    // {
-    //   field: 'id',
-    //   internal: true,
-    //   filterFunc: hasValue,
-    // },
+    {
+      field: 'lat',
+      internal: true,
+    },
+    {
+      field: 'lon',
+      internal: true,
+    },
     {
       field: 'month',
       title: 'Seasonality',
@@ -166,13 +169,6 @@ const SpeciesTemplate = ({
       values: Array.from(
         Set(data.map(d => d.get('admin1Name'))).values()
       ).sort(),
-    },
-
-    {
-      field: 'bounds', // note: constructed field!
-      internal: true,
-      getValue: record => ({ lat: record.get('lat'), lon: record.get('lon') }),
-      filterFunc: boundsFilterFunc,
     },
   ]
 

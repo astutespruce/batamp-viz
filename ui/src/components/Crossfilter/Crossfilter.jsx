@@ -27,6 +27,7 @@ export const hasValue = filterValues => value => filterValues.has(value)
 // Actions
 export const RESET_FILTERS = 'RESET_FILTERS'
 export const SET_FILTER = 'SET_FILTER' // payload is {field, filterValue}
+export const SET_SPATIAL_FILTER = 'SET_SPATIAL_FILTER' // payload is {bounds}
 export const SET_VALUE_FIELD = 'SET_VALUE_FIELD' // payload is {field}
 
 // Incoming data is an immutableJS List of Maps
@@ -72,6 +73,40 @@ export const useCrossfilter = (data, filters, initValueField = null) => {
           // convert Array from crossfilter back to an immutable List
           data: List(crossfilter.allFiltered()),
           filters: state.get('filters').set(field, filterValue),
+          dimensionTotals: aggregateByDimension(dimensions, valueField),
+          filteredTotal: getFilteredTotal(crossfilter, valueField),
+          dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
+        })
+        break
+      }
+
+      case SET_SPATIAL_FILTER: {
+        const valueField = state.get('valueField')
+        const { bounds } = payload
+        // incoming value is [xmin, ymin, xmax, ymax]
+
+        if (!(dimensions.lat && dimensions.lon)) {
+          console.warn(
+            'Filter requested on spatial dimensions that do not exist.  Must be configured as lat, lon when Crossfilter is constructed.'
+          )
+          return state
+        }
+
+        const {lat, lon} = dimensions
+
+        if (bounds === null) {
+          lat.filterAll()
+          lon.filterAll()
+        } else {
+          const [xmin, ymin, xmax,ymax] = bounds
+          lon.filterRange([xmin, xmax])
+          lat.filterRange([ymin, ymax])
+        }
+
+        newState = state.merge({
+          // convert Array from crossfilter back to an immutable List
+          data: List(crossfilter.allFiltered()),
+          // filters: state.get('filters').set(field, filterValue),
           dimensionTotals: aggregateByDimension(dimensions, valueField),
           filteredTotal: getFilteredTotal(crossfilter, valueField),
           dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
