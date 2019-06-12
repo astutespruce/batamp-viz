@@ -1,4 +1,7 @@
-import { theme } from '../../style/theme'
+import { interpolate, interpolateRgb } from 'd3-interpolate'
+
+import { formatNumber } from 'util/format'
+import { theme } from 'style'
 
 const TILE_HOST = 'https://tiles.batamp.databasin.org'
 // const TILE_HOST = 'http://localhost:8001'
@@ -278,3 +281,53 @@ export const speciesLayers = [
     },
   },
 ]
+
+export const legends = {
+  species: () => [
+    {
+      color: `${theme.colors.highlight[500]}33`,
+      borderColor: `${theme.colors.highlight[500]}33`,
+      borderWidth: 1,
+      label: 'Species range',
+    },
+  ],
+  // TODO: make it based on properties in the map
+  detectors: upperValue => {
+    const radiusInterpolator = interpolate(MINRADIUS, MAXRADIUS)
+    const colorInterpolator = interpolateRgb(DARKESTCOLOR, LIGHTESTCOLOR)
+
+    const entries = []
+
+    if (upperValue > 0) {
+      let breaks = []
+      if (upperValue - 1 > 4) {
+        breaks = [0.66, 0.33]
+      }
+
+      entries.push(
+        {
+          type: 'circle',
+          radius: MAXRADIUS,
+          label: `≥ ${formatNumber(upperValue, 0)}`,
+          color: LIGHTESTCOLOR,
+        },
+        ...breaks.map(b => ({
+          type: 'circle',
+          label: `${formatNumber(upperValue * b, 0)}`,
+          radius: radiusInterpolator(b),
+          color: colorInterpolator(b),
+        })),
+        { type: 'circle', radius: MINRADIUS, label: '1', color: DARKESTCOLOR }
+      )
+    }
+
+    entries.push({
+      type: 'circle',
+      radius: MINRADIUS,
+      label: 'Not detected',
+      color: NONDETECTIONCOLOR,
+    })
+
+    return entries
+  },
+}

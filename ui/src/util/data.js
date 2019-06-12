@@ -41,7 +41,7 @@ export const filterIndex = (index, keys) => {
 export const sum = values => values.reduce((prev, value) => prev + value, 0)
 
 /**
- * Round number UP to the nearest power of 10
+ * Round number to the nearest power of 10
  * @param {Number} number
  */
 export const niceNumber = number => {
@@ -49,7 +49,7 @@ export const niceNumber = number => {
     return number
   }
   const factor = 10 ** Math.max(number.toString().length - 2, 1)
-  return Math.ceil(number / factor) * factor
+  return Math.round(number / factor) * factor
 }
 
 /**
@@ -79,7 +79,8 @@ export const flatzip = (a, b) => {
  */
 export const sumBy = (records, groupField, valueField) =>
   records.reduce(
-    (prev, value) => prev.update(
+    (prev, value) =>
+      prev.update(
         value.get(groupField),
         0,
         prevCount => prevCount + value.get(valueField, 0)

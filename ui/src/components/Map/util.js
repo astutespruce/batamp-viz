@@ -1,4 +1,5 @@
 import geoViewport from '@mapbox/geo-viewport'
+import { flatzip } from 'util/data'
 
 /**
  * Calculate the appropriate center and zoom to fit the bounds, given padding.
@@ -101,4 +102,69 @@ export const calculateBounds = geometries => {
       },
       [null, null, null, null]
     )
+}
+
+// TODO: memoize!
+/**
+ * Construct Mapbox GL style expression to interpolate linearly between
+ * values of domain (min, max) against the range (minOutput, maxOutput).
+ * fallback is used when max value is 0 or if min > 0
+ *
+ * @param {Object} - options
+ */
+export const interpolateExpr = ({
+  property,
+  domain,
+  range,
+  fallback,
+  hasZero = true,
+}) => {
+  const [min, max] = domain
+
+  if (max === 0) {
+    return fallback
+  }
+
+  const interpolateExpression = [
+    'interpolate',
+    ['linear'],
+    ['get', property],
+    ...flatzip(domain, range),
+  ]
+
+  if (hasZero) {
+    // if there is nothing to interpolate between, return first output value
+    if (min === max) {
+      return ['case', ['==', ['get', property], 0], fallback, range[0]]
+    }
+
+    return [
+      'case',
+      ['==', ['get', property], 0],
+      fallback,
+      interpolateExpression,
+    ]
+  }
+
+  return interpolateExpression
+}
+
+/**
+ * Calculate the maximum value of a property across an array of features.
+ * If no features are present, this returns fallback value
+ *
+ * @param {Array} features - GeoJSON features
+ * @param {String} property - name of property
+ * @param {Number} fallback - value to use when there are no features
+ */
+export const maxProperty = (features, property, fallback = null) => {
+  const values = features
+    .map(({ properties: { [property]: v } }) => v)
+    .filter(v => !isNaN(v))
+
+  if (values.length) {
+    return Math.max(...values)
+  }
+
+  return fallback
 }

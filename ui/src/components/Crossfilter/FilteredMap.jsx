@@ -62,29 +62,34 @@ const FilteredMap = ({
   // TODO: this assumes timestep is not split out as a separate filter when
   // animating time!
   const data = state.get('data')
-  const totalById = sumBy(data, 'id', valueField)
+  const filteredIds = Set(data.map(d => d.get('id')))
 
-  let maxValue = 0
+  let totalById = ImmutableMap()
+  // Note: the totals will only include entries where valueField is > 0
   if (valueField === 'id') {
-    maxValue = totalById.size
+    // convert to boolean-like values.  1 indicates that it was detected with at least one night.
+    totalById = sumBy(data, 'id', 'nights').map(total => (total > 0 ? 1 : 0))
   } else {
-    maxValue = totalById.size ? Math.max(...Array.from(totalById.values())) : 0
+    totalById = sumBy(data, 'id', valueField)
   }
 
+  const maxValue = totalById.size
+    ? Math.max(...Array.from(totalById.values()))
+    : 0
+
   // Only show the detectors that currently meet the applied filters
-  const filteredIds = Set(data.map(d => d.get('id')))
   const keys = Set(['id', 'lat', 'lon'])
-  const detectors = rawDetectors.filter(d => filteredIds.has(d.get('id'))).map(d =>
-    d
-      .filter((_, k) => keys.has(k))
-      .merge({ total: totalById.get(d.get('id'), 0) })
-  )
+  const detectors = rawDetectors
+    .filter(d => filteredIds.has(d.get('id')))
+    .map(d =>
+      d
+        .filter((_, k) => keys.has(k))
+        .merge({ total: totalById.get(d.get('id'), 0) })
+    )
 
   return (
     <Map
-      // data={state.get('data')}
       detectors={detectors}
-      // totals={totals}
       valueField={valueField}
       maxValue={maxValue}
       onBoundsChange={handleBoundsChange}
