@@ -6,7 +6,7 @@ import { css } from 'styled-components'
 import { Columns, Column } from 'components/Grid'
 import { Link } from 'components/Link'
 import styled, { themeGet, theme } from 'style'
-import { formatNumber } from 'util/format'
+import { formatNumber, quantityLabel } from 'util/format'
 
 const Wrapper = styled.div`
   &:not(:first-child) {
@@ -53,8 +53,10 @@ const ListItem = ({ item, metric }) => {
     species,
     commonName,
     sciName,
+    detectors,
     detections,
-    nights,
+    detectionNights,
+    detectorNights,
     contributors,
   } = item.toJS()
 
@@ -69,23 +71,32 @@ const ListItem = ({ item, metric }) => {
             </Column>
             <Column>
               <Stats>
-                <Metric isActive={metric === 'detections'}>
-                  {formatNumber(detections, 0)} detections
-                </Metric>
+                {detections > 0 ? (
+                  <>
+                    <Metric isActive={metric === 'detections'}>
+                      {formatNumber(detections, 0)} detections
+                    </Metric>{' '}
+                    on{' '}
+                    <Metric isActive={metric === 'nights detected'}>
+                      {formatNumber(detectionNights, 0)} nights
+                    </Metric>
+                  </>
+                ) : (
+                  <Metric>not detected on any night</Metric>
+                )}
                 <br />
-                on{' '}
-                <Metric isActive={metric === 'nights'}>
-                  {formatNumber(nights, 0)} nights
-                </Metric>
+                monitored at{' '}
+                <Metric isActive={metric === 'detectors'}>
+                  {formatNumber(detectors, 0)} detectors
+                </Metric>{' '}
+                for {formatNumber(detectorNights, 0)} nights
                 {contributors ? (
                   <>
                     <br />
                     by{' '}
                     <Metric isActive={metric === 'contributors'}>
-                      {contributors.length}{' '}
-                      {contributors.length === 1
-                        ? 'contributor'
-                        : 'contributors'}
+                      {contributors}{' '}
+                      {quantityLabel('contributors', contributors)}
                     </Metric>
                   </>
                 ) : null}
@@ -103,8 +114,10 @@ ListItem.propTypes = {
     species: PropTypes.string.isRequired,
     commonName: PropTypes.string.isRequired,
     sciName: PropTypes.string.isRequired,
+    detectors: PropTypes.number.isRequired,
     detections: PropTypes.number.isRequired,
-    nights: PropTypes.number.isRequired,
+    detectionNights: PropTypes.number.isRequired,
+    detectorNights: PropTypes.number.isRequired,
     contributors: PropTypes.number.isRequired,
   }).isRequired,
   metric: PropTypes.string.isRequired,

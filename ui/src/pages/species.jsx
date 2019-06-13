@@ -36,8 +36,10 @@ SpeciesPage.propTypes = {
         PropTypes.shape({
           node: PropTypes.shape({
             species: PropTypes.string.isRequired,
+            detectors: PropTypes.number.isRequired,
             detections: PropTypes.number.isRequired,
-            nights: PropTypes.number.isRequired,
+            detectionNights: PropTypes.number.isRequired,
+            detectorNights: PropTypes.number.isRequired,
             contributors: PropTypes.number.isRequired,
           }).isRequired,
         })
@@ -52,8 +54,10 @@ export const pageQuery = graphql`
       edges {
         node {
           species
+          detectors
           detections
-          nights: detectionNights
+          detectionNights
+          detectorNights
           contributors
         }
       }

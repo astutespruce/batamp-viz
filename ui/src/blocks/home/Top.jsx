@@ -36,8 +36,9 @@ const List = styled.ul`
 const Top = ({
   detectors,
   contributors,
-  detections,
-  nights,
+  allDetections,
+  sppDetections,
+  detectorNights,
   species,
   years,
   admin1,
@@ -65,12 +66,15 @@ const Top = ({
             <HighlightTitle>Progress so far:</HighlightTitle>
             <List>
               <li>
-                <b>{formatNumber(detections, 0)}</b> detections of{' '}
+                <b>{formatNumber(allDetections, 0)}</b> total bat detections
+              </li>
+              <li>
+                <b>{formatNumber(sppDetections, 0)}</b> detections of{' '}
                 <b>{species}</b> species
               </li>
               <li>
-                <b>{formatNumber(nights, 0)}</b> nights across <b>{years}</b>{' '}
-                years
+                <b>{formatNumber(detectorNights, 0)}</b> nights monitored during{' '}
+                <b>{years}</b> years
               </li>
               <li>
                 <b>{formatNumber(detectors, 0)}</b> detectors operated by{' '}
@@ -114,8 +118,9 @@ const Top = ({
 Top.propTypes = {
   admin1: PropTypes.number.isRequired,
   detectors: PropTypes.number.isRequired,
-  detections: PropTypes.number.isRequired,
-  nights: PropTypes.number.isRequired,
+  allDetections: PropTypes.number.isRequired,
+  sppDetections: PropTypes.number.isRequired,
+  detectorNights: PropTypes.number.isRequired,
   species: PropTypes.number.isRequired,
   years: PropTypes.number.isRequired,
   contributors: PropTypes.number.isRequired,

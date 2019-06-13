@@ -95,7 +95,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
   const { state } = useContext(Context)
   let valueField = state.get('valueField')
   if (valueField === 'id') {
-    valueField = 'nights'
+    valueField = 'detectionNights'
   }
 
   const {
@@ -119,8 +119,10 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
   // If we are showing nights, we need to show the true effort which is
   // number of detector nights
+
+  // FIXME: what is valueField??
   const max =
-    valueField === 'nights'
+    valueField === 'detectionNights'
       ? detectorNights
       : Math.max(...Array.from(sppTotals.map(([_, value]) => value)))
 
@@ -203,7 +205,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
           <Section>
             <SectionHeader>
               {metric}{' '}
-              {valueField === 'nights' ? (
+              {valueField === 'detectionNights' ? (
                 <Metric>
                   (of {formatNumber(detectorNights)}{' '}
                   {quantityLabel('nights', detectorNights)} monitored)

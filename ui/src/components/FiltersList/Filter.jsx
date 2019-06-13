@@ -81,7 +81,6 @@ const Filter = ({
   sort,
   vertical,
 }) => {
-  console.log('render Filter', field)
   const [isOpen, setIsOpen] = useState(initIsOpen)
   const { setFilter, state } = useCrossfilter()
 

@@ -57,6 +57,8 @@ IndexPage.propTypes = {
       admin1: PropTypes.number.isRequired,
       detectorNights: PropTypes.number.isRequired,
       detectionNights: PropTypes.number.isRequired,
+      allDetections: PropTypes.number.isRequired,
+      sppDetections: PropTypes.number.isRequired,
       years: PropTypes.number.isRequired,
       contributors: PropTypes.number.isRequired,
     }),
@@ -65,9 +67,10 @@ IndexPage.propTypes = {
         PropTypes.shape({
           node: PropTypes.shape({
             contributor: PropTypes.string.isRequired,
-            detections: PropTypes.number.isRequired,
+            allDetections: PropTypes.number.isRequired,
+            sppDetections: PropTypes.number.isRequired,
             detectorNights: PropTypes.number.isRequired,
-            species: PropTypes.arrayOf(PropTypes.string),
+            species: PropTypes.number,
           }),
         })
       ).isRequired,
@@ -87,18 +90,21 @@ export const pageQuery = graphql`
     summaryJson {
       admin1
       contributors
-      nights: detectorNights
+      detectionNights
+      detectorNights
       years
-      detections
+      allDetections
+      sppDetections
       detectors
       species
     }
-    allContributorsJson(sort: { fields: [detections], order: DESC }) {
+    allContributorsJson {
       edges {
         node {
           contributor
-          detections
-          nights: detectorNights
+          allDetections
+          sppDetections
+          detectorNights
           detectors
           species
         }

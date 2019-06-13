@@ -57,7 +57,7 @@ const FilteredMap = ({
   // Note: the totals will only include entries where valueField is > 0
   if (valueField === 'id') {
     // convert to boolean-like values.  1 indicates that it was detected with at least one night.
-    totalById = sumBy(data, 'id', 'nights').map(total => (total > 0 ? 1 : 0))
+    totalById = sumBy(data, 'id', 'detectionNights').map(total => (total > 0 ? 1 : 0))
   } else {
     totalById = sumBy(data, 'id', valueField)
   }

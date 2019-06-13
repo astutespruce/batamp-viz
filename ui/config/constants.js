@@ -161,7 +161,11 @@ export const SPECIES_ID = {
 
 export const METRIC_LABELS = {
   detections: 'detections',
-  nights: 'nights detected',
+  sppDetections: 'species detections',
+  allDetections: 'bat detections',
+  detectionNights: 'nights detected',
+  detectorNights: 'nights monitored',
+
   id: 'detectors',
   occurrences: 'nights detected',
 }

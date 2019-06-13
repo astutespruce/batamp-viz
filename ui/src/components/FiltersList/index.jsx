@@ -114,7 +114,7 @@ FiltersList.propTypes = {
   filters: PropTypes.arrayOf(
     PropTypes.shape({
       field: PropTypes.string.isRequired,
-      filterFunc: PropTypes.func.isRequired,
+      filterFunc: PropTypes.func,
       title: PropTypes.string.isRequired,
       values: PropTypes.arrayOf(
         PropTypes.oneOfType([PropTypes.string, PropTypes.number])

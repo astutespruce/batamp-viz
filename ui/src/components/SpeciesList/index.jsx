@@ -1,14 +1,12 @@
-import React, { useEffect, useReducer, useRef, memo } from 'react'
-import PropTypes from 'prop-types'
+import React, { useReducer, memo } from 'react'
 import { Set, List, Map } from 'immutable'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 
-import { SearchField, useIndex } from 'components/Search'
+import { useIndex } from 'components/Search'
 import { Box, Flex, Columns, Column } from 'components/Grid'
 import { SortBar, SearchBar } from 'components/List'
 import styled, { themeGet } from 'style'
 import ListItem from './ListItem'
-
 
 const sortOptions = [
   {
@@ -23,7 +21,14 @@ const sortOptions = [
     label: 'detections',
     sortFunc: (a, b) => b.get('detections') - a.get('detections'),
   },
-  { label: 'nights', sortFunc: (a, b) => b.get('nights') - a.get('nights') },
+  {
+    label: 'nights detected',
+    sortFunc: (a, b) => b.get('detectionNights') - a.get('detectionNights'),
+  },
+  {
+    label: 'detectors',
+    sortFunc: (a, b) => b.get('detectors') - a.get('detectors'),
+  },
   {
     label: 'contributors',
     sortFunc: (a, b) => b.get('contributors') - a.get('contributors'),

@@ -80,7 +80,7 @@ const SpeciesTemplate = ({
       month,
       year: (timestamp - 100 * month) + 2000,
       detectorNights,
-      nights: detectionNights, // TODO: detectionNights
+      detectionNights,
       detections
     }
   }))
@@ -188,7 +188,7 @@ const SpeciesTemplate = ({
 
           <MapContainer>
             <TopBar>
-              <ValueFieldSelector fields={['detections', 'nights', 'id']} />
+              <ValueFieldSelector fields={['detections', 'detectionNights', 'id']} />
             </TopBar>
 
             <Map
@@ -251,7 +251,7 @@ export const pageQuery = graphql`
     speciesJson(species: { eq: $species }) {
       species
       detections
-      nights: detectionNights
+      detectionNights
       detectors
       contributors
     }

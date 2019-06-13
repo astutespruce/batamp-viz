@@ -254,8 +254,11 @@ summary = {
     "species": len(ACTIVITY_COLUMNS),
     "contributors": df.contributor.unique().size,
     "detectors": len(detectors),
-    "detections": int(
+    "allDetections": int(
         df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum().sum().astype("uint")
+    ),
+    "sppDetections": int(
+        df[ACTIVITY_COLUMNS].sum().sum().astype("uint")
     ),
     # detector_nights are sampling activity
     "detectorNights": len(df),
@@ -279,7 +282,15 @@ contributor_detections = (
     .sum()
     .sum(axis=1)
     .astype("uint")
-    .rename("detections")
+    .rename("all_detections")
+)
+
+contributor_spp_detections = (
+    contributor_gb[ACTIVITY_COLUMNS]
+    .sum()
+    .sum(axis=1)
+    .astype("uint")
+    .rename("spp_detections")
 )
 
 # detector nights - total sampling effort
@@ -302,6 +313,7 @@ contributor_species = (
 
 contributor_stats = (
     pd.DataFrame(contributor_detections)
+    .join(contributor_spp_detections)
     .join(contributor_nights)
     .join(contributor_detectors)
     .join(contributor_species)

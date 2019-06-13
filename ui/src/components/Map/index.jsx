@@ -34,7 +34,7 @@ import {
   LIGHTESTCOLOR,
   DARKESTCOLOR,
 } from './config'
-import { METRIC_LABELS } from '../../../config/constants'
+import { METRIC_LABELS, SPECIES } from '../../../config/constants'
 
 const Wrapper = styled.div`
   position: relative;
@@ -412,7 +412,7 @@ const Map = ({
 
   // TODO: memoize as a function of detectors (they will change on bounds change)
   const styleDetectors = (calculateMax = false) => {
-    console.log('style detectors')
+    console.log('style detectors', calculateMax)
     const { current: map } = mapRef
     const { current: metric } = valueFieldRef
 
@@ -428,10 +428,12 @@ const Map = ({
     if (calculateMax) {
       const visibleDetectors = map.querySourceFeatures('detectors')
 
-      upperValue = maxProperty(
-        visibleDetectors,
-        metric === 'id' ? 'point_count' : 'total',
-        0
+      upperValue = niceNumber(
+        maxProperty(
+          visibleDetectors,
+          metric === 'id' ? 'point_count' : 'total',
+          0
+        )
       )
     } else {
       console.log('falling back to max value', maxValue, niceNumber(maxValue))
@@ -525,13 +527,15 @@ const Map = ({
     })
   }
 
+  const legendTitle = valueField === 'id' ? `Number of ${METRIC_LABELS[valueField]} that detected ${SPECIES[species].commonName}` : `Number of ${METRIC_LABELS[valueField]}`
+
   return (
     <Wrapper>
       <div ref={mapNode} style={{ width: '100%', height: '100%' }} />
 
       <Legend
         entries={legendEntries}
-        title={`Number of ${METRIC_LABELS[valueField]}`}
+        title={legendTitle}
         note={
           detectors.size
             ? 'Map shows detector locations.  They may be clustered together if near each other.'

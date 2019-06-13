@@ -7,6 +7,7 @@ import styled from 'style'
 import { formatNumber } from 'util/format'
 import { Section, Title } from '../styles'
 import Contributor from './Contributor'
+import { METRIC_LABELS } from '../../../../config/constants'
 
 const Subtitle = styled.h3`
   margin-bottom: 0.5rem;
@@ -17,10 +18,24 @@ const NameList = styled.p`
   font-size: 0.9em !important;
 `
 
-const metrics = ['detections', 'nights', 'detectors', 'species']
+const metrics = [
+  'sppDetections',
+  'allDetections',
+  'detectorNights',
+  'detectors',
+  'species',
+]
+
+const sortOptions = metrics.map(m => METRIC_LABELS[m] || m)
 
 const Contributors = ({ contributors, totals }) => {
-  const { species: totalSpp, detections, detectors, nights } = totals
+  const {
+    species: totalSpp,
+    allDetections,
+    sppDetections,
+    detectors,
+    detectorNights,
+  } = totals
 
   const [sortIdx, setSortIdx] = useState(0)
 
@@ -29,12 +44,6 @@ const Contributors = ({ contributors, totals }) => {
   }
 
   const metric = metrics[sortIdx]
-
-  // Convert species array to species count
-  // const data = contributors.map(({ species, ...rest }) => ({
-  //   species: species && species.length ? species.length : 0,
-  //   ...rest,
-  // }))
 
   contributors.sort((a, b) => (a[metric] < b[metric] ? 1 : -1))
 
@@ -52,19 +61,21 @@ const Contributors = ({ contributors, totals }) => {
     <Section>
       <Title>Made possible by contributors like you</Title>
       <p>
-        This application leverages the combined efforts of {contributors.length}{' '}
-        contributors and would not be possible without their hard work.
-        Together, these contributors have collected over{' '}
-        {formatNumber(detections, 0)} bat detections on{' '}
-        {formatNumber(nights, 0)} nights using {formatNumber(detectors, 0)}{' '}
-        detectors, and they have collected data for at least {totalSpp} species.
+        This application leverages the combined efforts of{' '}
+        <b>{contributors.length}</b> contributors and would not be possible
+        without their hard work. Together, these contributors have collected
+        over <b>{formatNumber(allDetections, 0)}</b> bat detections on{' '}
+        <b>{formatNumber(detectorNights, 0)}</b> nights using{' '}
+        <b>{formatNumber(detectors, 0)}</b> detectors, and they have collected{' '}
+        <b>{formatNumber(sppDetections, 0)}</b> detections of at least{' '}
+        <b>{totalSpp}</b> species.
       </p>
 
       <Flex alignItems="center" justifyContent="space-between">
         <Subtitle>Top contributors</Subtitle>
         <SortBar
           index={sortIdx}
-          options={metrics}
+          options={sortOptions}
           onChange={handleSortChange}
         />
       </Flex>
@@ -87,15 +98,17 @@ Contributors.propTypes = {
   contributors: PropTypes.arrayOf(
     PropTypes.shape({
       contributor: PropTypes.string.isRequired,
-      nights: PropTypes.number.isRequired,
-      detections: PropTypes.number.isRequired,
+      detectorNights: PropTypes.number.isRequired,
+      allDetections: PropTypes.number.isRequired,
+      sppDetections: PropTypes.number.isRequired,
       detectors: PropTypes.number.isRequired,
-      species: PropTypes.arrayOf(PropTypes.string),
+      species: PropTypes.number,
     })
   ).isRequired,
   totals: PropTypes.shape({
-    detections: PropTypes.number.isRequired,
-    nights: PropTypes.number.isRequired,
+    allDetections: PropTypes.number.isRequired,
+    sppDetections: PropTypes.number.isRequired,
+    detectorNights: PropTypes.number.isRequired,
     detectors: PropTypes.number.isRequired,
     species: PropTypes.number.isRequired,
   }).isRequired,

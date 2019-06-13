@@ -25,6 +25,7 @@ const Name = styled.div`
 const Stats = styled.div`
   color: ${themeGet('colors.grey.600')};
   font-size: 0.8rem;
+  line-height: 1.4;
 `
 
 const Metric = styled.span`
@@ -36,10 +37,17 @@ const Metric = styled.span`
     `}
 `
 
+const donutLabels = {
+  sppDetections: 'detections',
+  allDetections: 'detections',
+  detectorNights: 'nights',
+}
+
 const Contributor = ({
   contributor,
-  detections,
-  nights,
+  allDetections,
+  sppDetections,
+  detectorNights,
   detectors,
   species,
   percent,
@@ -51,22 +59,32 @@ const Contributor = ({
     <Columns justifyContent="space-between">
       <Column>
         <Stats>
-          <Metric isActive={metric === 'detections'}>
-            {formatNumber(detections, 0)} detections
+          <Metric
+            isActive={metric === 'allDetections' || metric === 'sppDetections'}
+          >
+            {formatNumber(
+              metric === 'allDetections' ? allDetections : sppDetections,
+              0
+            )}{' '}
+            detections
           </Metric>
           <br />
           on{' '}
-          <Metric isActive={metric === 'nights'}>
-            {formatNumber(nights, 0)} nights
+          <Metric isActive={metric === 'detectorNights'}>
+            {formatNumber(detectorNights, 0)} nights
           </Metric>
           <br />
           using{' '}
           <Metric isActive={metric === 'detectors'}>
             {detectors} detectors
           </Metric>
+          .
           <br />
-          <Metric isActive={metric === 'species'}>{species} species</Metric>{' '}
-          detected
+          <br />
+          <Metric isActive={metric === 'species'}>
+            {species} species
+          </Metric>{' '}
+          detected.
         </Stats>
       </Column>
       <Column flex={0}>
@@ -74,7 +92,7 @@ const Contributor = ({
           size={100}
           percentSize={24}
           donutWidth={18}
-          label={`of ${metric}`}
+          label={`of ${donutLabels[metric] || metric}`}
           percent={percent}
         />
       </Column>
@@ -84,8 +102,9 @@ const Contributor = ({
 
 Contributor.propTypes = {
   contributor: PropTypes.string.isRequired,
-  nights: PropTypes.number.isRequired,
-  detections: PropTypes.number.isRequired,
+  detectorNights: PropTypes.number.isRequired,
+  allDetections: PropTypes.number.isRequired,
+  sppDetections: PropTypes.number.isRequired,
   detectors: PropTypes.number.isRequired,
   species: PropTypes.number.isRequired,
   percent: PropTypes.number.isRequired,

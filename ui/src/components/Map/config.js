@@ -43,9 +43,6 @@ export const sources = {
     clusterMaxZoom: 10, // show clusters at lowest zoom since there may be multiple detectors at a site
     clusterRadius: 12,
     clusterProperties: {
-      //   detections: ['+', ['get', 'detections']],
-      //   nights: ['+', ['get', 'nights']],
-      //   detectors: ['+', ['get', 'nights']],
       total: ['+', ['get', 'total']],
     },
   },
