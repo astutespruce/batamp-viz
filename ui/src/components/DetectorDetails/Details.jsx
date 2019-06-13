@@ -265,7 +265,7 @@ Details.propTypes = {
     ts: ImmutablePropTypes.listOf(
       ImmutablePropTypes.mapContains({
         detections: PropTypes.number,
-        nights: PropTypes.number.isRequired,
+        detectionNights: PropTypes.number.isRequired,
         month: PropTypes.number.isRequired,
         year: PropTypes.number.isRequired,
       })

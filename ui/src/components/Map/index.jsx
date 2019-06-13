@@ -10,7 +10,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import styled, { theme } from 'style'
 import { hasWindow } from 'util/dom'
 import { formatNumber, quantityLabel } from 'util/format'
-import { niceNumber, flatzip } from 'util/data'
+import { niceNumber } from 'util/data'
 
 import StyleSelector from './StyleSelector'
 import Legend from './Legend'

@@ -229,6 +229,7 @@ SpeciesTemplate.propTypes = {
         datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
         contributors: PropTypes.string.isRequired,
         species: PropTypes.arrayOf(PropTypes.string),
+        targetSpecies: PropTypes.arrayOf(PropTypes.string),
         detections: PropTypes.number.isRequired,
         detectorNights: PropTypes.number.isRequired,
         detectionNights: PropTypes.number.isRequired,
@@ -278,6 +279,7 @@ export const pageQuery = graphql`
           detectionNights
           dateRange
           species
+          targetSpecies
         }
       }
     }

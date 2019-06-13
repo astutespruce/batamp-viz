@@ -1,13 +1,11 @@
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { List, Set, fromJS } from 'immutable'
+import { Set, fromJS } from 'immutable'
 
 import FiltersList from 'components/FiltersList'
-import { Switch } from 'components/Form'
 import Layout from 'components/Layout'
 import {
-  Text,
   HelpText as BaseHelpText,
   ExpandableParagraph,
 } from 'components/Text'
@@ -17,9 +15,8 @@ import {
 } from 'components/Crossfilter'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
-import { withinBounds } from 'components/Map/util'
 import { Flex, Box } from 'components/Grid'
-import styled, { themeGet } from 'style'
+import styled from 'style'
 import { createIndex } from 'util/data'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import {
@@ -37,11 +34,6 @@ const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
 const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
   const [selected, setSelected] = useState({ features: Set(), feature: null })
-  const [filterByBounds, setFilterByBounds] = useState(true)
-
-  const handleToggleBoundsFilter = () => {
-    setFilterByBounds(prev => !prev)
-  }
 
   const handleSelectFeatures = ids => {
     const features = detectorIndex
@@ -74,7 +66,14 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
     ...v,
   }))
 
-  const detectors = fromJS(extractNodes(allDetectorsJson))
+  const detectors = fromJS(
+    extractNodes(allDetectorsJson).map(d => ({
+      // note: detector height is multiplied by 10 to make into integer,
+      // reverse that here
+      ...d,
+      micHt: d.micHt / 10,
+    }))
+  )
   const detectorIndex = createIndex(detectors, 'id')
 
 
@@ -103,7 +102,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
           month,
           year: timestamp - 100 * month + 2000,
           detectorNights,
-          nights: detectionNights, // TODO: detectionNights
+          detectionNights,
           detections,
           // we are redefining nights as occurrences when merged across species
           occurrences: detectionNights,
@@ -221,7 +220,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
           </Sidebar>
           <Map
             detectors={detectors}
-            filterByBounds={filterByBounds}
+            filterByBounds
             selectedFeature={selected.feature}
             onSelectFeatures={handleSelectFeatures}
           />
@@ -291,6 +290,7 @@ export const pageQuery = graphql`
           detectionNights
           dateRange
           species
+          targetSpecies
         }
       }
     }

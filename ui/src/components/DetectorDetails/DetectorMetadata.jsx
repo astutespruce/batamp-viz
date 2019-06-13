@@ -1,10 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ImmutablePropTypes from 'react-immutable-proptypes'
+import { Set } from 'immutable'
+import { FaCheck, FaTimes } from 'react-icons/fa'
 
 import { OutboundLink } from 'components/Link'
 import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
+import { SPECIES } from '../../../config/constants'
 
 const Field = styled.section`
   &:not(:first-child) {
@@ -37,6 +39,31 @@ const FieldHelp = styled.p`
   line-height: 1.2;
 `
 
+const SpeciesList = styled(FieldValueList)`
+  list-style: none;
+`
+
+const DetectedIcon = styled(FaCheck)`
+  height: 1em;
+  width: 1em;
+  margin-right: 0.25em;
+  color: green;
+`
+
+const NotDetectedIcon = styled(FaTimes)`
+  height: 1em;
+  width: 1em;
+  margin-right: 0.25em;
+  color: red;
+`
+
+const SpeciesListItem = styled.li``
+
+const ScientificName = styled.span`
+  font-size: 0.8em;
+  color: ${themeGet('colors.grey.600')};
+`
+
 const DetectorMetadata = ({
   lat,
   lon,
@@ -50,8 +77,23 @@ const DetectorMetadata = ({
   contributors,
   detectorNights,
   detectionNights,
+  species,
+  targetSpecies,
 }) => {
   const numContributors = contributors.split(', '.length)
+
+  const detectedSpp = Set(species)
+  const monitoredSpp = targetSpecies
+    .map(spp => {
+      const { commonName, sciName } = SPECIES[spp]
+
+      return {
+        commonName,
+        sciName,
+        detected: detectedSpp.has(spp),
+      }
+    })
+    .sort((a, b) => (a.commonName < b.commonName ? -1 : 1))
 
   return (
     <>
@@ -79,6 +121,17 @@ const DetectorMetadata = ({
             ? 'Bats detected on all nights.'
             : `Bats detected on ${formatNumber(detectionNights, 0)} nights.`}
         </FieldValue>
+      </Field>
+      <Field>
+        <FieldHeader>Monitored species that were detected:</FieldHeader>
+        <SpeciesList>
+          {monitoredSpp.map(({ commonName, sciName, detected }) => (
+            <SpeciesListItem>
+              {detected ? <DetectedIcon /> : <NotDetectedIcon />}
+              {commonName} <ScientificName>({sciName})</ScientificName>
+            </SpeciesListItem>
+          ))}
+        </SpeciesList>
       </Field>
 
       {mfg ? (
@@ -175,6 +228,8 @@ DetectorMetadata.propTypes = {
   datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
   detectorNights: PropTypes.number.isRequired,
   detectionNights: PropTypes.number.isRequired,
+  species: PropTypes.arrayOf(PropTypes.string).isRequired,
+  targetSpecies: PropTypes.arrayOf(PropTypes.string).isRequired,
 }
 
 DetectorMetadata.defaultProps = {
