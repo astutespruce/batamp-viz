@@ -1,11 +1,11 @@
-import React, { useContext } from 'react'
+import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 import { FaRegTimesCircle } from 'react-icons/fa'
 import { Text } from 'rebass'
 
-import { Context as Crossfilter, RESET_FILTERS } from 'components/Crossfilter'
+import { useCrossfilter } from 'components/Crossfilter'
 import { Button } from 'components/Button'
-import { Flex, Box, Columns, Column } from 'components/Grid'
+import { Flex, Box } from 'components/Grid'
 import { formatNumber } from 'util/format'
 import styled, { themeGet } from 'style'
 import Filter from './Filter'
@@ -65,7 +65,7 @@ const Filters = styled(Box).attrs({ flex: 1, pr: '1rem' })`
 `
 
 const FiltersList = ({ filters }) => {
-  const { state, dispatch } = useContext(Crossfilter)
+  const { resetFilters, state } = useCrossfilter()
 
   const hasFilters =
     filters.filter(({ field }) => {
@@ -74,12 +74,7 @@ const FiltersList = ({ filters }) => {
     }).length > 0
 
   const handleReset = () => {
-    dispatch({
-      type: RESET_FILTERS,
-      payload: {
-        fields: filters.map(({ field }) => field),
-      },
-    })
+    resetFilters(filters.map(({ field }) => field))
   }
 
   const metricLabel = METRIC_LABELS[state.get('valueField')]

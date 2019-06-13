@@ -1,12 +1,11 @@
-import React, { useContext } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 
 import { Flex } from 'components/Grid'
 import { ToggleButton as BaseButton } from 'components/Button'
 import styled, { themeGet } from 'style'
 
-import { SET_VALUE_FIELD } from './Crossfilter'
-import { Context } from './Context'
+import { useCrossfilter } from './Context'
 import { METRIC_LABELS } from '../../../config/constants'
 
 const Wrapper = styled(Flex).attrs({
@@ -28,13 +27,10 @@ const ToggleButton = styled(BaseButton)`
 `
 
 const ValueFieldSelector = ({ fields }) => {
-  const { state, dispatch } = useContext(Context)
+  const { setValueField, state } = useCrossfilter()
 
   const handleChange = field => {
-    dispatch({
-      type: SET_VALUE_FIELD,
-      payload: { field },
-    })
+    setValueField(field)
   }
 
   const options = fields.map(f => ({

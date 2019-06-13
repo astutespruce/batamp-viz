@@ -1,24 +1,18 @@
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
 import { fromJS, Set } from 'immutable'
 
 import Layout from 'components/Layout'
-import { Switch } from 'components/Form'
-import { Text, HelpText } from 'components/Text'
 import {
-  hasValue,
   Provider as CrossfilterProvider,
   FilteredMap as Map,
   ValueFieldSelector,
-  TimePlayer,
 } from 'components/Crossfilter'
 import Sidebar from 'components/Sidebar'
-import { Box, Column, Columns, Flex } from 'components/Grid'
-import FiltersList from 'components/FiltersList'
+import {Flex } from 'components/Grid'
 import DetectorDetails from 'components/DetectorDetails'
-import styled, { themeGet } from 'style'
-import { formatNumber, quantityLabel } from 'util/format'
+import styled from 'style'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import { withinBounds } from 'components/Map/util'
 import TopBar from 'components/Map/TopBar'
@@ -149,21 +143,18 @@ const SpeciesTemplate = ({
       values: MONTHS,
       labels: MONTH_LABELS.map(m => m.slice(0, 3)),
       aggregateById: true,
-      filterFunc: hasValue,
     },
     {
       field: 'year',
       title: 'Year',
       isOpen: true,
       vertical: true,
-      filterFunc: hasValue,
       values: Array.from(Set(data.map(d => d.get('year'))).values()).sort(),
     },
     {
       field: 'admin1Name',
       title: 'State / Province',
       isOpen: true,
-      filterFunc: hasValue,
       sort: true,
       hideEmpty: true,
       values: Array.from(
@@ -180,7 +171,7 @@ const SpeciesTemplate = ({
         <CrossfilterProvider
           data={data}
           filters={filters}
-          valueField={valueField}
+          options={{valueField}}
         >
           <Sidebar allowScroll={false}>
             {selected.features.size > 0 ? (

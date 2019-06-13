@@ -1,14 +1,13 @@
 /** A wrapper for the map to inject context from crossfilter so that the map doesn't need to know anything about crossfilter */
 
-import React, { useContext, useRef, useEffect } from 'react'
+import React, { useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import { Set, Map as ImmutableMap } from 'immutable'
 
 import { sumBy } from 'util/data'
 import Map from 'components/Map'
-import { SET_SPATIAL_FILTER } from './Crossfilter'
-import { Context } from './Context'
+import { useCrossfilter } from './Context'
 
 const FilteredMap = ({
   detectors: rawDetectors,
@@ -16,7 +15,7 @@ const FilteredMap = ({
   onBoundsChange,
   ...props
 }) => {
-  const { state, dispatch } = useContext(Context)
+  const { setBounds, state } = useCrossfilter()
   const filterByBoundsRef = useRef(filterByBounds)
 
   // TODO: should use bounds after map first loads
@@ -26,12 +25,7 @@ const FilteredMap = ({
     filterByBoundsRef.current = filterByBounds
 
     // reset existing bounds filter if needed, or enable it to the last bounds
-    dispatch({
-      type: SET_SPATIAL_FILTER,
-      payload: {
-        bounds: filterByBounds ? boundsRef.current : null,
-      },
-    })
+    setBounds(filterByBounds ? boundsRef.current : null)
   }, [filterByBounds])
 
   const handleBoundsChange = bounds => {
@@ -42,12 +36,7 @@ const FilteredMap = ({
     // do not filter if this is not enabled
     if (!filterByBoundsRef.current) return
 
-    dispatch({
-      type: SET_SPATIAL_FILTER,
-      payload: {
-        bounds,
-      },
-    })
+    setBounds(bounds)
   }
 
   // total of current valueField by ID

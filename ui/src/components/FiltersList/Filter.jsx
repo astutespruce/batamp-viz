@@ -1,15 +1,13 @@
-import React, { useState, useContext } from 'react'
+import React, { useState, memo } from 'react'
 import PropTypes from 'prop-types'
 import { Map, Set } from 'immutable'
 import { FaRegTimesCircle, FaCaretDown, FaCaretRight } from 'react-icons/fa'
 
 import { HelpText } from 'components/Text'
-import { Context as Crossfilter, SET_FILTER } from 'components/Crossfilter'
+import { useCrossfilter } from 'components/Crossfilter'
 import { Flex } from 'components/Grid'
-import { BarChart as VerticalBarChart } from 'components/Chart'
 
 import styled, { theme, themeGet } from 'style'
-import { MONTH_LABELS } from '../../../config/constants'
 import HorizontalBars from './HorizontalBars'
 import VerticalBars from './VerticalBars'
 
@@ -83,8 +81,9 @@ const Filter = ({
   sort,
   vertical,
 }) => {
+  console.log('render Filter', field)
   const [isOpen, setIsOpen] = useState(initIsOpen)
-  const { state, dispatch } = useContext(Crossfilter)
+  const { setFilter, state } = useCrossfilter()
 
   const filterValues = state.get('filters').get(field, Set())
   const totals = state.get('dimensionTotals').get(field, Map())
@@ -112,26 +111,13 @@ const Filter = ({
   }
 
   const handleFilterToggle = value => {
-    dispatch({
-      type: SET_FILTER,
-      payload: {
-        field,
-        // TODO: adapt to other types
-        filterValue: filterValues.has(value)
-          ? filterValues.delete(value)
-          : filterValues.add(value),
-      },
-    })
+    setFilter(field, filterValues.has(value)
+    ? filterValues.delete(value)
+    : filterValues.add(value))
   }
 
   const handleReset = () => {
-    dispatch({
-      type: SET_FILTER,
-      payload: {
-        field,
-        filterValue: filterValues.clear(),
-      },
-    })
+    setFilter(field, filterValues.clear())
   }
 
   return (

@@ -1,12 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-// import { Switch } from 'components/Form'
-import {
-  Text,
-  HelpText,
-  ExpandableParagraph,
-} from 'components/Text'
+import { Text, HelpText, ExpandableParagraph } from 'components/Text'
 import { Box, Flex } from 'components/Grid'
 import FiltersList from 'components/FiltersList'
 import styled, { themeGet } from 'style'
@@ -45,27 +40,7 @@ const ScientificName = styled(Text).attrs({ as: 'h3' })`
   color: ${themeGet('colors.grey.00')};
 `
 
-
-// const Stats = styled(Box).attrs({ mt: '0.5rem', pt: '0.5rem' })`
-//   border-top: 1px solid #fff;
-//   font-size: 0.9rem;
-//   color: ${themeGet('colors.grey.900')};
-//   line-height: 1.5;
-// `
-
-// const RightColumn = styled(Column)`
-//   text-align: right;
-// `
-
-const index = ({
-  species,
-  filters,
-
-  //   detectors,
-  //   detections,
-  //   nights,
-  //   contributors,
-}) => {
+const index = ({ species, filters }) => {
   const { commonName, sciName } = SPECIES[species]
 
   return (
@@ -76,34 +51,7 @@ const index = ({
           <CommonName>{commonName}</CommonName>
           <ScientificName>{sciName}</ScientificName>
         </div>
-
-        {/* <Stats>
-                    <Columns>
-                  <Column>
-                    {formatNumber(detections, 0)} detections
-                    <br />
-                    {formatNumber(nights, 0)} nights
-                  </Column>
-                  <RightColumn>
-                    {detectors} detectors
-                    <br />
-                    {contributors ? (
-                      <>
-                        {contributors}{' '}{quantityLabel('contributors', contributors)}
-                      </>
-                    ) : null}
-                  </RightColumn>
-                  </Columns>
-                </Stats> */}
       </Header>
-
-      {/* <Box m="1rem">
-                  <Switch
-                    label="filter detectors by map extent?"
-                    enabled={filterByBounds}
-                    onChange={handleToggleBoundsFilter}
-                  />
-                </Box> */}
 
       {/* <Box my="1rem">
                   <TimePlayer
@@ -139,10 +87,6 @@ index.propTypes = {
       field: PropTypes.string.isRequired,
     })
   ).isRequired,
-  //   detections: PropTypes.number.isRequired,
-  //   nights: PropTypes.number.isRequired,
-  //   detectors: PropTypes.number.isRequired,
-  //   contributors: PropTypes.number.isRequired,
 }
 
 export default index

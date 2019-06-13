@@ -8,7 +8,6 @@ import { useInterval } from 'util/time'
 import styled, { themeGet } from 'style'
 
 import { Context } from './Context'
-import { SET_FILTER } from './Crossfilter'
 
 const SPEED_INCREMENT = 250
 
@@ -70,7 +69,7 @@ const TimePlayer = ({ timesteps, timestepLabels }) => {
   const [speed, setSpeed] = useState(1000) // in seconds
   const [isPlaying, setIsPlaying] = useState(false)
   const [idx, setIdx] = useState(0)
-  const { state, dispatch } = useContext(Context)
+  const { setFilter, state } = useContext(Context)
 
   const hasFilter = state.get('filters').get('timestep', Set()).size > 0
 
@@ -89,13 +88,7 @@ const TimePlayer = ({ timesteps, timestepLabels }) => {
   const setTimestepFilter = t => {
     const filterValue = t === null ? Set() : Set([t])
 
-    dispatch({
-      type: SET_FILTER,
-      payload: {
-        field: 'timestep',
-        filterValue,
-      },
-    })
+    setFilter('timestep', filterValue)
   }
 
   const play = () => {

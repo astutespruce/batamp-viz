@@ -12,7 +12,6 @@ import {
   ExpandableParagraph,
 } from 'components/Text'
 import {
-  hasValue,
   Provider as CrossfilterProvider,
   FilteredMap as Map,
 } from 'components/Crossfilter'
@@ -142,7 +141,6 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
       title: 'Species Detected',
       isOpen: false,
       hideEmpty: true,
-      filterFunc: hasValue,
       sort: true,
       values: allSpecies.map(({ species: spp }) => spp),
       labels: allSpecies.map(
@@ -154,7 +152,6 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
       title: 'Seasonality',
       isOpen: false,
       vertical: true,
-      filterFunc: hasValue,
       values: MONTHS,
       labels: MONTH_LABELS.map(m => m.slice(0, 3)),
     },
@@ -163,7 +160,6 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
       title: 'Year',
       isOpen: false,
       vertical: true,
-      filterFunc: hasValue,
       values: years,
       labels: years.map(y => `'${y.toString().slice(2)}`),
     },
@@ -171,7 +167,6 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
       field: 'admin1Name',
       title: 'State / Province',
       isOpen: false,
-      filterFunc: hasValue,
       sort: true,
       hideEmpty: true,
       values: Array.from(
@@ -189,7 +184,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
         <CrossfilterProvider
           data={data}
           filters={filters}
-          valueField={valueField}
+          options={{valueField}}
         >
           <Sidebar allowScroll={false}>
             {selected.features.size > 0 ? (
