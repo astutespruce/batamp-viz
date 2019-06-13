@@ -10,6 +10,7 @@ export const Wrapper = styled.div`
   background-color: ${themeGet('colors.grey.200')};
   padding: 0.5rem 1rem;
   margin-top: 0.25rem;
+  border-radius: 0.5rem;
 `
 
 export const InnerWrapper = styled(Flex).attrs({

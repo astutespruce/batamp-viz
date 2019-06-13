@@ -1,31 +1,33 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { FaExternalLinkAlt } from 'react-icons/fa'
 
+import { OutboundLink } from 'components/Link'
 import { Text, HelpText, ExpandableParagraph } from 'components/Text'
 import { Box, Flex } from 'components/Grid'
 import FiltersList from 'components/FiltersList'
+import BaseThumbnail from 'components/Species/SmallThumbnail' // { Thumbnail as BaseThumbnail }
 import styled, { themeGet } from 'style'
-import { SPECIES } from '../../../config/constants'
+import { SPECIES, PROFILE_ROOT_URL } from '../../../config/constants'
 
 const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
   height: 100%;
 `
 
-const Header = styled(Flex).attrs({ p: '0.5rem' })`
+const Header = styled(Box).attrs({ p: '0.5rem' })`
   background-color: ${themeGet('colors.highlight.100')};
   line-height: 1.2;
   flex: 0;
 `
 
-const Photo = styled.div`
-  width: 4rem;
-  height: 4rem;
+const Thumbnail = styled(BaseThumbnail)`
   margin-right: 0.5rem;
+`
 
-  background-color: ${themeGet('colors.grey.100')};
-  text-align: center;
+const ImageCredits = styled.div`
+  margin-top: 0.1rem;
+  font-size: 0.6rem;
   color: ${themeGet('colors.grey.600')};
-  font-size: smaller;
 `
 
 const CommonName = styled(Text).attrs({ as: 'h1' })`
@@ -40,17 +42,46 @@ const ScientificName = styled(Text).attrs({ as: 'h3' })`
   color: ${themeGet('colors.grey.00')};
 `
 
+const ProfileLinkIcon = styled(FaExternalLinkAlt)`
+  width: 1em;
+  height: 0.8em;
+  opacity: 0.6;
+`
+
+const ProfileLink = styled(OutboundLink)``
+
 const index = ({ species, filters }) => {
-  const { commonName, sciName } = SPECIES[species]
+  const { commonName, sciName, profileId } = SPECIES[species]
 
   return (
     <Wrapper>
       <Header>
-        <Photo>photo</Photo>
-        <div>
-          <CommonName>{commonName}</CommonName>
-          <ScientificName>{sciName}</ScientificName>
-        </div>
+        <Flex>
+          <div>
+            <Thumbnail species={species} />
+            <ImageCredits>
+              credit:{' '}
+              <OutboundLink from="/species" to="https://www.merlintuttle.org">
+                MerlinTuttle.org
+              </OutboundLink>{' '}
+              |{' '}
+              <OutboundLink from="/species" to="http://www.batcon.org/">
+                BCI
+              </OutboundLink>
+            </ImageCredits>
+          </div>
+          <div>
+            <CommonName>{commonName}</CommonName>
+            <ScientificName>{sciName}</ScientificName>
+            <br />
+            <ProfileLink
+              from="/species"
+              to={`${PROFILE_ROOT_URL}/${profileId}`}
+            >
+              Species profile <ProfileLinkIcon />
+            </ProfileLink>
+          </div>
+        </Flex>
       </Header>
 
       {/* <Box my="1rem">

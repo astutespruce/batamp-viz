@@ -5,6 +5,7 @@ import ImmutablePropTypes from 'react-immutable-proptypes'
 import { useIndex } from 'components/Search'
 import { Box, Flex, Columns, Column } from 'components/Grid'
 import { SortBar, SearchBar } from 'components/List'
+import { useThumbnails } from 'components/Species'
 import styled, { themeGet } from 'style'
 import ListItem from './ListItem'
 
@@ -39,8 +40,6 @@ export const Wrapper = styled(Flex).attrs({
   flex: '1 1 auto',
   flexDirection: 'column',
 })`
-  border-right: 1px solid ${themeGet('colors.grey.200')};
-  border-left: 1px solid ${themeGet('colors.grey.200')};
 `
 
 export const Count = styled.span`
@@ -115,6 +114,8 @@ const SpeciesList = ({ species }) => {
   const items = state.get('species', List())
   const metric = sortOptions[state.get('sortIdx')].label
 
+  const thumbnails = useThumbnails()
+
   return (
     <Wrapper>
       <Columns px="1rem" alignItems="baseline">
@@ -138,7 +139,12 @@ const SpeciesList = ({ species }) => {
 
       {items.size > 0 ? (
         items.map(item => (
-          <ListItem key={item.get('species')} item={item} metric={metric} />
+          <ListItem
+            key={item.get('species')}
+            item={item}
+            metric={metric}
+            thumbnail={thumbnails[item.get('species')] || null}
+          />
         ))
       ) : (
         <NoResults>No visible species...</NoResults>

@@ -9,6 +9,7 @@ import {
   FilteredMap as Map,
   ValueFieldSelector,
 } from 'components/Crossfilter'
+
 import Sidebar from 'components/Sidebar'
 import {Flex } from 'components/Grid'
 import DetectorDetails from 'components/DetectorDetails'
@@ -35,6 +36,7 @@ const boundsFilterFunc = mapBounds => ({ lat, lon }) =>
 
 const SpeciesTemplate = ({
   data: {
+    
     speciesJson,
     allDetectorsJson,
     allDetectorTsJson,
@@ -168,6 +170,10 @@ const SpeciesTemplate = ({
   return (
     <Layout title={`${commonName} (${sciName})`}>
       <Wrapper>
+      
+      
+
+
         <CrossfilterProvider
           data={data}
           filters={filters}
@@ -210,7 +216,7 @@ SpeciesTemplate.propTypes = {
     speciesJson: PropTypes.shape({
       species: PropTypes.string.isRequired,
       detections: PropTypes.number.isRequired,
-      nights: PropTypes.number.isRequired,
+      detectionNights: PropTypes.number.isRequired,
       detectors: PropTypes.number.isRequired,
       contributors: PropTypes.number.isRequired,
     }).isRequired,
@@ -256,6 +262,7 @@ export const pageQuery = graphql`
       detectors
       contributors
     }
+
     allDetectorsJson(filter: { targetSpecies: { eq: $species } }) {
       edges {
         node {
@@ -283,6 +290,7 @@ export const pageQuery = graphql`
         }
       }
     }
+
     allDetectorTsJson {
       edges {
         node {

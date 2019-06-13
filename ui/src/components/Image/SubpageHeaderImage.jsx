@@ -27,39 +27,22 @@ const StyledImage = styled(Img)`
   }
 `
 
-const Overlay = styled.div`
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(0, rgba(0, 0, 0, 0), 30%, rgba(0, 0, 0, 0.7));
-`
-
 const TitleContainer = styled(Container)`
   position: absolute;
   left: 0;
   right: 0;
   top: 3rem;
   text-shadow: 1px 1px 3px #000;
-  border-top: 3px solid #fff;
-  border-bottom: 3px solid #fff;
+  // border-top: 3px solid #fff;
+  // border-bottom: 3px solid #fff;
 `
 
 const Title = styled(Text).attrs({
   as: 'h1',
-  fontSize: ['3rem', '3rem', '5rem'],
+  fontSize: ['2rem', '2rem', '3rem'],
 })`
   color: #fff;
   margin: 0 0 0.5rem 0;
-`
-
-const Subtitle = styled(Text).attrs({
-  as: 'h3',
-  fontSize: ['1.5rem', '2rem', '3rem'],
-})`
-  color: #fff;
-  margin: 0;
 `
 
 const ImageCredits = styled.div`
@@ -78,12 +61,11 @@ const ImageCredits = styled.div`
   }
 `
 
-const HeaderImage = ({
+const SubpageHeaderImage = ({
   image,
   height,
   minHeight,
   title,
-  subtitle,
   credits,
   position,
 }) => (
@@ -92,10 +74,8 @@ const HeaderImage = ({
 
     {title ? (
       <>
-        <Overlay />
         <TitleContainer>
           <Title>{title}</Title>
-          {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
         </TitleContainer>
       </>
     ) : null}
@@ -111,7 +91,7 @@ const HeaderImage = ({
   </Wrapper>
 )
 
-HeaderImage.propTypes = {
+SubpageHeaderImage.propTypes = {
   image: PropTypes.any.isRequired,
   height: PropTypes.string,
   minHeight: PropTypes.string,
@@ -124,7 +104,7 @@ HeaderImage.propTypes = {
   position: PropTypes.string,
 }
 
-HeaderImage.defaultProps = {
+SubpageHeaderImage.defaultProps = {
   height: '60vh',
   minHeight: '20rem',
   title: '',
@@ -133,4 +113,4 @@ HeaderImage.defaultProps = {
   position: 'center',
 }
 
-export default HeaderImage
+export default SubpageHeaderImage
