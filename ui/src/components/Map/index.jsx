@@ -259,7 +259,7 @@ const Map = ({
           features.length
         } detectors at this location<br/>${formatNumber(min)} - ${formatNumber(
           max
-        )} ${metric}${tooltipSuffix}`
+        )} ${METRIC_LABELS[metric]}${tooltipSuffix}`
       } else {
         html = `${formatNumber(values[0])} ${
           METRIC_LABELS[metric]
@@ -352,7 +352,7 @@ const Map = ({
       } else {
         html = `${formatNumber(
           total
-        )} ${metric} (${point_count} detectors)${tooltipSuffix}`
+        )} ${METRIC_LABELS[metric]} (${point_count} detectors)${tooltipSuffix}`
       }
       tooltip
         .setLngLat(features[0].geometry.coordinates)

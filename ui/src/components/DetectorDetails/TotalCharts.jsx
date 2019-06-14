@@ -32,11 +32,15 @@ const TotalCharts = ({ data, selectedSpecies, max }) => {
 
   return (
     <Wrapper>
-      {detectedSelected ? (
-        selectedSppChart
-      ) : (
-        <Warning species={selectedSpecies} />
-      )}
+      {selectedSpecies ? (
+        <>
+          {detectedSelected ? (
+            selectedSppChart
+          ) : (
+            <Warning species={selectedSpecies} />
+          )}
+        </>
+      ) : null}
 
       {data
         .filter(([spp]) => spp !== selectedSpecies)

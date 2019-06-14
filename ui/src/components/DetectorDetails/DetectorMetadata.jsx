@@ -152,7 +152,7 @@ const DetectorMetadata = ({
         <SpeciesList>
           {monitoredSpp.map(
             ({ species: spp, commonName, sciName, detected }) => (
-              <SpeciesListItem highlight={spp === selectedSpecies}>
+              <SpeciesListItem key={spp} highlight={spp === selectedSpecies}>
                 {detected ? <DetectedIcon /> : <NotDetectedIcon />}
                 {commonName} <ScientificName>({sciName})</ScientificName>
               </SpeciesListItem>

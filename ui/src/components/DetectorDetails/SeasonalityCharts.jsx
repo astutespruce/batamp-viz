@@ -57,11 +57,15 @@ const SeasonalityCharts = ({ data, selectedSpecies }) => {
 
   return (
     <Wrapper>
-      {detectedSelected ? (
-        selectedSppChart
-      ) : (
-        <MissingSpeciesWarning species={selectedSpecies} />
-      )}
+      {selectedSpecies ? (
+        <>
+          {detectedSelected ? (
+            selectedSppChart
+          ) : (
+            <MissingSpeciesWarning species={selectedSpecies} />
+          )}
+        </>
+      ) : null}
 
       {sppData.map(({ species, commonName, sciName, values }) => (
         <BarChartWrapper key={species}>
