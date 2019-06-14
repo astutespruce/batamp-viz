@@ -32,3 +32,14 @@ tippecanoe -f -Z0 -z6 --no-tile-stats -l species_ranges -o tiles/species_ranges.
 ```
 
 The GRTS vector tile from the [BatAMP Grid Selection Tool](https://github.com/consbio/fuzzybat) was used here.
+
+## Map Images
+
+Map images are generated using [`mbgl-renderer`](https://github.com/consbio/mbgl-renderer).
+
+You must have a `.env` file that defines `MAPBOX_TOKEN` in the `/maps` directory.
+
+In `/maps` directory:
+
+-   `npm install`
+-   `npm run maps`

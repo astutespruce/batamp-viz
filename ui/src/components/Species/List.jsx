@@ -5,7 +5,7 @@ import ImmutablePropTypes from 'react-immutable-proptypes'
 import { useIndex } from 'components/Search'
 import { Box, Flex, Columns, Column } from 'components/Grid'
 import { SortBar, SearchBar } from 'components/List'
-import { useThumbnails } from 'components/Species'
+import { useThumbnails, useMapThumbnails } from 'components/Species'
 import styled, { themeGet } from 'style'
 import ListItem from './ListItem'
 
@@ -114,6 +114,7 @@ const SpeciesList = ({ species }) => {
   const metric = sortOptions[state.get('sortIdx')].label
 
   const thumbnails = useThumbnails()
+  const maps = useMapThumbnails()
 
   return (
     <Wrapper>
@@ -144,6 +145,7 @@ const SpeciesList = ({ species }) => {
               item={item}
               metric={metric}
               thumbnail={thumbnails[item.get('species')] || null}
+              map={maps[item.get('species')] || null}
             />
           ))
         ) : (

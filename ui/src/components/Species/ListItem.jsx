@@ -4,6 +4,7 @@ import ImmutablePropTypes from 'react-immutable-proptypes'
 import { css } from 'styled-components'
 import Img from 'gatsby-image'
 
+import MapThumbnail from 'components/Species/MapThumbnail'
 import { Flex, Box } from 'components/Grid'
 import { OutboundLink, Link } from 'components/Link'
 import styled, { themeGet } from 'style'
@@ -13,13 +14,14 @@ const Wrapper = styled.div`
   &:not(:first-child) {
     border-top: 1px solid ${themeGet('colors.grey.200')};
     padding-top: 0.5rem;
-    margin-top: 0.5rem;
+    margin-top: 1.5rem;
   }
 `
 
-const Content = styled(Flex).attrs({ flexWrap: 'wrap' })`
+const Header = styled(Box).attrs({ px: '1rem' })``
+
+const Content = styled(Flex).attrs({ flexWrap: 'wrap', px: '1rem' })`
   line-height: 1.4;
-  padding: 1rem;
 `
 
 const ThumbnailColumn = styled(Box).attrs({
@@ -28,20 +30,20 @@ const ThumbnailColumn = styled(Box).attrs({
   padding-right: 1rem;
 `
 
-const Profile = styled.div`
-  min-width: 200px;
-  flex: 1;
-`
-
 const Thumbnail = styled(Box)`
   min-width: 210px;
 `
 
 const ImageCredits = styled.div`
   margin-top: 0.5rem;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: ${themeGet('colors.grey.600')};
-  line-height: 1;
+  line-height: 1.2;
+`
+
+const MapCredits = styled(ImageCredits)`
+  margin: 0;
+  font-size: 0.6rem;
 `
 
 const Name = styled.div`
@@ -55,6 +57,8 @@ const ScientificName = styled.span`
 `
 
 const Stats = styled.ul`
+  min-width: 200px;
+  flex: 1;
   margin: 1rem 0 0 0;
   list-style: none;
   color: ${themeGet('colors.grey.800')};
@@ -73,7 +77,9 @@ const Metric = styled.span`
     `}
 `
 
-const ListItem = ({ item, metric, thumbnail }) => {
+const Map = styled.div``
+
+const ListItem = ({ item, metric, thumbnail, map }) => {
   const {
     species,
     commonName,
@@ -87,6 +93,14 @@ const ListItem = ({ item, metric, thumbnail }) => {
 
   return (
     <Wrapper>
+      <Header>
+        <Link to={`/species/${species}`}>
+          <Name>
+            {commonName} <ScientificName>({sciName})</ScientificName>
+          </Name>
+        </Link>
+      </Header>
+
       <Content>
         <ThumbnailColumn>
           <Link to={`/species/${species}`}>
@@ -101,54 +115,60 @@ const ListItem = ({ item, metric, thumbnail }) => {
             </OutboundLink>{' '}
             |{' '}
             <OutboundLink from="/species" to="http://www.batcon.org/">
-              BCI
+              batcon.org
             </OutboundLink>
           </ImageCredits>
         </ThumbnailColumn>
 
-        <Profile>
-          <Link to={`/species/${species}`}>
-            <Name>
-              {commonName} <ScientificName>({sciName})</ScientificName>
-            </Name>
-          </Link>
+        <Stats>
+          {detections > 0 ? (
+            <li>
+              <Metric isActive={metric === 'detections'}>
+                {formatNumber(detections, 0)}
+              </Metric>{' '}
+              detections
+            </li>
+          ) : null}
 
-          <Stats>
-            {detections > 0 ? (
-              <li>
-                <Metric isActive={metric === 'detections'}>
-                  {formatNumber(detections, 0)}
+          <li>
+            {detectionNights > 0 ? (
+              <>
+                on{' '}
+                <Metric isActive={metric === 'nights detected'}>
+                  {formatNumber(detectionNights, 0)}
                 </Metric>{' '}
-                detections
-              </li>
-            ) : null}
+              </>
+            ) : (
+              'not detected on any '
+            )}
+            of {formatNumber(detectorNights, 0)} nights monitored
+          </li>
 
-            <li>
-              {detectionNights > 0 ? (
-                <>
-                  on{' '}
-                  <Metric isActive={metric === 'nights detected'}>
-                    {formatNumber(detectionNights, 0)}
-                  </Metric>{' '}
-                </>
-              ) : (
-                'not detected on any '
-              )}
-              of {formatNumber(detectorNights, 0)} nights monitored
-            </li>
+          <li>
+            <Metric isActive={metric === 'detectors'}>
+              {formatNumber(detectors, 0)}
+            </Metric>{' '}
+            detectors monitored by{' '}
+            <Metric isActive={metric === 'contributors'}>{contributors}</Metric>{' '}
+            {quantityLabel('contributors', contributors)}
+          </li>
+        </Stats>
 
-            <li>
-              <Metric isActive={metric === 'detectors'}>
-                {formatNumber(detectors, 0)}
-              </Metric>{' '}
-              detectors monitored by{' '}
-              <Metric isActive={metric === 'contributors'}>
-                {contributors}
-              </Metric>{' '}
-              {quantityLabel('contributors', contributors)}
-            </li>
-          </Stats>
-        </Profile>
+        <Map>
+          <Img fixed={map} />
+          <MapCredits>
+            range:{' '}
+            <OutboundLink from="/species" to="http://www.batcon.org/">
+              batcon.org
+            </OutboundLink>{' '}
+            |{' '}
+            <OutboundLink from="/species" to="http://www.iucnredlist.org/">
+              IUCN
+            </OutboundLink>
+            <br />
+            basemap: © Mapbox, © OpenStreetMap
+          </MapCredits>
+        </Map>
       </Content>
     </Wrapper>
   )
@@ -167,10 +187,12 @@ ListItem.propTypes = {
   }).isRequired,
   metric: PropTypes.string.isRequired,
   thumbnail: PropTypes.object,
+  map: PropTypes.object,
 }
 
 ListItem.defaultProps = {
   thumbnail: null,
+  map: null,
 }
 
 // only rerender on item or metric change

@@ -1,0 +1,18 @@
+{
+  "name": "batamp-viz",
+  "version": "0.1.0",
+  "description": "Data visualization of Bat Acoustic Monitoring Data",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "esm": "^3.2.25",
+    "mbgl-renderer": "^0.4.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "maps": "node -r esm index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT"
+}

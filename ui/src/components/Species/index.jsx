@@ -3,6 +3,10 @@ import SmallThumbnail, {
   useSmallThumbnails,
   useSmallThumbnail,
 } from './SmallThumbnail'
+import MapThumbnail, {
+  useThumbnail as useMapThumbnail,
+  useThumbnails as useMapThumbnails
+} from './MapThumbnail'
 import SpeciesList from './List'
 
 export {
@@ -12,5 +16,8 @@ export {
   SmallThumbnail,
   useSmallThumbnail,
   useSmallThumbnails,
+  MapThumbnail,
+  useMapThumbnail,
+  useMapThumbnails,
   SpeciesList,
 }

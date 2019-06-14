@@ -1,5 +1,3 @@
-import { range } from 'util/data'
-
 export const NABounds = [-168.398438, 14.43468, -51.855469, 72.60712]
 
 export const COUNTRIES = {
@@ -8,7 +6,7 @@ export const COUNTRIES = {
   MX: 'Mexico',
 }
 
-export const MONTHS = range(1, 12)
+export const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 export const MONTH_LABELS = [
   'January',
   'February',
@@ -23,8 +21,6 @@ export const MONTH_LABELS = [
   'November',
   'December',
 ]
-
-export const WEEKS = range(1, 52)
 
 // Bat Conservation International's species profile pages.  Add profileId to end of this.
 export const PROFILE_ROOT_URL =
