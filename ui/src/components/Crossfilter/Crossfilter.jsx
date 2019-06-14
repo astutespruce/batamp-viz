@@ -71,6 +71,7 @@ export const Crossfilter = (data, filters, options = {}) => {
       total,
       filteredTotal: total,
       filters: Map(),
+      hasVisibleFilters: false,
       dimensionTotals: aggregateByDimension(dimensions, valueField),
       dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
     })
@@ -102,11 +103,14 @@ export const Crossfilter = (data, filters, options = {}) => {
       }
 
       const valueField = prevState.get('valueField')
+      const newFilters = prevState.get('filters').set(field, filterValue)
+      const hasVisibleFilters = newFilters.filter((v, k) => !v.isEmpty() && !dimensions[k].config.internal).size > 0
 
       const newState = prevState.merge({
         // convert Array from crossfilter back to an immutable List
         data: List(crossfilter.allFiltered()),
-        filters: prevState.get('filters').set(field, filterValue),
+        filters: newFilters,
+        hasVisibleFilters,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
         dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
@@ -177,11 +181,15 @@ export const Crossfilter = (data, filters, options = {}) => {
 
       const valueField = prevState.get('valueField')
 
+      const newFilters = prevState.get('filters').removeAll(fields)
+      const hasVisibleFilters = newFilters.filter((v, k) => !v.isEmpty() && !dimensions[k].config.internal).size > 0
+
       const newState = state.merge({
         // convert Array from crossfilter back to an immutable List
         data: List(crossfilter.allFiltered()),
         // remove all filter entries for these fields
-        filters: prevState.get('filters').removeAll(fields),
+        filters: newFilters,
+        hasVisibleFilters,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
         dimensionTotalsById: aggregateDimensionById(dimensions, valueField),

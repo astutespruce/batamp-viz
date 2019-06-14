@@ -81,6 +81,7 @@ const FilteredMap = ({
       detectors={detectors}
       valueField={valueField}
       maxValue={maxValue}
+      hasFilters={state.get('hasVisibleFilters')}
       onBoundsChange={handleBoundsChange}
       {...props}
     />

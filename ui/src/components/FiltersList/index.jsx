@@ -67,12 +67,6 @@ const Filters = styled(Box).attrs({ flex: 1, pr: '1rem' })`
 const FiltersList = ({ filters }) => {
   const { resetFilters, state } = useCrossfilter()
 
-  const hasFilters =
-    filters.filter(({ field }) => {
-      const curFilter = state.get('filters').get(field)
-      return curFilter && !curFilter.isEmpty()
-    }).length > 0
-
   const handleReset = () => {
     resetFilters(filters.map(({ field }) => field))
   }
@@ -98,7 +92,7 @@ const FiltersList = ({ filters }) => {
         ))}
       </Filters>
 
-      {hasFilters && (
+      {state.get('hasVisibleFilters') && (
         <ResetContainer>
           <ResetButton onClick={handleReset}>
             <ResetIcon />

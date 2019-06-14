@@ -49,6 +49,7 @@ const Map = ({
   selectedFeature,
   bounds,
   species,
+  hasFilters,
   onSelectFeatures,
   onBoundsChange,
 }) => {
@@ -59,12 +60,15 @@ const Map = ({
 
   const { accessToken, styles } = config
 
+  // Use refs to coordinate values set after map is constructed
   const mapNode = useRef(null)
   const mapRef = useRef(null)
   const baseStyleRef = useRef(null)
   const selectedFeatureRef = useRef(selectedFeature)
   const highlightFeatureRef = useRef(Set())
   const valueFieldRef = useRef(valueField)
+  const hasFilterRef = useRef(hasFilters)
+
   const [legendEntries, setLegendEntries] = useState(
     species ? legends.species() : []
   )
@@ -216,6 +220,11 @@ const Map = ({
       })
       highlightFeatureRef.current = ids
 
+      const hasFilterLabel = hasFilterRef.current
+        ? ' <i>within current filters</i>'
+        : ''
+      const tooltipSuffix = `${hasFilterLabel}.<br />Click to show details in the sidebar.`
+
       if (metric === 'id') {
         tooltip
           .setLngLat(features[0].geometry.coordinates)
@@ -223,7 +232,7 @@ const Map = ({
             `${formatNumber(features.length)} ${quantityLabel(
               'detectors',
               features.length
-            )} at this location<br />Click to show details in the sidebar.`
+            )} at this location${tooltipSuffix}`
           )
           .addTo(map)
 
@@ -241,9 +250,7 @@ const Map = ({
           .setHTML(
             `${features.length} detectors at this location<br/>${formatNumber(
               min
-            )} - ${formatNumber(
-              max
-            )} ${metric}.<br />Click to show details in the sidebar.`
+            )} - ${formatNumber(max)} ${metric}${tooltipSuffix}`
           )
           .addTo(map)
       } else {
@@ -252,7 +259,7 @@ const Map = ({
           .setHTML(
             `${formatNumber(values[0])} ${
               METRIC_LABELS[metric]
-            }.<br />Click to show details in the sidebar.`
+            }${tooltipSuffix}`
           )
           .addTo(map)
       }
@@ -329,13 +336,19 @@ const Map = ({
         { 'highlight-cluster': true }
       )
 
+      const hasFilterLabel = hasFilterRef.current
+        ? ' <i>within current filters</i>'
+        : ''
+      const tooltipSuffix = `${hasFilterLabel}.<br />Click to zoom in.`
+
+      // within filtered data<br />
       let html = ''
       if (metric === 'id') {
-        html = `${point_count} detectors at this location<br />Click to zoom in.`
+        html = `${point_count} detectors at this location${tooltipSuffix}`
       } else {
         html = `${formatNumber(
           total
-        )} ${metric} (${point_count} detectors)<br />Click to zoom in.`
+        )} ${metric} (${point_count} detectors)${tooltipSuffix}`
       }
       tooltip
         .setLngLat(features[0].geometry.coordinates)
@@ -369,6 +382,7 @@ const Map = ({
   useEffect(() => {
     // update refs
     valueFieldRef.current = valueField
+    hasFilterRef.current = hasFilters
 
     const { current: map } = mapRef
 
@@ -385,7 +399,7 @@ const Map = ({
     }
 
     // detectors are styled after data have loaded
-  }, [detectors, maxValue, valueField])
+  }, [detectors, maxValue, valueField, hasFilters])
 
   useEffect(() => {
     const { current: map } = mapRef
@@ -527,7 +541,12 @@ const Map = ({
     })
   }
 
-  const legendTitle = valueField === 'id' ? `Number of ${METRIC_LABELS[valueField]} that detected ${SPECIES[species].commonName}` : `Number of ${METRIC_LABELS[valueField]}`
+  const legendTitle =
+    valueField === 'id'
+      ? `Number of ${METRIC_LABELS[valueField]} that detected ${
+          SPECIES[species].commonName
+        }`
+      : `Number of ${METRIC_LABELS[valueField]}`
 
   return (
     <Wrapper>
@@ -567,6 +586,7 @@ Map.propTypes = {
   maxValue: PropTypes.number.isRequired,
   species: PropTypes.string,
   selectedFeature: PropTypes.number,
+  hasFilters: PropTypes.bool,
   onSelectFeatures: PropTypes.func,
   onBoundsChange: PropTypes.func,
 }
@@ -575,6 +595,7 @@ Map.defaultProps = {
   bounds: List(),
   species: null,
   selectedFeature: null,
+  hasFilters: false,
   onSelectFeatures: () => {},
   onBoundsChange: () => {},
 }
