@@ -1,5 +1,8 @@
 import { Map, List, fromJS } from 'immutable'
 
+import {extractNodes} from './graphql'
+import { SPECIES_ID } from '../../config/constants'
+
 /**
  * Generates an monotonically increasing array from start to stop.
  *
@@ -103,3 +106,74 @@ export const groupBy = (records, groupField) =>
       ),
     Map()
   )
+
+/** Unpack the packed detector time series data
+ *
+ * @param {Array} - array of data from extractNodes of graphql data for detector time series
+ */
+export const unpackTSData = data => {
+  console.log('unpack TS data')
+  return fromJS(
+    data.map(({ id, speciesId, timestamp, value }) => {
+      // timstamp is MYY, divide by 100 and extract whole number to get month
+      const month = Math.trunc(timestamp / 100)
+
+      // value is detectorNights|detectionNights|detections if detectionNights or detections are > 0, else
+      // it is just detectorNights
+      let detectionNights = 0
+      let detections = 0
+      let detectorNights = 0
+      if (value.includes('|')) {
+        ;[detectorNights, detectionNights, detections] = value
+          .split('|')
+          .map(d => parseInt(d, 10))
+      } else {
+        detectorNights = parseInt(value, 10)
+      }
+
+      return {
+        id,
+        species: SPECIES_ID[speciesId],
+        month,
+        year: timestamp - 100 * month + 2000,
+        detectorNights,
+        detectionNights,
+        detections,
+      }
+    })
+  )
+}
+
+/**
+ * Merge location data from detector data into timeseries data
+ *
+ * @param {ImmutableJS List} timeseries - list of detector timeseries data
+ * @param {ImmutableJS Map} detectorIndex - map of detector data by detectorID
+ */
+export const mergeLocationIntoTS = (timeseries, detectorIndex) => {
+  return timeseries.map(d => {
+    const detector = detectorIndex.get(d.get('id'))
+    return d.merge({
+      lat: detector.get('lat'),
+      lon: detector.get('lon'),
+      admin1Name: detector.get('admin1Name'),
+    })
+  })
+}
+
+/**
+ * Extract graphql detectorJson data to ImmutableJS list.
+ * Update height to correct value.
+ * 
+ * @param {Array} detectorsJson - array of graphql edges
+ */
+export const extractDetectors = (detectorsJson) => {
+return fromJS(
+  extractNodes(detectorsJson).map(d => ({
+    // note: detector height is multiplied by 10 to make into integer,
+    // reverse that here
+    ...d,
+    micHt: d.micHt / 10,
+  }))
+)
+}

@@ -11,15 +11,19 @@ import {
 } from 'components/Crossfilter'
 
 import Sidebar from 'components/Sidebar'
-import {Flex } from 'components/Grid'
+import { Flex } from 'components/Grid'
 import DetectorDetails from 'components/DetectorDetails'
 import styled from 'style'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
-import { withinBounds } from 'components/Map/util'
 import TopBar from 'components/Map/TopBar'
 import SpeciesFilters from 'components/SpeciesFilters'
-import { createIndex } from 'util/data'
-import { MONTHS, MONTH_LABELS, SPECIES, SPECIES_ID } from '../../config/constants'
+import {
+  createIndex,
+  unpackTSData,
+  mergeLocationIntoTS,
+  extractDetectors,
+} from 'util/data'
+import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -31,76 +35,22 @@ const MapContainer = styled.div`
   height: 100%;
 `
 
-const boundsFilterFunc = mapBounds => ({ lat, lon }) =>
-  withinBounds({ lat, lon }, mapBounds)
-
 const SpeciesTemplate = ({
-  data: {
-    
-    speciesJson,
-    allDetectorsJson,
-    allDetectorTsJson,
-  },
+  data: { speciesJson, allDetectorsJson, allDetectorTsJson },
 }) => {
   const valueField = 'detections'
   const [selected, setSelected] = useState({ features: Set(), feature: null })
-  const [filterByBounds, setFilterByBounds] = useState(true)
 
-  const { species: selectedSpecies} = speciesJson
-  const {commonName, sciName} = SPECIES[selectedSpecies]
+  const { species: selectedSpecies } = speciesJson
+  const { commonName, sciName } = SPECIES[selectedSpecies]
 
-  const detectors = fromJS(
-    extractNodes(allDetectorsJson).map(d => ({
-      // note: detector height is multiplied by 10 to make into integer,
-      // reverse that here
-      ...d,
-      micHt: d.micHt / 10,
-    }))
-  )
+  const detectors = extractDetectors(allDetectorsJson)
   const detectorIndex = createIndex(detectors, 'id')
-
-
-  // TODO: memoize this
-  const detectorTS = fromJS(extractNodes(allDetectorTsJson).map(({id, speciesId, timestamp, value}) => {
-    // timstamp is MYY, divide by 100 and extract whole number to get month
-    const month = Math.trunc(timestamp / 100) 
-
-    // value is detectorNights|detectionNights|detections if detectionNights or detections are > 0, else
-    // it is just detectorNights
-    let detectionNights = 0
-    let detections = 0
-    let detectorNights = 0
-    if (value.includes('|')) {
-      [detectorNights, detectionNights, detections] = value.split('|').map(d => parseInt(d, 10))
-    } else {
-      detectorNights = parseInt(value, 10)
-    }
-
-    return {
-      id,
-      species: SPECIES_ID[speciesId],
-      month,
-      year: (timestamp - 100 * month) + 2000,
-      detectorNights,
-      detectionNights,
-      detections
-    }
-  }))
-
-  const data = detectorTS
-    .filter(d => d.get('species') === selectedSpecies)
-    .map(d => {
-      const detector = detectorIndex.get(d.get('id'))
-      return d.merge({
-        lat: detector.get('lat'),
-        lon: detector.get('lon'),
-        admin1Name: detector.get('admin1Name'),
-      })
-    })
-
-  const handleToggleBoundsFilter = () => {
-    setFilterByBounds(prev => !prev)
-  }
+  const detectorTS = unpackTSData(extractNodes(allDetectorTsJson))
+  const data = mergeLocationIntoTS(
+    detectorTS.filter(d => d.get('species') === selectedSpecies),
+    detectorIndex
+  )
 
   const handleSelectFeatures = ids => {
     const features = detectorIndex
@@ -170,14 +120,10 @@ const SpeciesTemplate = ({
   return (
     <Layout title={`${commonName} (${sciName})`}>
       <Wrapper>
-      
-      
-
-
         <CrossfilterProvider
           data={data}
           filters={filters}
-          options={{valueField}}
+          options={{ valueField }}
         >
           <Sidebar allowScroll={false}>
             {selected.features.size > 0 ? (
@@ -188,17 +134,21 @@ const SpeciesTemplate = ({
                 onClose={handleDetailsClose}
               />
             ) : (
-              <SpeciesFilters species={selectedSpecies} filters={visibleFilters} />
+              <SpeciesFilters
+                species={selectedSpecies}
+                filters={visibleFilters}
+              />
             )}
           </Sidebar>
 
           <MapContainer>
             <TopBar>
-              <ValueFieldSelector fields={['detections', 'detectionNights', 'id']} />
+              <ValueFieldSelector
+                fields={['detections', 'detectionNights', 'id']}
+              />
             </TopBar>
 
             <Map
-              filterByBounds={filterByBounds}
               detectors={detectors}
               species={selectedSpecies}
               selectedFeature={selected.feature}
@@ -247,7 +197,7 @@ SpeciesTemplate.propTypes = {
         id: PropTypes.number.isRequired,
         speciesId: PropTypes.number.isRequired,
         timestamp: PropTypes.number.isRequired,
-        value: PropTypes.string.isRequired
+        value: PropTypes.string.isRequired,
       })
     ).isRequired,
   }).isRequired,

@@ -1,14 +1,11 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { Set, fromJS } from 'immutable'
+import { Set } from 'immutable'
 
 import FiltersList from 'components/FiltersList'
 import Layout from 'components/Layout'
-import {
-  HelpText as BaseHelpText,
-  ExpandableParagraph,
-} from 'components/Text'
+import { HelpText as BaseHelpText, ExpandableParagraph } from 'components/Text'
 import {
   Provider as CrossfilterProvider,
   FilteredMap as Map,
@@ -17,14 +14,14 @@ import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
 import { Flex, Box } from 'components/Grid'
 import styled from 'style'
-import { createIndex } from 'util/data'
-import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import {
-  MONTHS,
-  MONTH_LABELS,
-  SPECIES,
-  SPECIES_ID,
-} from '../../config/constants'
+  createIndex,
+  unpackTSData,
+  mergeLocationIntoTS,
+  extractDetectors,
+} from 'util/data'
+import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
+import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -66,65 +63,15 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
     ...v,
   }))
 
-  const detectors = fromJS(
-    extractNodes(allDetectorsJson).map(d => ({
-      // note: detector height is multiplied by 10 to make into integer,
-      // reverse that here
-      ...d,
-      micHt: d.micHt / 10,
-    }))
-  )
+  // TODO: memoize these
+  const detectors = extractDetectors(allDetectorsJson)
   const detectorIndex = createIndex(detectors, 'id')
+  const detectorTS = unpackTSData(extractNodes(allDetectorTsJson))
+  const data = mergeLocationIntoTS(detectorTS, detectorIndex)
 
-
-  const detectorTS = fromJS(
-    extractNodes(allDetectorTsJson).map(
-      ({ id, speciesId, timestamp, value }) => {
-        // timstamp is MYY, divide by 100 and extract whole number to get month
-        const month = Math.trunc(timestamp / 100)
-
-        // value is detectorNights|detectionNights|detections if detectionNights or detections are > 0, else
-        // it is just detectorNights
-        let detectionNights = 0
-        let detections = 0
-        let detectorNights = 0
-        if (value.includes('|')) {
-          [detectorNights, detectionNights, detections] = value
-            .split('|')
-            .map(d => parseInt(d, 10))
-        } else {
-          detectorNights = parseInt(value, 10)
-        }
-
-        return {
-          id,
-          species: SPECIES_ID[speciesId],
-          month,
-          year: timestamp - 100 * month + 2000,
-          detectorNights,
-          detectionNights,
-          detections,
-          // we are redefining nights as occurrences when merged across species
-          occurrences: detectionNights,
-        }
-      }
-    )
-  )
-
-
-  // splice in location-based information for use in the map and filters
-  const data = detectorTS.map(d => {
-    const detector = detectorIndex.get(d.get('id'))
-    return d.merge({
-      lat: detector.get('lat'),
-      lon: detector.get('lon'),
-      admin1Name: detector.get('admin1Name'),
-    })
-  })
-  
   const years = Array.from(Set(data.map(d => d.get('year'))).values()).sort()
 
-  const valueField = 'occurrences'
+  const valueField = 'detectionNights'
 
   const filters = [
     {
@@ -183,7 +130,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
         <CrossfilterProvider
           data={data}
           filters={filters}
-          options={{valueField}}
+          options={{ valueField }}
         >
           <Sidebar allowScroll={false}>
             {selected.features.size > 0 ? (
@@ -220,7 +167,6 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
           </Sidebar>
           <Map
             detectors={detectors}
-            filterByBounds
             selectedFeature={selected.feature}
             onSelectFeatures={handleSelectFeatures}
           />
