@@ -1,17 +1,17 @@
-import React, { memo, useContext } from 'react'
+import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import { FaRegTimesCircle, FaExclamationTriangle } from 'react-icons/fa'
 
-import { Text } from 'components/Text'
+import { Text, HelpText } from 'components/Text'
 import Tabs, { Tab as BaseTab } from 'components/Tabs'
-import { Context } from 'components/Crossfilter'
+import { useCrossfilter } from 'components/Crossfilter'
 import { Column, Columns, RightColumn, Box, Flex } from 'components/Grid'
-import { HorizontalBarChart } from 'components/Chart'
-import { SeasonalityCharts } from 'components/UnitDetails'
 import styled, { themeGet } from 'style'
-import { formatNumber, quantityLabel } from 'util/format'
+import { formatNumber } from 'util/format'
 import { sumBy, groupBy } from 'util/data'
+import TotalCharts from './TotalCharts'
+import SeasonalityCharts from './SeasonalityCharts'
 import { MONTHS, SPECIES, METRIC_LABELS } from '../../../config/constants'
 
 import DetectorMetadata from './DetectorMetadata'
@@ -62,8 +62,6 @@ const Tab = styled(BaseTab)`
   flex: 1 1 auto;
 `
 
-const Section = styled(Box).attrs({ py: '1rem' })``
-
 const SectionHeader = styled(Text).attrs({
   as: 'h3',
   py: '0.5rem',
@@ -82,17 +80,18 @@ const Metric = styled.span`
   text-transform: initial;
 `
 
-const Highlight = styled(Text)`
-  color: ${themeGet('colors.highlight.500')};
-`
-
 const WarningIcon = styled(FaExclamationTriangle)`
   width: 1.5em;
   height: 1em;
 `
 
+const FilterNote = styled(HelpText)`
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+`
+
 const Details = ({ detector, selectedSpecies, onClose }) => {
-  const { state } = useContext(Context)
+  const { state } = useCrossfilter()
   let valueField = state.get('valueField')
   if (valueField === 'id') {
     valueField = 'detectionNights'
@@ -120,7 +119,6 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
   // If we are showing nights, we need to show the true effort which is
   // number of detector nights
 
-  // FIXME: what is valueField??
   const max =
     valueField === 'detectionNights'
       ? detectorNights
@@ -132,21 +130,22 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     return MONTHS.map(month => byMonth.get(month, 0))
   })
 
-  const seasonalityData = sppTotals
-    .map(([species]) => {
-      return {
-        species,
-        ...SPECIES[species],
-        values: monthlyData.get(species),
-      }
-    })
-    .toJS()
-
-  const selectedSpeciesMax = selectedSpecies ? bySpp.get(selectedSpecies, 0) : 0
+  const seasonalityData = sppTotals.map(([species]) => {
+    return {
+      species,
+      ...SPECIES[species],
+      values: monthlyData.get(species),
+    }
+  })
 
   const metric = METRIC_LABELS[valueField]
 
-  const selectedSpeciesName = SPECIES[selectedSpecies]
+  const filterNote = state.get('hasVisibleFilters') ? (
+    <FilterNote>
+      <WarningIcon />
+      Note: your filters are not applied to the following data.
+    </FilterNote>
+  ) : null
 
   return (
     <Wrapper>
@@ -171,9 +170,9 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
               {dateRange}
             </Column>
             <RightColumn>
-              {formatNumber(detections, 0)} species detections
+              <b>{formatNumber(detections, 0)}</b> species detections
               <br />
-              {formatNumber(detectorNights, 0)} nights monitored
+              <b>{formatNumber(detectorNights, 0)}</b> nights monitored
             </RightColumn>
           </Columns>
         </Summary>
@@ -181,62 +180,31 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
       <TabContainer>
         <Tab id="species" label="Species Detected">
-          {selectedSpecies ? (
-            <Section>
-              {selectedSpeciesMax > 0 ? (
-                <Highlight>
-                  {`${selectedSpeciesName.commonName} (${
-                    selectedSpeciesName.sciName
-                  })`}{' '}
-                  is highlighted below.
-                </Highlight>
-              ) : (
-                <Highlight>
-                  <WarningIcon />
-                  {`${selectedSpeciesName.commonName} (${
-                    selectedSpeciesName.sciName
-                  })`}{' '}
-                  was not detected at this location.
-                </Highlight>
-              )}
-            </Section>
-          ) : null}
+          {filterNote}
+          <SectionHeader>Total {metric}</SectionHeader>
 
-          <Section>
-            <SectionHeader>
-              {metric}{' '}
-              {valueField === 'detectionNights' ? (
-                <Metric>
-                  (of {formatNumber(detectorNights)}{' '}
-                  {quantityLabel('nights', detectorNights)} monitored)
-                </Metric>
-              ) : null}
-            </SectionHeader>
-            {sppTotals.map(([spp, total]) => (
-              <HorizontalBarChart
-                key={spp}
-                label={SPECIES[spp].commonName}
-                sublabel={`(${SPECIES[spp].sciName})`}
-                quantity={total}
-                max={max}
-                highlight={spp === selectedSpecies}
-              />
-            ))}
-          </Section>
+          <TotalCharts
+            data={sppTotals.toJS()}
+            selectedSpecies={selectedSpecies}
+            max={max}
+          />
+        </Tab>
+        <Tab id="seasonality" label="Seasonality">
+          {filterNote}
 
-          <Section>
-            <SectionHeader>
-              Seasonality <Metric>(number of {metric})</Metric>
-            </SectionHeader>
-            <SeasonalityCharts
-              data={seasonalityData}
-              selectedSpecies={selectedSpecies}
-            />
-          </Section>
+          <SectionHeader>{metric} per month</SectionHeader>
+
+          <SeasonalityCharts
+            data={seasonalityData.toJS()}
+            selectedSpecies={selectedSpecies}
+          />
         </Tab>
 
         <Tab id="overview" label="Detector Information">
-          <DetectorMetadata {...detector.toJS()} />
+          <DetectorMetadata
+            {...detector.toJS()}
+            selectedSpecies={selectedSpecies}
+          />
         </Tab>
       </TabContainer>
     </Wrapper>

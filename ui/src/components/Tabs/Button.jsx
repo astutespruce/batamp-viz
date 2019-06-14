@@ -9,7 +9,7 @@ const InactiveButton = styled.div`
   flex-grow: 1;
   padding: 0.25rem 0.5rem;
   color: ${themeGet('colors.grey.700')};
-  border-bottom: 1px solid ${themeGet('colors.grey.200')};
+  border-bottom: 1px solid ${themeGet('colors.grey.300')};
   &:hover {
     background-color: ${themeGet('colors.grey.200')};
   }
@@ -21,10 +21,10 @@ const ActiveButton = styled(InactiveButton)`
   border-bottom-color: transparent;
   background-color: #fff !important;
   &:not(:first-child) {
-    border-left: 1px solid ${themeGet('colors.grey.200')};
+    border-left: 1px solid ${themeGet('colors.grey.300')};
   }
   &:not(:last-child) {
-    border-right: 1px solid ${themeGet('colors.grey.200')};
+    border-right: 1px solid ${themeGet('colors.grey.300')};
   }
 `
 

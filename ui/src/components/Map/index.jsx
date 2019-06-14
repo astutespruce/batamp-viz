@@ -205,6 +205,8 @@ const Map = ({
 
       if (!(features && features.length)) return
 
+      tooltip.setLngLat(features[0].geometry.coordinates)
+
       const ids = Set(features.map(({ id }) => id))
 
       // unhighlight all previous
@@ -227,7 +229,6 @@ const Map = ({
 
       if (metric === 'id') {
         tooltip
-          .setLngLat(features[0].geometry.coordinates)
           .setHTML(
             `${formatNumber(features.length)} ${quantityLabel(
               'detectors',
@@ -240,29 +241,25 @@ const Map = ({
       }
 
       const values = features.map(({ properties: { total } }) => total)
+      const min = Math.min(...values)
+      const max = Math.max(...values)
+      let html = ''
 
-      if (features.length > 1) {
-        const min = Math.min(...values)
-        const max = Math.max(...values)
-
-        tooltip
-          .setLngLat(features[0].geometry.coordinates)
-          .setHTML(
-            `${features.length} detectors at this location<br/>${formatNumber(
-              min
-            )} - ${formatNumber(max)} ${metric}${tooltipSuffix}`
-          )
-          .addTo(map)
+      if (max === 0) {
+        html = `Not detected${tooltipSuffix}`
+      } else if (max !== min) {
+        html = `${
+          features.length
+        } detectors at this location<br/>${formatNumber(min)} - ${formatNumber(
+          max
+        )} ${metric}${tooltipSuffix}`
       } else {
-        tooltip
-          .setLngLat(features[0].geometry.coordinates)
-          .setHTML(
-            `${formatNumber(values[0])} ${
-              METRIC_LABELS[metric]
-            }${tooltipSuffix}`
-          )
-          .addTo(map)
+        html = `${formatNumber(values[0])} ${
+          METRIC_LABELS[metric]
+        }${tooltipSuffix}`
       }
+
+      tooltip.setHTML(html).addTo(map)
     })
     map.on('mouseleave', 'detectors-points', () => {
       map.getCanvas().style.cursor = ''
@@ -463,7 +460,11 @@ const Map = ({
     }
 
     if (upperValue === 0) {
-      updateLegend([])
+      if (detectors.size) {
+        updateLegend(legends.detectors(upperValue))
+      } else {
+        updateLegend([])
+      }
       return
     }
 

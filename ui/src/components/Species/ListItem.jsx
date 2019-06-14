@@ -155,7 +155,9 @@ const ListItem = ({ item, metric, thumbnail, map }) => {
         </Stats>
 
         <Map>
-          <Img fixed={map} />
+          <Link to={`/species/${species}`}>
+            <Img fixed={map} />
+          </Link>
           <MapCredits>
             range:{' '}
             <OutboundLink from="/species" to="http://www.batcon.org/">

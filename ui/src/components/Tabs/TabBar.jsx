@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react'
+import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 
 import { Flex } from 'components/Grid'
@@ -10,8 +10,8 @@ const Wrapper = styled(Flex).attrs({
   justifyContent: 'space-between',
   flex: 0,
 })`
-  /* border-top: 1px solid ${themeGet('colors.grey.200')}; */
   background-color: ${themeGet('colors.grey.100')};
+  font-size: 0.9rem;
 `
 
 const TabBar = ({ tabs, activeTab, onChange }) => {
