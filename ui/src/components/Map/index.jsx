@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import { List, Set, fromJS } from 'immutable'
+import { useDebouncedCallback } from 'use-debounce'
 
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -71,6 +72,12 @@ const Map = ({
 
   const [legendEntries, setLegendEntries] = useState(
     species ? legends.species() : []
+  )
+
+  // Debounce calls to set style & legend, since these may be called frequently during panning or changing data
+  const [styleDetectors] = useDebouncedCallback(
+    calculateMax => styleDetectorsImpl(calculateMax),
+    100
   )
 
   useEffect(() => {
@@ -395,6 +402,9 @@ const Map = ({
       updateLegend([])
     }
 
+    // Sometimes updating the detectors doesn't trigger updating the style via sourcedata event
+    map.once('idle', () => styleDetectors(true))
+
     // detectors are styled after data have loaded
   }, [detectors, maxValue, valueField, hasFilters])
 
@@ -421,8 +431,7 @@ const Map = ({
     selectedFeatureRef.current = selectedFeature
   }, [selectedFeature])
 
-  // TODO: memoize as a function of detectors (they will change on bounds change)
-  const styleDetectors = (calculateMax = false) => {
+  const styleDetectorsImpl = (calculateMax = false) => {
     console.log('style detectors', calculateMax)
     const { current: map } = mapRef
     const { current: metric } = valueFieldRef
@@ -439,13 +448,15 @@ const Map = ({
     if (calculateMax) {
       const visibleDetectors = map.querySourceFeatures('detectors')
 
-      upperValue = niceNumber(
-        maxProperty(
-          visibleDetectors,
-          metric === 'id' ? 'point_count' : 'total',
-          0
+      if (metric === 'id') {
+        // only tally the detectors that have detections
+        const hadDetections = visibleDetectors.filter(
+          ({ properties: { total } }) => total > 0
         )
-      )
+        upperValue = niceNumber(maxProperty(hadDetections, 'point_count', 0))
+      } else {
+        upperValue = niceNumber(maxProperty(visibleDetectors, 'total', 0))
+      }
     } else {
       console.log('falling back to max value', maxValue, niceNumber(maxValue))
       upperValue = niceNumber(maxValue)

@@ -11,8 +11,6 @@ const Wrapper = styled.div``
 const Warning = styled(MissingSpeciesWarning).attrs({ mb: '1rem' })``
 
 const TotalCharts = ({ data, selectedSpecies, max }) => {
-  window.data = data
-
   let detectedSelected = false
   let selectedSppChart = null
   if (selectedSpecies) {

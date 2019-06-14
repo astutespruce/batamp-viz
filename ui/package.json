@@ -45,7 +45,8 @@
     "styled-components": "^4.2.0",
     "styled-system": "^4.1.0",
     "typography": "^0.16.19",
-    "typography-theme-noriega": "^0.16.19"
+    "typography-theme-noriega": "^0.16.19",
+    "use-debounce": "^2.1.0"
   },
   "keywords": [
     "gatsby"
