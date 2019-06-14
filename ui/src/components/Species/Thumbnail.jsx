@@ -16,6 +16,7 @@ import { extractNodes } from 'util/graphql'
  * NOTE: Due to the way graphql queries work at the moment, we have to do this for all
  * profile images, and then filter out the one we want.
  */
+
 export const useThumbnails = () => {
   const data = useStaticQuery(graphql`
     query ProfileThumbnailQuery {
@@ -25,8 +26,8 @@ export const useThumbnails = () => {
             id
             species: name
             childImageSharp {
-              fixed(width: 210, height: 150, quality: 100) {
-                ...GatsbyImageSharpFixed
+              fluid(quality: 100) {
+                ...GatsbyImageSharpFluid_withWebp
               }
             }
           }
@@ -36,9 +37,9 @@ export const useThumbnails = () => {
   `)
 
   return extractNodes(data.allFile).reduce(
-    (prev, { species, childImageSharp: { fixed } }) => {
+    (prev, { species, childImageSharp: { fluid } }) => {
       /* eslint-disable no-param-reassign */
-      prev[species] = fixed
+      prev[species] = fluid
       return prev
     },
     {}
@@ -53,9 +54,8 @@ export const useThumbnail = species => {
 
 const Thumbnail = ({ species, ...props }) => {
   const thumbnail = useThumbnail(species)
-  console.log('thumbnail', thumbnail)
 
-  return thumbnail ? <Img fixed={thumbnail} {...props} /> : null
+  return thumbnail ? <Img fluid={thumbnail} {...props} /> : null
 }
 
 Thumbnail.propTypes = {

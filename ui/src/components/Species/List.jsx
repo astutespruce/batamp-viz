@@ -39,8 +39,7 @@ const sortOptions = [
 export const Wrapper = styled(Flex).attrs({
   flex: '1 1 auto',
   flexDirection: 'column',
-})`
-`
+})``
 
 export const Count = styled.span`
   color: ${themeGet('colors.grey.600')};
@@ -137,18 +136,20 @@ const SpeciesList = ({ species }) => {
         onChange={handleQueryChange}
       />
 
-      {items.size > 0 ? (
-        items.map(item => (
-          <ListItem
-            key={item.get('species')}
-            item={item}
-            metric={metric}
-            thumbnail={thumbnails[item.get('species')] || null}
-          />
-        ))
-      ) : (
-        <NoResults>No visible species...</NoResults>
-      )}
+      <div>
+        {items.size > 0 ? (
+          items.map(item => (
+            <ListItem
+              key={item.get('species')}
+              item={item}
+              metric={metric}
+              thumbnail={thumbnails[item.get('species')] || null}
+            />
+          ))
+        ) : (
+          <NoResults>No visible species...</NoResults>
+        )}
+      </div>
     </Wrapper>
   )
 }

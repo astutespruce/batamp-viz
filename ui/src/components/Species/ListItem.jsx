@@ -4,50 +4,64 @@ import ImmutablePropTypes from 'react-immutable-proptypes'
 import { css } from 'styled-components'
 import Img from 'gatsby-image'
 
-import { Flex, Columns, Column } from 'components/Grid'
+import { Flex, Box } from 'components/Grid'
 import { OutboundLink, Link } from 'components/Link'
 import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
 
 const Wrapper = styled.div`
   &:not(:first-child) {
-    border-top: 1px solid ${themeGet('colors.grey.100')};
+    border-top: 1px solid ${themeGet('colors.grey.200')};
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
   }
 `
 
-const Content = styled.div`
+const Content = styled(Flex).attrs({ flexWrap: 'wrap' })`
   line-height: 1.4;
   padding: 1rem;
-  color: ${themeGet('colors.grey.600')};
 `
 
-const Profile = styled(Flex).attrs({
-  // alignItems: 'center',
-})``
+const ThumbnailColumn = styled(Box).attrs({
+  flex: ['1 0 auto', '0 1 auto', 0],
+})`
+  padding-right: 1rem;
+`
 
-const Thumbnail = styled(Img)`
-  margin-right: 0.5rem;
-  margin-bottom: 0.1rem;
+const Profile = styled.div`
+  min-width: 200px;
+  flex: 1;
+`
+
+const Thumbnail = styled(Box)`
+  min-width: 210px;
 `
 
 const ImageCredits = styled.div`
-  font-size: 0.6rem;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
   color: ${themeGet('colors.grey.600')};
+  line-height: 1;
 `
 
 const Name = styled.div`
   color: ${themeGet('colors.link')};
-  font-size: 1.5rem;
+  font-size: 1.75rem;
 `
 
-const ScientificName = styled.div`
+const ScientificName = styled.span`
   font-size: 1rem;
-  color: ${themeGet('colors.grey.600')};
+  color: ${themeGet('colors.grey.700')};
 `
 
-const Stats = styled.div`
-  font-size: 0.8rem;
-  text-align: right;
+const Stats = styled.ul`
+  margin: 1rem 0 0 0;
+  list-style: none;
+  color: ${themeGet('colors.grey.800')};
+
+  li {
+    margin-bottom: 0.5rem;
+  }
 `
 
 const Metric = styled.span`
@@ -74,63 +88,67 @@ const ListItem = ({ item, metric, thumbnail }) => {
   return (
     <Wrapper>
       <Content>
-        <Columns>
-          <Column>
-            <Link to={`/species/${species}`}>
-              <Profile>
-                {thumbnail ? <Thumbnail fixed={thumbnail} /> : null}
-                <div>
-                  <Name>{commonName}</Name>
-                  <ScientificName>({sciName})</ScientificName>
-                </div>
-              </Profile>
-            </Link>
-            <ImageCredits>
-              credit:{' '}
-              <OutboundLink from="/species" to="https://www.merlintuttle.org">
-                MerlinTuttle.org
-              </OutboundLink>{' '}
-              |{' '}
-              <OutboundLink from="/species" to="http://www.batcon.org/">
-                Bat Conservation International
-              </OutboundLink>
-            </ImageCredits>
-          </Column>
-          <Column>
-            <Stats>
-              {detections > 0 ? (
+        <ThumbnailColumn>
+          <Link to={`/species/${species}`}>
+            <Thumbnail>
+              <Img fluid={thumbnail} />
+            </Thumbnail>
+          </Link>
+          <ImageCredits>
+            credit:{' '}
+            <OutboundLink from="/species" to="https://www.merlintuttle.org">
+              MerlinTuttle.org
+            </OutboundLink>{' '}
+            |{' '}
+            <OutboundLink from="/species" to="http://www.batcon.org/">
+              BCI
+            </OutboundLink>
+          </ImageCredits>
+        </ThumbnailColumn>
+
+        <Profile>
+          <Link to={`/species/${species}`}>
+            <Name>
+              {commonName} <ScientificName>({sciName})</ScientificName>
+            </Name>
+          </Link>
+
+          <Stats>
+            {detections > 0 ? (
+              <li>
+                <Metric isActive={metric === 'detections'}>
+                  {formatNumber(detections, 0)}
+                </Metric>{' '}
+                detections
+              </li>
+            ) : null}
+
+            <li>
+              {detectionNights > 0 ? (
                 <>
-                  <Metric isActive={metric === 'detections'}>
-                    {formatNumber(detections, 0)} detections
-                  </Metric>{' '}
-                  <br />
                   on{' '}
                   <Metric isActive={metric === 'nights detected'}>
-                    {formatNumber(detectionNights, 0)} nights
-                  </Metric>
+                    {formatNumber(detectionNights, 0)}
+                  </Metric>{' '}
                 </>
               ) : (
-                <Metric>not detected on any night</Metric>
+                'not detected on any '
               )}
-              <br />
-              at{' '}
+              of {formatNumber(detectorNights, 0)} nights monitored
+            </li>
+
+            <li>
               <Metric isActive={metric === 'detectors'}>
-                {formatNumber(detectors, 0)} detectors
+                {formatNumber(detectors, 0)}
               </Metric>{' '}
-              <br />
-              monitored for {formatNumber(detectorNights, 0)} nights
-              {contributors ? (
-                <>
-                  <br />
-                  by{' '}
-                  <Metric isActive={metric === 'contributors'}>
-                    {contributors} {quantityLabel('contributors', contributors)}
-                  </Metric>
-                </>
-              ) : null}
-            </Stats>
-          </Column>
-        </Columns>
+              detectors monitored by{' '}
+              <Metric isActive={metric === 'contributors'}>
+                {contributors}
+              </Metric>{' '}
+              {quantityLabel('contributors', contributors)}
+            </li>
+          </Stats>
+        </Profile>
       </Content>
     </Wrapper>
   )

@@ -27,6 +27,9 @@ TypographyTheme.overrideThemeStyles = () => ({
     outline: 'none',
     cursor: 'pointer',
   },
+  img: {
+    marginBottom: 0,
+  },
 })
 
 const typography = new Typography(TypographyTheme)

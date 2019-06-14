@@ -83,9 +83,13 @@ const SubpageHeaderImage = ({
     {credits ? (
       <ImageCredits>
         Photo:&nbsp;
-        <a href={credits.url} target="_blank" rel="noopener noreferrer">
-          {credits.author}
-        </a>
+        {credits.url ? (
+          <a href={credits.url} target="_blank" rel="noopener noreferrer">
+            {credits.author}
+          </a>
+        ) : (
+          credits.author
+        )}
       </ImageCredits>
     ) : null}
   </Wrapper>
@@ -96,9 +100,8 @@ SubpageHeaderImage.propTypes = {
   height: PropTypes.string,
   minHeight: PropTypes.string,
   title: PropTypes.string,
-  subtitle: PropTypes.string,
   credits: PropTypes.shape({
-    url: PropTypes.string.isRequired,
+    url: PropTypes.string,
     author: PropTypes.string.isRequired,
   }),
   position: PropTypes.string,
