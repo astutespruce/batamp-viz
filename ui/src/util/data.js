@@ -1,6 +1,6 @@
 import { Map, List, fromJS } from 'immutable'
 
-import {extractNodes} from './graphql'
+import { extractNodes } from './graphql'
 import { SPECIES_ID } from '../../config/constants'
 
 /**
@@ -112,7 +112,6 @@ export const groupBy = (records, groupField) =>
  * @param {Array} - array of data from extractNodes of graphql data for detector time series
  */
 export const unpackTSData = data => {
-  console.log('unpack TS data')
   return fromJS(
     data.map(({ id, speciesId, timestamp, value }) => {
       // timstamp is MYY, divide by 100 and extract whole number to get month
@@ -164,16 +163,16 @@ export const mergeLocationIntoTS = (timeseries, detectorIndex) => {
 /**
  * Extract graphql detectorJson data to ImmutableJS list.
  * Update height to correct value.
- * 
+ *
  * @param {Array} detectorsJson - array of graphql edges
  */
-export const extractDetectors = (detectorsJson) => {
-return fromJS(
-  extractNodes(detectorsJson).map(d => ({
-    // note: detector height is multiplied by 10 to make into integer,
-    // reverse that here
-    ...d,
-    micHt: d.micHt / 10,
-  }))
-)
+export const extractDetectors = detectorsJson => {
+  return fromJS(
+    extractNodes(detectorsJson).map(d => ({
+      // note: detector height is multiplied by 10 to make into integer,
+      // reverse that here
+      ...d,
+      micHt: d.micHt / 10,
+    }))
+  )
 }

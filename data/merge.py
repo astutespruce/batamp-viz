@@ -8,6 +8,7 @@ import geopandas as gp
 import numpy as np
 from feather import read_dataframe
 from shapely.geometry import Point
+from databasin.client import Client
 
 from geofeather import read_geofeather
 from constants import (
@@ -19,6 +20,22 @@ from constants import (
 )
 from util import camelcase
 
+# API key stored in .env.
+# generated using https://databasin.org/auth/api-keys/
+from settings import DATABASIN_KEY, DATABASIN_USER
+
+client = Client()
+client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
+
+
+def get_dataset_title(id):
+    try:
+        return client.get_dataset(id).title
+    except:
+        # will be handled in UI tier
+        return ""
+
+
 src_dir = Path("data/src")
 derived_dir = Path("data/derived")
 boundary_dir = Path("data/boundaries")
@@ -28,6 +45,7 @@ json_dir = Path("ui/data")
 location_fields = ["lat", "lon"]
 # Due to size limits in Gatsby, just doing by month for now
 time_fields = ["year", "month"]
+
 
 #### Read raw source data from CSV ############################################
 print("Reading CSV data...")
@@ -143,6 +161,29 @@ df = df.drop(columns=["mic_ht_units", "first_name", "last_name", "tempdate"])
 
 df.reset_index().to_feather(derived_dir / "merged_raw.feather")
 
+#### Get dataset names from Data Basin ##############################
+print("Getting dataset names from Data Basin...")
+
+# Read cache of dataset ID:Name
+dataset_names_file = derived_dir / "dataset_names.feather"
+if Path.exists(dataset_names_file):
+    dataset_names = read_dataframe(dataset_names_file).set_index("dataset")
+else:
+    dataset_names = pd.DataFrame(columns=["dataset", "dataset_name"]).set_index(
+        "dataset"
+    )
+
+datasets = df.groupby("dataset").size().reset_index()[["dataset"]].set_index("dataset")
+missing_names = datasets.join(dataset_names)
+missing_names = missing_names.loc[missing_names.dataset_name.isnull()]
+missing_names.dataset_name = missing_names.apply(
+    lambda row: get_dataset_title(row.name), axis=1
+)
+dataset_names = dataset_names.append(
+    missing_names, sort=False, ignore_index=False
+).reindex()
+dataset_names.reset_index().to_feather(dataset_names_file)
+
 
 #### Extract site and detector info ############################################
 print("Extracting information for sites and detectors...")
@@ -257,9 +298,7 @@ summary = {
     "allDetections": int(
         df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum().sum().astype("uint")
     ),
-    "sppDetections": int(
-        df[ACTIVITY_COLUMNS].sum().sum().astype("uint")
-    ),
+    "sppDetections": int(df[ACTIVITY_COLUMNS].sum().sum().astype("uint")),
     # detector_nights are sampling activity
     "detectorNights": len(df),
     # detection_nights are nights where at least one species was detected
@@ -344,25 +383,35 @@ detector_effort = df.groupby("detector").size()
 
 ### Calculate detector stats
 # Update detectors table with list of unique datasets, species, and contributors
-detector_datasets = (
-    df.groupby("detector").dataset.unique().apply(list).rename("datasets")
-)
 
+# Join in dataset names
+datasets = dataset_names.reset_index()
+datasets["datasets"] = datasets.apply(
+    lambda row: "{0}:{1}".format(row.dataset, row.dataset_name), axis=1
+)
+datasets = datasets.set_index("dataset")
+detector_datasets = (
+    df.set_index("dataset")
+    .join(datasets)
+    .groupby("detector")
+    .datasets.unique()
+    .apply(list)
+    .rename("datasets")
+)
 
 
 # NOTE: we are dropping any detectors that did not target species
-print('{} detectors'.format(len(detectors)))
-detectors = detectors.loc[detectors.index.isin(df.dropna(axis=0, how="all", subset=ACTIVITY_COLUMNS).detector.unique())]
-print('{} detectors have species records'.format(len(detectors)))
+print("{} detectors".format(len(detectors)))
+detectors = detectors.loc[
+    detectors.index.isin(
+        df.dropna(axis=0, how="all", subset=ACTIVITY_COLUMNS).detector.unique()
+    )
+]
+print("{} detectors have species records".format(len(detectors)))
 
 # Calculate list of unique species present or targeted per detector
 # We are setting null data to -1 so we can filter it out
-stacked = (
-    df[["detector"] + ACTIVITY_COLUMNS]
-    .fillna(-1)
-    .set_index("detector")
-    .stack()
-)
+stacked = df[["detector"] + ACTIVITY_COLUMNS].fillna(-1).set_index("detector").stack()
 det_spps = (
     stacked[stacked > 0]
     .reset_index()
@@ -541,10 +590,13 @@ det_ts["timestamp"] = (det_ts.month * 100) + (det_ts.year - 2000)
 
 # Path detector nights, detection nights, detections into a single value
 index = det_ts.loc[det_ts.detections > 0].index
-det_ts['value'] = det_ts.detector_nights.astype('str')
-det_ts.loc[index, 'value'] = det_ts.loc[index].apply(lambda row: "{0}|{1}|{2}".format(
+det_ts["value"] = det_ts.detector_nights.astype("str")
+det_ts.loc[index, "value"] = det_ts.loc[index].apply(
+    lambda row: "{0}|{1}|{2}".format(
         row.detector_nights, row.detection_nights, row.detections
-    ), axis=1)
+    ),
+    axis=1,
+)
 
 det_ts = det_ts[["detector", "species", "timestamp", "value"]]
 det_ts.columns = ["i", "s", "t", "v"]

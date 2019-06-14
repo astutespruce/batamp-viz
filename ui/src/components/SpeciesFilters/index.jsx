@@ -15,7 +15,6 @@ const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
 `
 
 const Header = styled(Box).attrs({ p: '0.5rem' })`
-  background-color: ${themeGet('colors.highlight.100')};
   line-height: 1.2;
   flex: 0;
 `

@@ -59,3 +59,12 @@ for id in dataset_ids:
         with open(out_dir / "{}.csv".format(id), "w") as outfile:
             outfile.write(data)
 
+
+
+for id in df.dataset.unique():
+    try:
+        ds = client.get_dataset(id)
+        print(ds.title)
+
+
+

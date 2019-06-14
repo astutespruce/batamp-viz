@@ -63,7 +63,6 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
     ...v,
   }))
 
-  // TODO: memoize these
   const detectors = extractDetectors(allDetectorsJson)
   const detectorIndex = createIndex(detectors, 'id')
   const detectorTS = unpackTSData(extractNodes(allDetectorTsJson))
@@ -147,16 +146,19 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
                     <ExpandableParagraph
                       snippet="An occurrence is anytime a species was detected by an acoustic
                 detector at a given location during a given night. Use the
-                following filters to select specific species or time periods
-                that you are interested in."
+                following filters to ..."
                     >
                       An occurrence is anytime a species was detected by an
                       acoustic detector at a given location for a given month
                       and year. Use the following filters to select specific
                       species or time periods that you are interested in.
+                      Detectors are also filtered based on the extent of the
+                      map.
                       <br />
                       <br />
-                      TODO
+                      You can combine filters and use multiple values for each
+                      filter. For example, you can select Fringed Bat in March
+                      and April.
                     </ExpandableParagraph>
                   </HelpText>
                 </Box>

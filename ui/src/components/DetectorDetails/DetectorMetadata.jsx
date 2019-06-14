@@ -85,7 +85,7 @@ const DetectorMetadata = ({
   model,
   micType,
   reflType,
-  idMethods,
+  callId,
   datasets,
   contributors,
   detectorNights,
@@ -109,6 +109,16 @@ const DetectorMetadata = ({
       }
     })
     .sort((a, b) => (a.commonName < b.commonName ? -1 : 1))
+
+  const datasetInfo = datasets.map(d => {
+    const [id, name] = d.split(':')
+
+    return {
+      id,
+      url: `https://batamp.databasin.org/datasets/${id}`,
+      name: name || `private dataset (${id})`,
+    }
+  })
 
   return (
     <>
@@ -175,20 +185,16 @@ const DetectorMetadata = ({
         </Field>
       ) : null}
 
-      {idMethods && idMethods.length ? (
+      {callId ? (
         <Field>
           <FieldHeader>How were species identified?</FieldHeader>
-          <FieldValueList>
-            {idMethods.map(method => (
-              <li>{method}</li>
-            ))}
-          </FieldValueList>
+          <FieldValue>{callId}</FieldValue>
         </Field>
       ) : null}
 
       <Field>
         <FieldHeader>
-          Source {quantityLabel('datasets', datasets.length)} on{' '}
+          Source {quantityLabel('datasets', datasetInfo.length)} on{' '}
           <OutboundLink
             from="/"
             to="https://batamp.databasin.org/"
@@ -198,26 +204,18 @@ const DetectorMetadata = ({
           </OutboundLink>
           :
         </FieldHeader>
-        {datasets.size === 1 ? (
+        {datasetInfo.length === 1 ? (
           <FieldValue>
-            <OutboundLink
-              from="/"
-              to={`https://batamp.databasin.org/datasets/${datasets.get(0)}`}
-              target="_blank"
-            >
-              {datasets.get(0)}
+            <OutboundLink from="/" to={datasetInfo[0].url}>
+              {datasetInfo[0].name}
             </OutboundLink>
           </FieldValue>
         ) : (
           <FieldValueList>
-            {datasets.map(dataset => (
-              <li key={dataset}>
-                <OutboundLink
-                  from="/"
-                  to={`https://batamp.databasin.org/datasets/${dataset}`}
-                  target="_blank"
-                >
-                  {dataset}
+            {datasetInfo.map(({ id, url, name }) => (
+              <li key={id}>
+                <OutboundLink from="/" to={url}>
+                  {name}
                 </OutboundLink>
               </li>
             ))}
@@ -241,7 +239,7 @@ DetectorMetadata.propTypes = {
   model: PropTypes.string,
   micType: PropTypes.string,
   reflType: PropTypes.string,
-  idMethods: PropTypes.string,
+  callId: PropTypes.string,
   datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
   detectorNights: PropTypes.number.isRequired,
   detectionNights: PropTypes.number.isRequired,
@@ -255,7 +253,7 @@ DetectorMetadata.defaultProps = {
   model: null,
   micType: null,
   reflType: null,
-  idMethods: null,
+  callId: null,
   selectedSpecies: null,
 }
 
