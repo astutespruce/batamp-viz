@@ -6,6 +6,7 @@ import ImmutablePropTypes from 'react-immutable-proptypes'
 import { Set, Map as ImmutableMap } from 'immutable'
 
 import { sumBy } from 'util/data'
+import { useIsEqualMemo } from 'util/hooks'
 import Map from 'components/Map'
 import { useCrossfilter } from './Context'
 
@@ -51,30 +52,36 @@ const FilteredMap = ({
   // TODO: this assumes timestep is not split out as a separate filter when
   // animating time!
   const data = state.get('data')
-  const filteredIds = Set(data.map(d => d.get('id')))
+  const filteredIds = useIsEqualMemo(() => Set(data.map(d => d.get('id'))), [
+    data,
+  ])
 
-  let totalById = ImmutableMap()
-  // Note: the totals will only include entries where valueField is > 0
-  if (valueField === 'id') {
-    // convert to boolean-like values.  1 indicates that it was detected with at least one night.
-    totalById = sumBy(data, 'id', 'detectionNights').map(total => (total > 0 ? 1 : 0))
-  } else {
-    totalById = sumBy(data, 'id', valueField)
-  }
+  const totalById = useIsEqualMemo(() => {
+    if (valueField === 'id') {
+      // convert to boolean-like values.  1 indicates that it was detected with at least one night.
+      return sumBy(data, 'id', 'detectionNights').map(total =>
+        total > 0 ? 1 : 0
+      )
+    }
+    return sumBy(data, 'id', valueField)
+  }, [data, valueField])
 
   const maxValue = totalById.size
     ? Math.max(...Array.from(totalById.values()))
     : 0
 
   // Only show the detectors that currently meet the applied filters
-  const keys = Set(['id', 'lat', 'lon'])
-  const detectors = rawDetectors
-    .filter(d => filteredIds.has(d.get('id')))
-    .map(d =>
-      d
-        .filter((_, k) => keys.has(k))
-        .merge({ total: totalById.get(d.get('id'), 0) })
-    )
+  const detectors = useIsEqualMemo(
+    () =>
+      rawDetectors
+        .filter(d => filteredIds.has(d.get('id')))
+        .map(d =>
+          d
+            .filter((_, k) => k === 'id' || k === 'lat' || k === 'lon')
+            .merge({ total: totalById.get(d.get('id'), 0) })
+        ),
+    [filteredIds, totalById]
+  )
 
   return (
     <Map

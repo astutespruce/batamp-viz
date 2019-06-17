@@ -163,6 +163,7 @@ const Map = ({
     // listen on source data events for detectors and update style at that time
     map.on('sourcedata', ({ sourceId, isSourceLoaded }) => {
       if (isSourceLoaded && sourceId === 'detectors') {
+        console.log('source data on detectors')
         styleDetectors(true)
       }
     })
@@ -350,9 +351,9 @@ const Map = ({
       if (metric === 'id') {
         html = `${point_count} detectors at this location${tooltipSuffix}`
       } else {
-        html = `${formatNumber(
-          total
-        )} ${METRIC_LABELS[metric]} (${point_count} detectors)${tooltipSuffix}`
+        html = `${formatNumber(total)} ${
+          METRIC_LABELS[metric]
+        } (${point_count} detectors)${tooltipSuffix}`
       }
       tooltip
         .setLngLat(features[0].geometry.coordinates)
@@ -401,6 +402,8 @@ const Map = ({
       // update legend to remove detectors altogether
       updateLegend([])
     }
+
+    console.log('firing update to detectors', maxValue)
 
     // Sometimes updating the detectors doesn't trigger updating the style via sourcedata event
     map.once('idle', () => styleDetectors(true))
