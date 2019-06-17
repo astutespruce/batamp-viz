@@ -19,7 +19,7 @@ export const config = {
   center: [-91.426, 51.711],
   zoom: 2.3,
   minZoom: 1.75,
-  styles: ['light-v9', 'satellite-streets-v11'],
+  styles: ['light-v9', 'satellite-streets-v11', 'streets-v11'],
   padding: 0.1, // padding around bounds as a proportion
 }
 

@@ -110,6 +110,9 @@ const DetectorMetadata = ({
     })
     .sort((a, b) => (a.commonName < b.commonName ? -1 : 1))
 
+  const numMonitored = monitoredSpp.length
+  const numDetected = detectedSpp.size
+
   const datasetInfo = datasets.map(d => {
     const [id, name] = d.split(':')
 
@@ -148,7 +151,9 @@ const DetectorMetadata = ({
         </FieldValue>
       </Field>
       <Field>
-        <FieldHeader>Monitored species that were detected:</FieldHeader>
+        <FieldHeader>
+          {numDetected} of {numMonitored} monitored species were detected:
+        </FieldHeader>
         <SpeciesList>
           {monitoredSpp.map(
             ({ species: spp, commonName, sciName, detected }) => (
@@ -243,7 +248,7 @@ DetectorMetadata.propTypes = {
   datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
   detectorNights: PropTypes.number.isRequired,
   detectionNights: PropTypes.number.isRequired,
-  species: PropTypes.arrayOf(PropTypes.string).isRequired,
+  species: PropTypes.arrayOf(PropTypes.string),
   targetSpecies: PropTypes.arrayOf(PropTypes.string).isRequired,
   selectedSpecies: PropTypes.string,
 }
@@ -254,6 +259,7 @@ DetectorMetadata.defaultProps = {
   micType: null,
   reflType: null,
   callId: null,
+  species: [],
   selectedSpecies: null,
 }
 

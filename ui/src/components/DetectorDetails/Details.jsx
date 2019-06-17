@@ -73,13 +73,6 @@ const SectionHeader = styled(Text).attrs({
   text-transform: capitalize;
 `
 
-const Metric = styled.span`
-  font-size: 0.8rem;
-  color: ${themeGet('colors.grey.700')};
-  font-weight: normal;
-  text-transform: initial;
-`
-
 const WarningIcon = styled(FaExclamationTriangle)`
   width: 1.5em;
   height: 1em;
@@ -88,6 +81,10 @@ const WarningIcon = styled(FaExclamationTriangle)`
 const FilterNote = styled(HelpText)`
   font-size: 0.8rem;
   margin-bottom: 1rem;
+`
+
+const Highlight = styled(Box)`
+  color: ${themeGet('colors.highlight.500')};
 `
 
 const Details = ({ detector, selectedSpecies, onClose }) => {
@@ -102,6 +99,8 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     detections,
     admin1Name,
     country,
+    species,
+    detectionNights,
     detectorNights,
     dateRange,
   } = detector.toJS()
@@ -118,7 +117,6 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
   // If we are showing nights, we need to show the true effort which is
   // number of detector nights
-
   const max =
     valueField === 'detectionNights'
       ? detectorNights
@@ -130,15 +128,29 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     return MONTHS.map(month => byMonth.get(month, 0))
   })
 
-  const seasonalityData = sppTotals.map(([species]) => {
+  const seasonalityData = sppTotals.map(([spp]) => {
     return {
-      species,
-      ...SPECIES[species],
-      values: monthlyData.get(species),
+      species: spp,
+      ...SPECIES[spp],
+      values: monthlyData.get(spp),
     }
   })
 
   const metric = METRIC_LABELS[valueField]
+
+  const hasSpecies = species && species.length > 0
+
+  let noSpeciesWarning = null
+  if (!hasSpecies) {
+    noSpeciesWarning = (
+      <Highlight>
+        <WarningIcon />
+        No species were detected on any night.
+        <br />
+        {detectionNights} bat detections were not identified to species.
+      </Highlight>
+    )
+  }
 
   const filterNote = state.get('hasVisibleFilters') ? (
     <FilterNote>
@@ -183,21 +195,29 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
           {filterNote}
           <SectionHeader>Total {metric}</SectionHeader>
 
-          <TotalCharts
-            data={sppTotals.toJS()}
-            selectedSpecies={selectedSpecies}
-            max={max}
-          />
+          {hasSpecies ? (
+            <TotalCharts
+              data={sppTotals.toJS()}
+              selectedSpecies={selectedSpecies}
+              max={max}
+            />
+          ) : (
+            noSpeciesWarning
+          )}
         </Tab>
         <Tab id="seasonality" label="Seasonality">
           {filterNote}
 
           <SectionHeader>{metric} per month</SectionHeader>
 
-          <SeasonalityCharts
-            data={seasonalityData.toJS()}
-            selectedSpecies={selectedSpecies}
-          />
+          {hasSpecies ? (
+            <SeasonalityCharts
+              data={seasonalityData.toJS()}
+              selectedSpecies={selectedSpecies}
+            />
+          ) : (
+            noSpeciesWarning
+          )}
         </Tab>
 
         <Tab id="overview" label="Detector Information">
