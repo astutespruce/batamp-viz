@@ -159,7 +159,19 @@ df["dayofyear"] = df.tempdate.dt.dayofyear.astype("uint16")
 # drop unneeded columns
 df = df.drop(columns=["mic_ht_units", "first_name", "last_name", "tempdate"])
 
+
+### Drop duplicates
+# NOTE: these will likely have different dataset IDs, and we don't necessarily
+# care about slightly different values for the detector or contributor fields
+core_columns = (
+    location_fields + ["mic_ht", "night"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS
+)
+df = df.drop_duplicates(subset=core_columns, keep="first")
+print("{} records after dropping complete duplicates".format(len(df)))
+
+
 df.reset_index().to_feather(derived_dir / "merged_raw.feather")
+
 
 #### Get dataset names from Data Basin ##############################
 print("Getting dataset names from Data Basin...")
@@ -278,6 +290,53 @@ df = (
 # PENDING DECISION FROM CONTRIBUTOR
 # index = df.laci.isnull() & (df.admin1_name == "Hawaii")
 # df.loc[index, "laci"] = df.loc[index].bat
+
+
+### Coalesce duplicate nights and detectors
+# These are duplicated and have different activity levels
+# take the max activity level by column
+
+# have to keep the index around so we can join back on it
+df["prev_index"] = df.index
+temp = (
+    df.set_index(["detector", "night"])
+    .join(df.groupby(["detector", "night"]).size().rename("duplicates"))
+    .reset_index()
+    .set_index("prev_index")
+)
+dup_index = temp.loc[temp.duplicates > 1].index
+nondup_index = temp.loc[temp.duplicates == 1].index
+print("{} records have duplicate detector / night combinations".format(len(dup_index)))
+
+dups = df.loc[dup_index]
+
+# Take first entry from all non-activity columns
+meta = (
+    dups[
+        [c for c in dups.columns if not c in ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS]
+    ]
+    .groupby(["detector", "night"])
+    .first()
+)
+activity = (
+    dups[["detector", "night"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS]
+    .groupby(["detector", "night"])
+    .max()
+)
+dedup = meta.join(activity).reset_index()
+
+# append these, sort, and reindex
+# NOTE: the new index DOES NOT match the index used for the merged_raw export above!
+df = (
+    df.loc[nondup_index]
+    .drop(columns=["prev_index"])
+    .append(dedup, ignore_index=True, sort=False)
+    .sort_values(by=["detector", "night"])
+    .reindex()
+)
+print(
+    "{} records after removing duplicate detector / night combinations".format(len(df))
+)
 
 
 # Write out merged data
