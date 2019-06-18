@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import { Set, Map as ImmutableMap } from 'immutable'
 
-import { sumBy } from 'util/data'
+import { sumBy, countUniqueBy, uniqueBy, uniqueMapBy } from 'util/data'
 import { useIsEqualMemo } from 'util/hooks'
 import Map from 'components/Map'
 import { useCrossfilter } from './Context'
@@ -57,13 +57,24 @@ const FilteredMap = ({
   ])
 
   const totalById = useIsEqualMemo(() => {
-    if (valueField === 'id') {
-      // convert to boolean-like values.  1 indicates that it was detected with at least one night.
-      return sumBy(data, 'id', 'detectionNights').map(total =>
-        total > 0 ? 1 : 0
-      )
+    switch (valueField) {
+      case 'id': {
+        return sumBy(data, 'id', 'detectionNights').map(total =>
+          total > 0 ? 1 : 0
+        )
+      }
+      case 'species': {
+        // only count species that were actually detected
+        return countUniqueBy(
+          data.filter(d => d.get('detectionNights', 0) > 0),
+          'id',
+          'species'
+        )
+      }
+      default: {
+        return sumBy(data, 'id', valueField)
+      }
     }
-    return sumBy(data, 'id', valueField)
   }, [data, valueField])
 
   const maxValue = totalById.size
@@ -78,7 +89,10 @@ const FilteredMap = ({
         .map(d =>
           d
             .filter((_, k) => k === 'id' || k === 'lat' || k === 'lon')
-            .merge({ total: totalById.get(d.get('id'), 0) })
+            .merge({
+              total: totalById.get(d.get('id'), 0),
+              max: totalById.get(d.get('id'), 0),
+            })
         ),
     [filteredIds, totalById]
   )

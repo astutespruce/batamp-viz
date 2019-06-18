@@ -6,7 +6,7 @@ import {
   aggregateByDimension,
   getRawTotal,
   getFilteredTotal,
-  aggregateDimensionById,
+  // aggregateDimensionById,
 } from './util'
 
 // returns true if passed in values contains the value
@@ -62,7 +62,7 @@ export const Crossfilter = (data, filters, options = {}) => {
   const [state, setState] = useState(() => {
     const valueField = options.valueField || null
     const total = getRawTotal(crossfilter, valueField)
-    return Map({
+    const initialState = Map({
       // passed in data
       data,
       valueField,
@@ -73,8 +73,16 @@ export const Crossfilter = (data, filters, options = {}) => {
       filters: Map(),
       hasVisibleFilters: false,
       dimensionTotals: aggregateByDimension(dimensions, valueField),
-      dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
+
+      // Not used:
+      // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
     })
+
+    if (isDebug) {
+      console.log('Initial state', initialState.toJS())
+    }
+
+    return initialState
   })
 
   const setFilter = (field, filterValue) => {
@@ -104,7 +112,10 @@ export const Crossfilter = (data, filters, options = {}) => {
 
       const valueField = prevState.get('valueField')
       const newFilters = prevState.get('filters').set(field, filterValue)
-      const hasVisibleFilters = newFilters.filter((v, k) => !v.isEmpty() && !dimensions[k].config.internal).size > 0
+      const hasVisibleFilters =
+        newFilters.filter(
+          (v, k) => !v.isEmpty() && !dimensions[k].config.internal
+        ).size > 0
 
       const newState = prevState.merge({
         // convert Array from crossfilter back to an immutable List
@@ -113,7 +124,9 @@ export const Crossfilter = (data, filters, options = {}) => {
         hasVisibleFilters,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
-        dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
+
+        // Not used:
+        // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
       })
 
       if (isDebug) {
@@ -156,7 +169,9 @@ export const Crossfilter = (data, filters, options = {}) => {
         // filters: state.get('filters').set(field, filterValue),
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
-        dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
+
+        // Not used:
+        // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
       })
 
       if (isDebug) {
@@ -182,7 +197,10 @@ export const Crossfilter = (data, filters, options = {}) => {
       const valueField = prevState.get('valueField')
 
       const newFilters = prevState.get('filters').removeAll(fields)
-      const hasVisibleFilters = newFilters.filter((v, k) => !v.isEmpty() && !dimensions[k].config.internal).size > 0
+      const hasVisibleFilters =
+        newFilters.filter(
+          (v, k) => !v.isEmpty() && !dimensions[k].config.internal
+        ).size > 0
 
       const newState = state.merge({
         // convert Array from crossfilter back to an immutable List
@@ -192,7 +210,9 @@ export const Crossfilter = (data, filters, options = {}) => {
         hasVisibleFilters,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
-        dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
+
+        // Not used:
+        // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
       })
 
       if (isDebug) {
@@ -215,7 +235,9 @@ export const Crossfilter = (data, filters, options = {}) => {
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
         total: getRawTotal(crossfilter, valueField),
-        dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
+
+        // Not used:
+        // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
       })
 
       if (isDebug) {

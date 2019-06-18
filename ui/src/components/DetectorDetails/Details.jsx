@@ -90,7 +90,7 @@ const Highlight = styled(Box)`
 const Details = ({ detector, selectedSpecies, onClose }) => {
   const { state } = useCrossfilter()
   let valueField = state.get('valueField')
-  if (valueField === 'id') {
+  if (valueField === 'id' || valueField === 'species') {
     valueField = 'detectionNights'
   }
 

@@ -44,6 +44,7 @@ export const sources = {
     clusterRadius: 12,
     clusterProperties: {
       total: ['+', ['get', 'total']],
+      max: ['max', ['get', 'total']],
     },
   },
 }
@@ -295,9 +296,18 @@ export const legends = {
 
     const entries = []
 
-    if (upperValue > 0) {
+    if (upperValue === 1) {
+      entries.push({
+        type: 'circle',
+        radius: MINRADIUS,
+        label: '1',
+        color: DARKESTCOLOR,
+      })
+    } else if (upperValue > 1) {
       let breaks = []
-      if (upperValue - 1 > 4) {
+      if (upperValue > 2 && upperValue <= 4) {
+        breaks = [0.5]
+      } else if (upperValue > 4) {
         breaks = [0.66, 0.33]
       }
 

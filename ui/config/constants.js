@@ -304,4 +304,5 @@ export const METRIC_LABELS = {
   detectorNights: 'nights monitored',
 
   id: 'detectors',
+  species: 'species',
 }

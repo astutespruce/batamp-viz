@@ -1,4 +1,4 @@
-import { Map, List, fromJS } from 'immutable'
+import { Map, List, Set, fromJS } from 'immutable'
 
 import { extractNodes } from './graphql'
 import { SPECIES_ID } from '../../config/constants'
@@ -48,7 +48,7 @@ export const sum = values => values.reduce((prev, value) => prev + value, 0)
  * @param {Number} number
  */
 export const niceNumber = number => {
-  if (number > 1 && number < 10) {
+  if (number >= 1 && number < 10) {
     return number
   }
   const factor = 10 ** Math.max(number.toString().length - 2, 1)
@@ -106,6 +106,40 @@ export const groupBy = (records, groupField) =>
       ),
     Map()
   )
+
+/**
+ * Aggregate unique values of valueField grouped by groupField
+ * @param {Immutable List} records - list of Map objects
+ * @param {String} groupField - field to group by
+ * @param {String} valueField - field to add to unique list
+ */
+export const uniqueBy = (records, groupField, valueField) =>
+  records.reduce(
+    (prev, value) =>
+      prev.update(value.get(groupField), Set(), prevList =>
+        prevList.add(value.get(valueField))
+      ),
+    Map()
+  )
+
+/**
+ * Aggregate COUNT of unique values of valueField grouped by groupField
+ * @param {Immutable List} records - list of Map objects
+ * @param {String} groupField - field to group by
+ * @param {String} valueField - field to add to unique list
+ */
+export const countUniqueBy = (records, groupField, valueField) =>
+  uniqueBy(records, groupField, valueField).map(v => v.size)
+
+/**
+ * For each unique value of groupField, returns an ImmutableJS Map where the key
+ * is the value of valueField and the value is 1
+ * @param {Immutable List} records - list of Map objects
+ * @param {String} groupField - field to group by
+ * @param {String} valueField - field to add to unique list
+ */
+export const uniqueMapBy = (records, groupField, valueField) =>
+  uniqueBy(records, groupField, valueField).map(d => Map(d.map(k => [k, 1])))
 
 /** Unpack the packed detector time series data
  *

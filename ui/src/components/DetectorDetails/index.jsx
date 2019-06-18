@@ -18,8 +18,6 @@ const DetectorDetails = ({
   onSetDetector,
   onClose,
 }) => {
-  console.log('incoming detectors for details', detectors.toJS())
-
   const [index, setIndex] = useState(0)
   if (index >= detectors.size) {
     // we are rendering with a set of detectors different in size than our previous render

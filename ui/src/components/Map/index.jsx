@@ -12,6 +12,7 @@ import styled, { theme } from 'style'
 import { hasWindow } from 'util/dom'
 import { formatNumber, quantityLabel } from 'util/format'
 import { niceNumber } from 'util/data'
+import { useIsEqualMemo } from 'util/hooks'
 
 import StyleSelector from './StyleSelector'
 import Legend from './Legend'
@@ -163,7 +164,6 @@ const Map = ({
     // listen on source data events for detectors and update style at that time
     map.on('sourcedata', ({ sourceId, isSourceLoaded }) => {
       if (isSourceLoaded && sourceId === 'detectors') {
-        console.log('source data on detectors')
         styleDetectors(true)
       }
     })
@@ -242,6 +242,18 @@ const Map = ({
               'detectors',
               features.length
             )} at this location${tooltipSuffix}`
+          )
+          .addTo(map)
+
+        return
+      }
+
+      if (metric === 'species') {
+        tooltip
+          .setHTML(
+            `${Math.max(
+              ...features.map(({ properties: { total } }) => total)
+            )} species detected at this location${tooltipSuffix}`
           )
           .addTo(map)
 
@@ -333,7 +345,7 @@ const Map = ({
       // only highlight the first cluster or it gets confusing to interpret
       const {
         id,
-        properties: { point_count, total },
+        properties: { point_count, total, max },
       } = features[0]
       highlightFeatureRef.current = Set([id])
       map.setFeatureState(
@@ -350,6 +362,8 @@ const Map = ({
       let html = ''
       if (metric === 'id') {
         html = `${point_count} detectors at this location${tooltipSuffix}`
+      } else if (metric === 'species') {
+        html = `at least ${max} species detected at this location${tooltipSuffix}`
       } else {
         html = `${formatNumber(total)} ${
           METRIC_LABELS[metric]
@@ -403,8 +417,6 @@ const Map = ({
       updateLegend([])
     }
 
-    console.log('firing update to detectors', maxValue)
-
     // Sometimes updating the detectors doesn't trigger updating the style via sourcedata event
     map.once('idle', () => styleDetectors(true))
 
@@ -435,7 +447,13 @@ const Map = ({
   }, [selectedFeature])
 
   const styleDetectorsImpl = (calculateMax = false) => {
-    console.log('style detectors', calculateMax)
+    // console.log(
+    //   'style detectors',
+    //   calculateMax,
+    //   detectors.size,
+    //   valueField,
+    //   valueFieldRef.current
+    // )
     const { current: map } = mapRef
     const { current: metric } = valueFieldRef
 
@@ -457,6 +475,8 @@ const Map = ({
           ({ properties: { total } }) => total > 0
         )
         upperValue = niceNumber(maxProperty(hadDetections, 'point_count', 0))
+      } else if (metric === 'species') {
+        upperValue = maxProperty(visibleDetectors, 'max', 0)
       } else {
         upperValue = niceNumber(maxProperty(visibleDetectors, 'total', 0))
       }
@@ -473,6 +493,8 @@ const Map = ({
       upperValue = niceNumber(maxValue)
     }
 
+    // console.log('upper ', upperValue)
+
     if (upperValue === 0) {
       if (detectors.size) {
         updateLegend(legends.detectors(upperValue))
@@ -482,31 +504,31 @@ const Map = ({
       return
     }
 
-    console.log('upper ', upperValue)
-
-    const colorExpr = interpolateExpr({
-      property: 'total',
-      domain: [1, upperValue],
-      range: [DARKESTCOLOR, LIGHTESTCOLOR],
-      fallback: NONDETECTIONCOLOR,
-      hasZero: true,
-    })
-
-    map.setPaintProperty('detectors-clusters', 'circle-color', colorExpr)
-    map.setPaintProperty('detectors-points', 'circle-color', colorExpr)
+    const property = metric === 'species' ? 'max' : 'total'
 
     const radiusExpr = interpolateExpr({
-      property: 'total',
+      property,
       domain: [1, upperValue],
       range: [MINRADIUS, MAXRADIUS],
       fallback: MINRADIUS,
       hasZero: true,
     })
 
-    map.setPaintProperty('detectors-clusters', 'circle-radius', radiusExpr)
-    map.setPaintProperty('detectors-points', 'circle-radius', radiusExpr)
+    const colorExpr = interpolateExpr({
+      property,
+      domain: [1, upperValue],
+      range: [DARKESTCOLOR, LIGHTESTCOLOR],
+      fallback: NONDETECTIONCOLOR,
+      hasZero: true,
+    })
 
-    // updateLegend(getDetectorLegend(upperValue))
+
+    map.setPaintProperty('detectors-points', 'circle-radius', radiusExpr)
+    map.setPaintProperty('detectors-points', 'circle-color', colorExpr)
+
+    map.setPaintProperty('detectors-clusters', 'circle-radius', radiusExpr)
+    map.setPaintProperty('detectors-clusters', 'circle-color', colorExpr)
+
     updateLegend(legends.detectors(upperValue))
   }
 

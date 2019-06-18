@@ -5,10 +5,12 @@ import { Set } from 'immutable'
 
 import FiltersList from 'components/FiltersList'
 import Layout from 'components/Layout'
+import TopBar from 'components/Map/TopBar'
 import { HelpText as BaseHelpText, ExpandableParagraph } from 'components/Text'
 import {
   Provider as CrossfilterProvider,
   FilteredMap as Map,
+  ValueFieldSelector,
 } from 'components/Crossfilter'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
@@ -27,6 +29,12 @@ const Wrapper = styled(Flex)`
   height: 100%;
 `
 
+const MapContainer = styled.div`
+  position: relative;
+  flex: 1 0 auto;
+  height: 100%;
+`
+
 const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
 const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
@@ -41,6 +49,9 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
           ts: detectorTS.filter(v => v.get('id') === d.get('id')),
         })
       )
+
+    console.log('selectedFeatures', features.toJS())
+
     setSelected({
       features,
       feature: features.size ? features.first().get('id') : null,
@@ -71,6 +82,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
   const years = Array.from(Set(data.map(d => d.get('year'))).values()).sort()
 
   const valueField = 'detectionNights'
+  // const valueField = 'species'
 
   const filters = [
     {
@@ -167,11 +179,19 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
               </>
             )}
           </Sidebar>
-          <Map
-            detectors={detectors}
-            selectedFeature={selected.feature}
-            onSelectFeatures={handleSelectFeatures}
-          />
+          <MapContainer>
+            <TopBar>
+              <ValueFieldSelector
+                fields={['detectionNights', 'species']}
+              />
+            </TopBar>
+
+            <Map
+              detectors={detectors}
+              selectedFeature={selected.feature}
+              onSelectFeatures={handleSelectFeatures}
+            />
+          </MapContainer>
         </CrossfilterProvider>
       </Wrapper>
     </Layout>
