@@ -52,6 +52,7 @@ const FilteredMap = ({
   // TODO: this assumes timestep is not split out as a separate filter when
   // animating time!
   const data = state.get('data')
+
   const filteredIds = useIsEqualMemo(() => Set(data.map(d => d.get('id'))), [
     data,
   ])

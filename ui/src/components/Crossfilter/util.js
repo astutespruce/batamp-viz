@@ -40,10 +40,12 @@ export const getFilteredTotal = ({ groupAll }, valueField) => {
     return groupAll().value()
   }
   // id and species are a special case, return count of unique values
+  // ONLY where they are nonzero
   if (valueField === 'id' || valueField === 'species') {
     return groupAll()
       .reduce(...groupReducer(valueField))
-      .value().size
+      .value()
+      .filter(v => v > 0).size
   }
 
   return groupAll()
@@ -130,7 +132,8 @@ export const aggregateByDimension = (dimensions, valueField) => {
           sums = group()
             .reduce(...reducer)
             .all()
-            .map(d => [d.key, d.value.size])
+            // only keep values > 0
+            .map(d => [d.key, d.value.filter(v => v > 0).size])
         } else {
           sums = group()
             .reduceSum(d => d.get(valueField))
