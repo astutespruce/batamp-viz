@@ -50,12 +50,24 @@ const Filler = styled.div`
   transition: flex-grow 300ms;
 `
 
-const HorizontalBar = ({ isFiltered, isExcluded, label, quantity, max, onClick }) => {
+const HorizontalBar = ({
+  value,
+  isFiltered,
+  isExcluded,
+  label,
+  quantity,
+  max,
+  onClick,
+}) => {
   const position = quantity / max
   const remainder = 1 - position
 
+  const handleClick = () => {
+    onClick(value)
+  }
+
   return (
-    <Wrapper onClick={onClick} isExcluded={isExcluded}>
+    <Wrapper onClick={handleClick} isExcluded={isExcluded}>
       <Labels active={isFiltered}>
         <Column>{label}</Column>
         <Column flex={0}>{formatNumber(quantity)}</Column>
@@ -78,6 +90,7 @@ const HorizontalBar = ({ isFiltered, isExcluded, label, quantity, max, onClick }
 }
 
 HorizontalBar.propTypes = {
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   isFiltered: PropTypes.bool, // true if filter is set on this bar
   isExcluded: PropTypes.bool, // true if filters are set on others but not this one
   label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,

@@ -1,5 +1,5 @@
 // ideas adapted from: https://github.com/kentcdodds/use-deep-compare-effect/blob/master/src/index.js
-import { useRef, useEffect, useMemo } from 'react'
+import { useRef, useEffect, useMemo, useCallback } from 'react'
 import deepEqual from 'dequal'
 
 /**
@@ -8,7 +8,7 @@ import deepEqual from 'dequal'
  *
  * @param {any} value
  */
-const memoizedIsEqual = value => {
+export const memoizedIsEqual = value => {
   const ref = useRef(null)
 
   // if an ImmutableJS object, use its builtin equals function,
@@ -44,4 +44,8 @@ export const useIsEqualEffect = (callback, dependencies) => {
  */
 export const useIsEqualMemo = (callback, dependencies) => {
   return useMemo(callback, dependencies.map(d => memoizedIsEqual(d)))
+}
+
+export const useIsEqualCallback = (callback, dependencies) => {
+  return useCallback(callback, dependencies.map(d => memoizedIsEqual(d)))
 }

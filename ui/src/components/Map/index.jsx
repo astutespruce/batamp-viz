@@ -1,5 +1,5 @@
 /* eslint-disable max-len, no-underscore-dangle camelcase */
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import { List, Set, fromJS } from 'immutable'
@@ -8,11 +8,11 @@ import { useDebouncedCallback } from 'use-debounce'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
-import styled, { theme } from 'style'
+import styled from 'style'
 import { hasWindow } from 'util/dom'
 import { formatNumber, quantityLabel } from 'util/format'
 import { niceNumber } from 'util/data'
-import { useIsEqualMemo } from 'util/hooks'
+import { useIsEqualEffect } from 'util/hooks'
 
 import StyleSelector from './StyleSelector'
 import Legend from './Legend'
@@ -398,7 +398,7 @@ const Map = ({
   }, [])
 
   // Only update style for detectors when they change because of the valueField
-  useEffect(() => {
+  useIsEqualEffect(() => {
     // update refs
     valueFieldRef.current = valueField
     hasFilterRef.current = hasFilters
@@ -451,7 +451,6 @@ const Map = ({
     //   'style detectors',
     //   calculateMax,
     //   detectors.size,
-    //   valueField,
     //   valueFieldRef.current
     // )
     const { current: map } = mapRef
@@ -521,7 +520,6 @@ const Map = ({
       fallback: NONDETECTIONCOLOR,
       hasZero: true,
     })
-
 
     map.setPaintProperty('detectors-points', 'circle-radius', radiusExpr)
     map.setPaintProperty('detectors-points', 'circle-color', colorExpr)

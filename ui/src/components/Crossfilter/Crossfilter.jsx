@@ -2,12 +2,7 @@ import { useState, useMemo } from 'react'
 import { Map, List } from 'immutable'
 import Crossfilter2 from 'crossfilter2'
 import { isDebug } from 'util/dom'
-import {
-  aggregateByDimension,
-  getRawTotal,
-  getFilteredTotal,
-  // aggregateDimensionById,
-} from './util'
+import { aggregateByDimension, getRawTotal, getFilteredTotal } from './util'
 
 // returns true if passed in values contains the value
 // values must be a Set
@@ -73,9 +68,6 @@ export const Crossfilter = (data, filters, options = {}) => {
       filters: Map(),
       hasVisibleFilters: false,
       dimensionTotals: aggregateByDimension(dimensions, valueField),
-
-      // Not used:
-      // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
     })
 
     if (isDebug) {
@@ -124,9 +116,6 @@ export const Crossfilter = (data, filters, options = {}) => {
         hasVisibleFilters,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
-
-        // Not used:
-        // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
       })
 
       if (isDebug) {
@@ -169,9 +158,6 @@ export const Crossfilter = (data, filters, options = {}) => {
         // filters: state.get('filters').set(field, filterValue),
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
-
-        // Not used:
-        // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
       })
 
       if (isDebug) {
@@ -210,9 +196,6 @@ export const Crossfilter = (data, filters, options = {}) => {
         hasVisibleFilters,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
-
-        // Not used:
-        // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
       })
 
       if (isDebug) {
@@ -235,9 +218,6 @@ export const Crossfilter = (data, filters, options = {}) => {
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
         total: getRawTotal(crossfilter, valueField),
-
-        // Not used:
-        // dimensionTotalsById: aggregateDimensionById(dimensions, valueField),
       })
 
       if (isDebug) {

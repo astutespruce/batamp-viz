@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Map, Set } from 'immutable'
 import { FaRegTimesCircle, FaCaretDown, FaCaretRight } from 'react-icons/fa'
@@ -6,6 +6,7 @@ import { FaRegTimesCircle, FaCaretDown, FaCaretRight } from 'react-icons/fa'
 import { HelpText } from 'components/Text'
 import { useCrossfilter } from 'components/Crossfilter'
 import { Flex } from 'components/Grid'
+import { useIsEqualCallback, useIsEqualMemo } from 'util/hooks'
 
 import styled, { theme, themeGet } from 'style'
 import HorizontalBars from './HorizontalBars'
@@ -88,32 +89,49 @@ const Filter = ({
   const totals = state.get('dimensionTotals').get(field, Map())
   const max = totals.max()
 
-  // splice together label, value, and count so that we can filter and sort
-  let data = values.map((value, i) => ({
-    value,
-    label: labels ? labels[i] : value,
-    quantity: totals.get(value, 0),
-    isFiltered: filterValues.has(value),
-    isExcluded: !filterValues.isEmpty() && !filterValues.has(value),
-  }))
+  // Memoize processing of data, since the context changes frequently
+  // but the data that impact this filter may not change as frequently
+  const data = useIsEqualMemo(() => {
+    // if not isOpen, we can bypass processing the data
+    if (!isOpen) {
+      return []
+    }
 
-  if (hideEmpty) {
-    data = data.filter(({ quantity, isFiltered }) => quantity > 0 || isFiltered)
-  }
+    // splice together label, value, and count so that we can filter and sort
+    let newData = values.map((value, i) => ({
+      value,
+      label: labels ? labels[i] : value,
+      quantity: totals.get(value, 0),
+      isFiltered: filterValues.has(value),
+      isExcluded: !filterValues.isEmpty() && !filterValues.has(value),
+    }))
+    if (hideEmpty) {
+      newData = newData.filter(
+        ({ quantity, isFiltered }) => quantity > 0 || isFiltered
+      )
+    }
 
-  if (sort) {
-    data = data.sort((a, b) => (a.quantity < b.quantity ? 1 : -1))
-  }
+    if (sort) {
+      newData = newData.sort((a, b) => (a.quantity < b.quantity ? 1 : -1))
+    }
+    return newData
+  }, [filterValues, totals, isOpen])
 
   const toggle = () => {
     setIsOpen(prev => !prev)
   }
 
-  const handleFilterToggle = value => {
-    setFilter(field, filterValues.has(value)
-    ? filterValues.delete(value)
-    : filterValues.add(value))
-  }
+  const handleFilterToggle = useIsEqualCallback(
+    value => {
+      setFilter(
+        field,
+        filterValues.has(value)
+          ? filterValues.delete(value)
+          : filterValues.add(value)
+      )
+    },
+    [filterValues]
+  )
 
   const handleReset = () => {
     setFilter(field, filterValues.clear())

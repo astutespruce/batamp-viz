@@ -119,7 +119,6 @@ export const aggregateByDimension = (dimensions, valueField) => {
 
   return Map(
     Object.values(dimensions)
-      // .filter(({ config: { aggregate = true } }) => aggregate)
       .filter(({ config: { internal } }) => !internal)
       .map(({ group, config: { field } }) => {
         let sums = null
