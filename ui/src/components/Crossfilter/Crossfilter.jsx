@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Map, List } from 'immutable'
+import { Map } from 'immutable'
 import Crossfilter2 from 'crossfilter2'
 import { isDebug } from 'util/dom'
 import { aggregateByDimension, getRawTotal, getFilteredTotal } from './util'
@@ -10,11 +10,11 @@ export const hasValue = filterValues => value => filterValues.has(value)
 
 /**
  * Initialize crossfilter from the data and filters
- * @param {ImmutableJS List} data - list of records to index
+ * @param {Array} data - records to index
  * @param {Array} filters - array of field configuration
  */
 const initCrossfilter = (data, filters) => {
-  const crossfilter = Crossfilter2(data.toArray())
+  const crossfilter = Crossfilter2(data)
 
   const dimensions = {}
   filters.forEach(filter => {
@@ -24,12 +24,13 @@ const initCrossfilter = (data, filters) => {
     const dimensionFunction =
       getValue ||
       (record => {
-        const value = record.get(field)
-        // if incoming value is an immutableJS object, convert it to JS first
-        if (value && value.toJS !== undefined) {
-          return value.toJS()
-        }
-        return value
+        return record[field]
+        // const value = record.get(field)
+        // // if incoming value is an immutableJS object, convert it to JS first
+        // if (value && value.toJS !== undefined) {
+        //   return value.toJS()
+        // }
+        // return value
       })
 
     const dimension = crossfilter.dimension(dimensionFunction, !!isArray)
@@ -111,7 +112,7 @@ export const Crossfilter = (data, filters, options = {}) => {
 
       const newState = prevState.merge({
         // convert Array from crossfilter back to an immutable List
-        data: List(crossfilter.allFiltered()),
+        data: crossfilter.allFiltered(),
         filters: newFilters,
         hasVisibleFilters,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
@@ -154,7 +155,7 @@ export const Crossfilter = (data, filters, options = {}) => {
 
       const newState = prevState.merge({
         // convert Array from crossfilter back to an immutable List
-        data: List(crossfilter.allFiltered()),
+        data: crossfilter.allFiltered(),
         // filters: state.get('filters').set(field, filterValue),
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
@@ -190,7 +191,7 @@ export const Crossfilter = (data, filters, options = {}) => {
 
       const newState = state.merge({
         // convert Array from crossfilter back to an immutable List
-        data: List(crossfilter.allFiltered()),
+        data: crossfilter.allFiltered(),
         // remove all filter entries for these fields
         filters: newFilters,
         hasVisibleFilters,

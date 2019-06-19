@@ -3,9 +3,8 @@
 import React, { useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
-import { Set, Map as ImmutableMap } from 'immutable'
 
-import { sumBy, countUniqueBy, uniqueBy, uniqueMapBy } from 'util/data'
+import { sumBy, countUniqueBy, mapValues } from 'util/data'
 import { useIsEqualMemo } from 'util/hooks'
 import Map from 'components/Map'
 import { useCrossfilter } from './Context'
@@ -51,36 +50,38 @@ const FilteredMap = ({
   // NOTE: this is only the total for all applied filters
   // TODO: this assumes timestep is not split out as a separate filter when
   // animating time!
+
   const data = state.get('data')
+  window.data = data
 
-  const filteredIds = useIsEqualMemo(() => Set(data.map(d => d.get('id'))), [
-    data,
-  ])
+  const filteredIds = useIsEqualMemo(() => {
+    return new Set(data.map(({ id }) => id))
+  }, [data])
 
+  // Any detector not included below can be assumed to have a total of 0
   const totalById = useIsEqualMemo(() => {
+    // only tally records where species were detectedp
+    // TODO: push this up the stack?  Can we avoid including this in TS at all?
+    const filteredData = data.filter(d => (d.detectionNights || 0) > 0)
+
     switch (valueField) {
       case 'id': {
-        return sumBy(data, 'id', 'detectionNights').map(total =>
+        // only return 1 as stand in as count for a given detector so that
+        // other tallies work correctly
+        return mapValues(sumBy(filteredData, 'id', 'detectionNights'), total =>
           total > 0 ? 1 : 0
         )
       }
       case 'species': {
-        // only count species that were actually detected
-        return countUniqueBy(
-          data.filter(d => d.get('detectionNights', 0) > 0),
-          'id',
-          'species'
-        )
+        return countUniqueBy(filteredData, 'id', 'species')
       }
       default: {
-        return sumBy(data, 'id', valueField)
+        return sumBy(filteredData, 'id', valueField)
       }
     }
   }, [data, valueField])
 
-  const maxValue = totalById.size
-    ? Math.max(...Array.from(totalById.values()))
-    : 0
+  const maxValue = Math.max(...Object.values(totalById))
 
   // Only show the detectors that currently meet the applied filters
   const detectors = useIsEqualMemo(
@@ -91,12 +92,14 @@ const FilteredMap = ({
           d
             .filter((_, k) => k === 'id' || k === 'lat' || k === 'lon')
             .merge({
-              total: totalById.get(d.get('id'), 0),
-              max: totalById.get(d.get('id'), 0),
+              total: totalById[d.get('id')] || 0,
+              max: totalById[d.get('id')] || 0,
             })
         ),
     [filteredIds, totalById]
   )
+
+  window.detectors = detectors
 
   return (
     <Map

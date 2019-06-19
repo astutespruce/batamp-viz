@@ -17,11 +17,11 @@ import DetectorDetails from 'components/DetectorDetails'
 import { Flex, Box } from 'components/Grid'
 import styled from 'style'
 import {
-  createIndex,
   unpackTSData,
   mergeLocationIntoTS,
   extractDetectors,
 } from 'util/data'
+import {createIndex } from 'util/immutable'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
@@ -139,7 +139,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
     <Layout title="Explore Species Occurrences">
       <Wrapper>
         <CrossfilterProvider
-          data={data}
+          data={data.toJS()}
           filters={filters}
           options={{ valueField }}
         >

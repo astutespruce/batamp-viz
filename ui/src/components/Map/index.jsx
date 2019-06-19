@@ -70,6 +70,7 @@ const Map = ({
   const highlightFeatureRef = useRef(Set())
   const valueFieldRef = useRef(valueField)
   const hasFilterRef = useRef(hasFilters)
+  const detectorsRef = useRef(detectors)
 
   const [legendEntries, setLegendEntries] = useState(
     species ? legends.species() : []
@@ -410,6 +411,12 @@ const Map = ({
     const source = map.getSource('detectors')
     if (!source) return
 
+    detectorsRef.current = detectors
+
+    // reset to defaults until the styles are updated
+    map.setPaintProperty('detectors-points', 'circle-radius', MINRADIUS)
+    map.setPaintProperty('detectors-clusters', 'circle-radius', MINRADIUS)
+
     source.setData(toGeoJSONPoints(detectors.toJS()))
 
     if (detectors.size === 0) {
@@ -418,7 +425,9 @@ const Map = ({
     }
 
     // Sometimes updating the detectors doesn't trigger updating the style via sourcedata event
-    map.once('idle', () => styleDetectors(true))
+    map.once('idle', () => {
+      styleDetectors(true)
+    })
 
     // detectors are styled after data have loaded
   }, [detectors, maxValue, valueField, hasFilters])
@@ -447,17 +456,12 @@ const Map = ({
   }, [selectedFeature])
 
   const styleDetectorsImpl = (calculateMax = false) => {
-    // console.log(
-    //   'style detectors',
-    //   calculateMax,
-    //   detectors.size,
-    //   valueFieldRef.current
-    // )
+    console.log('style detectors', calculateMax, detectorsRef.current.size)
     const { current: map } = mapRef
     const { current: metric } = valueFieldRef
 
     // if there are no detectors to style, don't update style
-    if (detectors.size === 0) {
+    if (detectorsRef.current.size === 0) {
       return
     }
 
@@ -492,7 +496,7 @@ const Map = ({
       upperValue = niceNumber(maxValue)
     }
 
-    // console.log('upper ', upperValue)
+    console.log('upper ', upperValue)
 
     if (upperValue === 0) {
       if (detectors.size) {

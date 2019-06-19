@@ -16,7 +16,8 @@ export const Provider = ({ data, filters, options, children }) => {
 }
 
 Provider.propTypes = {
-  data: ImmutablePropTypes.list.isRequired,
+  // data: ImmutablePropTypes.list.isRequired,
+  data: PropTypes.array.isRequired,
   filters: PropTypes.array.isRequired,
   options: PropTypes.object,
   children: PropTypes.oneOfType([
@@ -29,7 +30,6 @@ Provider.propTypes = {
 Provider.defaultProps = {
   options: {},
 }
-
 
 // Hook for easier use in context
 export const useCrossfilter = () => {
