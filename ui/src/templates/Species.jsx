@@ -18,11 +18,11 @@ import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import TopBar from 'components/Map/TopBar'
 import SpeciesFilters from 'components/SpeciesFilters'
 import {
-  createIndex,
   unpackTSData,
   mergeLocationIntoTS,
   extractDetectors,
 } from 'util/data'
+import {createIndex } from 'util/immutable'
 import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
@@ -121,7 +121,7 @@ const SpeciesTemplate = ({
     <Layout title={`${commonName} (${sciName})`}>
       <Wrapper>
         <CrossfilterProvider
-          data={data}
+          data={data.toJS()}
           filters={filters}
           options={{ valueField }}
         >
