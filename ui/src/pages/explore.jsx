@@ -16,12 +16,8 @@ import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
 import { Flex, Box } from 'components/Grid'
 import styled from 'style'
-import {
-  unpackTSData,
-  mergeLocationIntoTS,
-  extractDetectors,
-} from 'util/data'
-import {createIndex } from 'util/immutable'
+import { unpackTSData, mergeLocationIntoTS, extractDetectors } from 'util/data'
+import { createIndex } from 'util/immutable'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
@@ -39,6 +35,94 @@ const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
 const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
   const [selected, setSelected] = useState({ features: Set(), feature: null })
+
+  // use state initialization to ensure that we only process data when page mounts
+  // and not subsequent rerenders when a detector is selected
+  const [{
+    data,
+    detectorIndex,
+    detectorLocations,
+    detectorTS,
+    filters,
+    visibleFilters,
+  }] = useState(() => {
+    const detectors = extractDetectors(allDetectorsJson)
+    const initDetectorTS = unpackTSData(extractNodes(allDetectorTsJson))
+
+    // extract location fields for use in the map
+    const initDetectorLocations = detectors.map(d =>
+      d.filter((_, k) => k === 'id' || k === 'lat' || k === 'lon')
+    )
+    const initDetectorIndex = createIndex(detectors, 'id')
+    const initData = mergeLocationIntoTS(initDetectorTS, initDetectorIndex)
+
+    // data for filter values
+    const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
+      species,
+      ...v,
+    }))
+
+    const years = Array.from(
+      Set(initData.map(d => d.get('year'))).values()
+    ).sort()
+
+    const initFilters = [
+      {
+        field: 'lat',
+        internal: true,
+      },
+      {
+        field: 'lon',
+        internal: true,
+      },
+      {
+        field: 'species',
+        title: 'Species Detected',
+        isOpen: false,
+        hideEmpty: true,
+        sort: true,
+        values: allSpecies.map(({ species: spp }) => spp),
+        labels: allSpecies.map(
+          ({ commonName, sciName }) => `${commonName} (${sciName})`
+        ),
+      },
+      {
+        field: 'month',
+        title: 'Seasonality',
+        isOpen: false,
+        vertical: true,
+        values: MONTHS,
+        labels: MONTH_LABELS.map(m => m.slice(0, 3)),
+      },
+      {
+        field: 'year',
+        title: 'Year',
+        isOpen: false,
+        vertical: true,
+        values: years,
+        labels: years.map(y => `'${y.toString().slice(2)}`),
+      },
+      {
+        field: 'admin1Name',
+        title: 'State / Province',
+        isOpen: false,
+        sort: true,
+        hideEmpty: true,
+        values: Array.from(
+          Set(initData.map(d => d.get('admin1Name'))).values()
+        ).sort(),
+      },
+    ]
+
+    return {
+      data: initData,
+      detectorIndex: initDetectorIndex,
+      detectorLocations: initDetectorLocations,
+      detectorTS: initDetectorTS,
+      filters: initFilters,
+      visibleFilters: initFilters.filter(({ internal }) => !internal),
+    }
+  })
 
   const handleSelectFeatures = ids => {
     const features = detectorIndex
@@ -69,79 +153,13 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
     setSelected({ features: Set(), feature: null })
   }
 
-  const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
-    species,
-    ...v,
-  }))
-
-  const detectors = extractDetectors(allDetectorsJson)
-  const detectorIndex = createIndex(detectors, 'id')
-  const detectorTS = unpackTSData(extractNodes(allDetectorTsJson))
-  const data = mergeLocationIntoTS(detectorTS, detectorIndex)
-
-  const years = Array.from(Set(data.map(d => d.get('year'))).values()).sort()
-
-  const valueField = 'detectionNights'
-  // const valueField = 'species'
-
-  const filters = [
-    {
-      field: 'lat',
-      internal: true,
-    },
-    {
-      field: 'lon',
-      internal: true,
-    },
-    {
-      field: 'species',
-      title: 'Species Detected',
-      isOpen: false,
-      hideEmpty: true,
-      sort: true,
-      values: allSpecies.map(({ species: spp }) => spp),
-      labels: allSpecies.map(
-        ({ commonName, sciName }) => `${commonName} (${sciName})`
-      ),
-    },
-    {
-      field: 'month',
-      title: 'Seasonality',
-      isOpen: false,
-      vertical: true,
-      values: MONTHS,
-      labels: MONTH_LABELS.map(m => m.slice(0, 3)),
-    },
-    {
-      field: 'year',
-      title: 'Year',
-      isOpen: false,
-      vertical: true,
-      values: years,
-      labels: years.map(y => `'${y.toString().slice(2)}`),
-    },
-    {
-      field: 'admin1Name',
-      title: 'State / Province',
-      isOpen: false,
-      sort: true,
-      hideEmpty: true,
-      values: Array.from(
-        Set(data.map(d => d.get('admin1Name'))).values()
-      ).sort(),
-    },
-  ]
-
-  // filter out internal filters
-  const visibleFilters = filters.filter(({ internal }) => !internal)
-
   return (
     <Layout title="Explore Species Occurrences">
       <Wrapper>
         <CrossfilterProvider
           data={data.toJS()}
           filters={filters}
-          options={{ valueField }}
+          options={{ valueField: 'detectionNights' }}
         >
           <Sidebar allowScroll={false}>
             {selected.features.size > 0 ? (
@@ -181,13 +199,11 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
           </Sidebar>
           <MapContainer>
             <TopBar>
-              <ValueFieldSelector
-                fields={['detectionNights', 'species']}
-              />
+              <ValueFieldSelector fields={['detectionNights', 'species']} />
             </TopBar>
 
             <Map
-              detectors={detectors}
+              detectors={detectorLocations}
               selectedFeature={selected.feature}
               onSelectFeatures={handleSelectFeatures}
             />

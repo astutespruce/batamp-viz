@@ -112,7 +112,12 @@ const Filter = ({
     }
 
     if (sort) {
-      newData = newData.sort((a, b) => (a.quantity < b.quantity ? 1 : -1))
+      newData = newData.sort((a, b) => {
+        if (a.quantity === b.quantity) {
+          return a.label < b.label ? -1 : 1
+        }
+        return a.quantity < b.quantity ? 1 : -1
+      })
     }
     return newData
   }, [filterValues, totals, isOpen])

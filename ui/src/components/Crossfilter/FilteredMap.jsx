@@ -10,7 +10,7 @@ import Map from 'components/Map'
 import { useCrossfilter } from './Context'
 
 const FilteredMap = ({
-  detectors: rawDetectors,
+  detectors,
   filterByBounds,
   onBoundsChange,
   ...props
@@ -39,28 +39,15 @@ const FilteredMap = ({
     setBounds(bounds)
   }
 
-  // total of current valueField by ID
-  // const totals = state.get('dimensionTotals').get('id')
-  // const totalByID = state
-  //   .get('dimensionTotalsById', ImmutableMap())
-  //   .get('timestep', ImmutableMap())
-
   const valueField = state.get('valueField')
-
-  // NOTE: this is only the total for all applied filters
-  // TODO: this assumes timestep is not split out as a separate filter when
-  // animating time!
-
   const data = state.get('data')
-
   const filteredIds = useIsEqualMemo(() => {
     return new Set(data.map(({ id }) => id))
   }, [data])
 
   // Any detector not included below can be assumed to have a total of 0
   const totalById = useIsEqualMemo(() => {
-    // only tally records where species were detectedp
-    // TODO: push this up the stack?  Can we avoid including this in TS at all?
+    // only tally records where species were detected
     const filteredData = data.filter(d => (d.detectionNights || 0) > 0)
 
     switch (valueField) {
@@ -83,13 +70,13 @@ const FilteredMap = ({
   const maxValue = Math.max(...Object.values(totalById))
 
   // Only show the detectors that currently meet the applied filters
-  const detectors = useIsEqualMemo(
+  const filteredDetectors = useIsEqualMemo(
     () =>
-      rawDetectors
+      detectors
         .filter(d => filteredIds.has(d.get('id')))
         .map(d =>
           d
-            .filter((_, k) => k === 'id' || k === 'lat' || k === 'lon')
+            // .filter((_, k) => k === 'id' || k === 'lat' || k === 'lon')
             .merge({
               total: totalById[d.get('id')] || 0,
               max: totalById[d.get('id')] || 0,
@@ -100,7 +87,7 @@ const FilteredMap = ({
 
   return (
     <Map
-      detectors={detectors}
+      detectors={filteredDetectors}
       valueField={valueField}
       maxValue={maxValue}
       hasFilters={state.get('hasVisibleFilters')}

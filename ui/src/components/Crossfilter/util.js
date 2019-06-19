@@ -1,7 +1,7 @@
 import { Map, Set } from 'immutable'
 
 import { sum } from 'util/data'
-import { groupReducer } from './reducers'
+import { groupReducer, filteredGroupReducer } from './reducers'
 
 /**
  * Calculates the total COUNT (if valueField is absent) or total SUM (if valueField provided)
@@ -64,33 +64,53 @@ export const getFilteredTotal = ({ groupAll }, valueField) => {
  * @param {String} valueField - name of value field within record.
  *
  */
-export const aggregateByDimension = (dimensions, valueField) => {
-  // id and species are a special case, return count of unique values
-  const isGrouped = valueField === 'id' || valueField === 'species'
-  const reducer = isGrouped ? groupReducer(valueField) : null
-
+export const aggregateByDimension = (dimensions, valueField = null) => {
   return Map(
     Object.values(dimensions)
       .filter(({ config: { internal } }) => !internal)
       .map(({ group, config: { field } }) => {
         let sums = null
 
-        if (!valueField) {
-          sums = group()
-            .all()
-            .map(d => Object.values(d))
-        } else if (isGrouped) {
-          sums = group()
-            .reduce(...reducer)
-            .all()
-            // only keep values > 0
-            .map(d => [d.key, Object.values(d.value).filter(v => v > 0).length])
-        } else {
-          sums = group()
-            // .reduceSum(d => d.get(valueField))
-            .reduceSum(d => d[valueField])
-            .all()
-            .map(d => Object.values(d))
+        switch (valueField) {
+          case null: {
+            sums = group()
+              .all()
+              .map(d => Object.values(d))
+            break
+          }
+          case 'id': {
+            sums = group()
+              .reduce(...groupReducer(valueField))
+              .all()
+              // only keep values > 0
+              .map(d => [
+                d.key,
+                Object.values(d.value).filter(v => v > 0).length,
+              ])
+            break
+          }
+          case 'species': {
+            sums = group()
+              // only retain those that have nonzero detectionNights
+              .reduce(
+                ...filteredGroupReducer(valueField, d => d.detectionNights > 0)
+              )
+              .all()
+              // only keep values > 0
+              .map(d => [
+                d.key,
+                Object.values(d.value).filter(v => v > 0).length,
+              ])
+            break
+          }
+          default: {
+            sums = group()
+              // .reduceSum(d => d.get(valueField))
+              .reduceSum(d => d[valueField])
+              .all()
+              .map(d => Object.values(d))
+            break
+          }
         }
         return [field, Map(sums)]
       })

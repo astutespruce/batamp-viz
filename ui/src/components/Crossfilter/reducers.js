@@ -9,14 +9,46 @@ import { Map, Set } from 'immutable'
 
 export const groupReducer = groupField => [
   // add
-  (prev, d) => {
-    const group = d[groupField]
+  (prev, record) => {
+    // only count it if valueField is nonzero
+    // if (!record[valueField]) {
+    //   return prev
+    // }
+    const group = record[groupField]
     prev[group] = (prev[group] || 0) + 1
     return prev
   },
   // remove
-  (prev, d) => {
-    const group = d[groupField]
+  (prev, record) => {
+    const group = record[groupField]
+
+    // never let counts go below 0
+    prev[group] = Math.max((prev[group] || 0) - 1, 0)
+    return prev
+  },
+  // init
+  () => ({}),
+]
+
+export const filteredGroupReducer = (groupField, filterFunc) => [
+  // add
+  (prev, record) => {
+    // ignore if it fails the filterFunc
+    if (!filterFunc(record)) {
+      return prev
+    }
+    const group = record[groupField]
+    prev[group] = (prev[group] || 0) + 1
+    return prev
+  },
+  // remove
+  (prev, record) => {
+    // ignore if it fails the filterFunc
+    if (!filterFunc(record)) {
+      return prev
+    }
+
+    const group = record[groupField]
 
     // never let counts go below 0
     prev[group] = Math.max((prev[group] || 0) - 1, 0)

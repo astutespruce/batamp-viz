@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { fromJS, Set } from 'immutable'
+import { Set } from 'immutable'
 
 import Layout from 'components/Layout'
 import {
@@ -38,19 +38,87 @@ const MapContainer = styled.div`
 const SpeciesTemplate = ({
   data: { speciesJson, allDetectorsJson, allDetectorTsJson },
 }) => {
-  const valueField = 'detections'
-  const [selected, setSelected] = useState({ features: Set(), feature: null })
-
   const { species: selectedSpecies } = speciesJson
   const { commonName, sciName } = SPECIES[selectedSpecies]
 
-  const detectors = extractDetectors(allDetectorsJson)
-  const detectorIndex = createIndex(detectors, 'id')
-  const detectorTS = unpackTSData(extractNodes(allDetectorTsJson))
-  const data = mergeLocationIntoTS(
-    detectorTS.filter(d => d.get('species') === selectedSpecies),
-    detectorIndex
-  )
+  const [selected, setSelected] = useState({ features: Set(), feature: null })
+
+// use state initialization to ensure that we only process data when page mounts
+  // and not subsequent rerenders when a detector is selected
+  const [{
+    data,
+    detectorIndex,
+    detectorLocations,
+    detectorTS,
+    filters,
+    visibleFilters,
+  }] = useState(() => {
+    const detectors = extractDetectors(allDetectorsJson)
+    const initDetectorTS = unpackTSData(extractNodes(allDetectorTsJson))
+
+    // extract location fields for use in the map
+    const initDetectorLocations = detectors.map(d =>
+      d.filter((_, k) => k === 'id' || k === 'lat' || k === 'lon')
+    )
+    const initDetectorIndex = createIndex(detectors, 'id')
+    const initData = mergeLocationIntoTS(
+      initDetectorTS.filter(d => d.get('species') === selectedSpecies),
+      initDetectorIndex
+    )
+
+    // data for filter values
+    const years = Array.from(
+      Set(initData.map(d => d.get('year'))).values()
+    ).sort()
+
+    const initFilters = [
+      {
+        field: 'lat',
+        internal: true,
+      },
+      {
+        field: 'lon',
+        internal: true,
+      },
+      {
+        field: 'month',
+        title: 'Seasonality',
+        isOpen: true,
+        vertical: true,
+        values: MONTHS,
+        labels: MONTH_LABELS.map(m => m.slice(0, 3)),
+        aggregateById: true,
+      },
+      {
+        field: 'year',
+        title: 'Year',
+        isOpen: true,
+        vertical: true,
+        values: years,
+        labels: years.map(y => `'${y.toString().slice(2)}`),
+      },
+      {
+        field: 'admin1Name',
+        title: 'State / Province',
+        isOpen: true,
+        sort: true,
+        hideEmpty: true,
+        values: Array.from(
+          Set(initData.map(d => d.get('admin1Name'))).values()
+        ).sort(),
+      },
+    ]
+
+    return {
+      data: initData,
+      detectorIndex: initDetectorIndex,
+      detectorLocations: initDetectorLocations,
+      detectorTS: initDetectorTS,
+      filters: initFilters,
+      visibleFilters: initFilters.filter(({ internal }) => !internal),
+    }
+  })
+
 
   const handleSelectFeatures = ids => {
     const features = detectorIndex
@@ -78,52 +146,13 @@ const SpeciesTemplate = ({
     setSelected({ features: Set(), feature: null })
   }
 
-  const filters = [
-    {
-      field: 'lat',
-      internal: true,
-    },
-    {
-      field: 'lon',
-      internal: true,
-    },
-    {
-      field: 'month',
-      title: 'Seasonality',
-      isOpen: true,
-      vertical: true,
-      values: MONTHS,
-      labels: MONTH_LABELS.map(m => m.slice(0, 3)),
-      aggregateById: true,
-    },
-    {
-      field: 'year',
-      title: 'Year',
-      isOpen: true,
-      vertical: true,
-      values: Array.from(Set(data.map(d => d.get('year'))).values()).sort(),
-    },
-    {
-      field: 'admin1Name',
-      title: 'State / Province',
-      isOpen: true,
-      sort: true,
-      hideEmpty: true,
-      values: Array.from(
-        Set(data.map(d => d.get('admin1Name'))).values()
-      ).sort(),
-    },
-  ]
-
-  const visibleFilters = filters.filter(({ internal }) => !internal)
-
   return (
     <Layout title={`${commonName} (${sciName})`}>
       <Wrapper>
         <CrossfilterProvider
           data={data.toJS()}
           filters={filters}
-          options={{ valueField }}
+          options={{ valueField: 'detections' }}
         >
           <Sidebar allowScroll={false}>
             {selected.features.size > 0 ? (
@@ -149,7 +178,7 @@ const SpeciesTemplate = ({
             </TopBar>
 
             <Map
-              detectors={detectors}
+              detectors={detectorLocations}
               species={selectedSpecies}
               selectedFeature={selected.feature}
               onSelectFeatures={handleSelectFeatures}
