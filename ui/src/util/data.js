@@ -58,8 +58,6 @@ export const sumBy = (records, groupField, valueField) =>
     return prev
   }, {})
 
-window.sumBy = sumBy
-
 /**
  * Aggregate unique values of valueField grouped by groupField
  * Returns a JS Set for each value of groupField
@@ -96,8 +94,6 @@ export const mapValues = (records, func) =>
     prev[k] = func(v)
     return prev
   }, {})
-
-window.mapValues = mapValues
 
 /** Unpack the packed detector time series data
  *
