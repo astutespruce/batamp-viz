@@ -456,7 +456,7 @@ const Map = ({
   }, [selectedFeature])
 
   const styleDetectorsImpl = (calculateMax = false) => {
-    console.log('style detectors', calculateMax, detectorsRef.current.size)
+    // console.log('style detectors', calculateMax, detectorsRef.current.size)
     const { current: map } = mapRef
     const { current: metric } = valueFieldRef
 
@@ -496,7 +496,7 @@ const Map = ({
       upperValue = niceNumber(maxValue)
     }
 
-    console.log('upper ', upperValue)
+    // console.log('upper ', upperValue)
 
     if (upperValue === 0) {
       if (detectors.size) {

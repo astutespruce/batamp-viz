@@ -52,7 +52,6 @@ const FilteredMap = ({
   // animating time!
 
   const data = state.get('data')
-  window.data = data
 
   const filteredIds = useIsEqualMemo(() => {
     return new Set(data.map(({ id }) => id))
@@ -98,8 +97,6 @@ const FilteredMap = ({
         ),
     [filteredIds, totalById]
   )
-
-  window.detectors = detectors
 
   return (
     <Map
