@@ -2,19 +2,33 @@
 import { useRef, useEffect, useMemo, useCallback } from 'react'
 import deepEqual from 'dequal'
 
+const isSetEqual = (setA, setB) => {
+  if (setA === setB) {
+    // same instance or both are null
+    return true
+  }
+  if (setA === null || setB === null) {
+    return false
+  }
+  // if they have the same members but are different instances, equality
+  // check above fails
+  if (setA.size !== setB.size) {
+    return false
+  }
+
+  return Array.from(setA).filter(d => !setB.has(d)).length === 0
+}
+
 /**
  * Return the previous instance of the value if the incoming value is equal to it.
- * Specifically handles deep equality and ImmutableJS objects
  *
  * @param {any} value
  */
 export const memoizedIsEqual = value => {
   const ref = useRef(null)
 
-  // if an ImmutableJS object, use its builtin equals function,
-  // otherwise fall back to deep equality check
-  if (value.equals) {
-    if (!value.equals(ref.current)) {
+  if (value instanceof Set) {
+    if (!isSetEqual(value, ref.current)) {
       ref.current = value
     }
   } else if (!deepEqual(value, ref.current)) {
@@ -26,8 +40,6 @@ export const memoizedIsEqual = value => {
 
 /**
  * Same as native useEffect, but compare dependencies on deep rather than shallow equality.
- * Use with ImmutableJS objects that are created during each render to prevent them from
- * otherwise triggering new renders for equivalent values.
  * @param {function} callback
  * @param {Array} dependencies
  */
@@ -37,8 +49,6 @@ export const useIsEqualEffect = (callback, dependencies) => {
 
 /**
  * Same as native useMemo, but compare dependencies on deep rather than shallow equality.
- * Use with ImmutableJS objects that are created during each render to prevent them from
- * otherwise triggering new renders for equivalent values.
  * @param {function} callback
  * @param {Array} dependencies
  */

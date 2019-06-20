@@ -1,8 +1,6 @@
 /* eslint-disable max-len, no-underscore-dangle camelcase */
 import React, { useRef, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import ImmutablePropTypes from 'react-immutable-proptypes'
-import { List, Set, fromJS } from 'immutable'
 import { useDebouncedCallback } from 'use-debounce'
 
 import mapboxgl from 'mapbox-gl'
@@ -11,7 +9,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import styled from 'style'
 import { hasWindow } from 'util/dom'
 import { formatNumber, quantityLabel } from 'util/format'
-import { niceNumber } from 'util/data'
+import { niceNumber, difference, clone } from 'util/data'
 import { useIsEqualEffect } from 'util/hooks'
 
 import StyleSelector from './StyleSelector'
@@ -67,7 +65,7 @@ const Map = ({
   const mapRef = useRef(null)
   const baseStyleRef = useRef(null)
   const selectedFeatureRef = useRef(selectedFeature)
-  const highlightFeatureRef = useRef(Set())
+  const highlightFeatureRef = useRef(new Set())
   const valueFieldRef = useRef(valueField)
   const hasFilterRef = useRef(hasFilters)
   const detectorsRef = useRef(detectors)
@@ -89,7 +87,7 @@ const Map = ({
     const { padding, bounds: initBounds } = config
     let { center, zoom } = config
 
-    const targetBounds = bounds.isEmpty() ? initBounds : bounds.toJS()
+    const targetBounds = bounds && bounds.length ? initBounds : bounds
 
     // If bounds are available, use these to establish center and zoom when map first loads
     if (targetBounds && targetBounds.length === 4) {
@@ -130,21 +128,17 @@ const Map = ({
     })
 
     // Construct GeoJSON points from detector locations
-    sources.detectors.data = toGeoJSONPoints(detectors.toJS())
+    sources.detectors.data = toGeoJSONPoints(detectors)
 
     map.on('load', () => {
       // snapshot existing map config
-      baseStyleRef.current = fromJS(map.getStyle())
+      baseStyleRef.current = clone(map.getStyle())
 
       // add species range underneath everything else
       if (species) {
         map.addSource('species', speciesSource)
         speciesLayers.forEach(speciesLayer => {
-          map.addLayer(
-            fromJS(speciesLayer)
-              .merge({ filter: ['==', 'species', species] })
-              .toJS()
-          )
+          map.addLayer({ ...speciesLayer, filter: ['==', 'species', species] })
         })
       }
 
@@ -199,7 +193,7 @@ const Map = ({
           features.map(({ id, properties }) => [id, properties])
         )
 
-        const ids = Set(features.map(({ id }) => id))
+        const ids = new Set(features.map(({ id }) => id))
         onSelectFeatures(ids)
       }
     })
@@ -216,10 +210,10 @@ const Map = ({
 
       tooltip.setLngLat(features[0].geometry.coordinates)
 
-      const ids = Set(features.map(({ id }) => id))
+      const ids = new Set(features.map(({ id }) => id))
 
-      // unhighlight all previous
-      const unhighlightIds = highlightFeatureRef.current.subtract(ids)
+      // unhighlight all previous that are not currently visible
+      const unhighlightIds = difference(highlightFeatureRef.current, ids)
       if (unhighlightIds.size) {
         unhighlightIds.forEach(id =>
           map.setFeatureState({ source: 'detectors', id }, { highlight: false })
@@ -291,7 +285,7 @@ const Map = ({
           map.setFeatureState({ source: 'detectors', id }, { highlight: false })
         )
       }
-      highlightFeatureRef.current = Set()
+      highlightFeatureRef.current = new Set()
 
       tooltip.remove()
     })
@@ -348,7 +342,7 @@ const Map = ({
         id,
         properties: { point_count, total, max },
       } = features[0]
-      highlightFeatureRef.current = Set([id])
+      highlightFeatureRef.current = new Set([id])
       map.setFeatureState(
         { source: 'detectors', id },
         { 'highlight-cluster': true }
@@ -388,7 +382,7 @@ const Map = ({
           )
         )
       }
-      highlightFeatureRef.current = Set()
+      highlightFeatureRef.current = new Set()
 
       tooltip.remove()
     })
@@ -417,7 +411,7 @@ const Map = ({
     map.setPaintProperty('detectors-points', 'circle-radius', MINRADIUS)
     map.setPaintProperty('detectors-clusters', 'circle-radius', MINRADIUS)
 
-    source.setData(toGeoJSONPoints(detectors.toJS()))
+    source.setData(toGeoJSONPoints(detectors))
 
     if (detectors.size === 0) {
       // update legend to remove detectors altogether
@@ -484,7 +478,7 @@ const Map = ({
         upperValue = niceNumber(maxProperty(visibleDetectors, 'total', 0))
       }
     } else {
-      console.log('falling back to max value', maxValue, niceNumber(maxValue))
+      // console.log('falling back to max value', maxValue, niceNumber(maxValue))
       upperValue = niceNumber(maxValue)
     }
 
@@ -543,22 +537,19 @@ const Map = ({
     setLegendEntries(entries)
   }
 
-  // TODO: move to util
   const handleBasemapChange = styleID => {
     const { current: map } = mapRef
     const { current: baseStyle } = baseStyleRef
 
-    const snapshot = fromJS(map.getStyle())
-    const baseSources = baseStyle.get('sources')
-    const baseLayers = baseStyle.get('layers')
+    const snapshot = clone(map.getStyle())
+    const baseSources = new Set(Object.keys(baseStyle.sources))
+    const baseLayers = new Set(baseStyle.layers.map(({ id }) => id))
 
     // diff the sources and layers to find those added by the user
-    const userSources = snapshot
-      .get('sources')
-      .filter((_, key) => !baseSources.has(key))
-    const userLayers = snapshot
-      .get('layers')
-      .filter(layer => !baseLayers.includes(layer))
+    const userSources = Object.entries(snapshot.sources).filter(
+      ([id]) => !baseSources.has(id)
+    )
+    const userLayers = snapshot.layers.filter(({ id }) => !baseLayers.has(id))
 
     map.setStyle(`mapbox://styles/mapbox/${styleID}`)
 
@@ -568,14 +559,14 @@ const Map = ({
       // and re-add the sources / layers back on it
 
       // save base for new style
-      baseStyleRef.current = fromJS(map.getStyle())
+      baseStyleRef.current = clone(map.getStyle())
 
-      userSources.forEach((source, id) => {
-        map.addSource(id, source.toJS())
+      userSources.forEach(([id, source]) => {
+        map.addSource(id, source)
       })
 
       userLayers.forEach(layer => {
-        map.addLayer(layer.toJS())
+        map.addLayer(layer)
       })
     })
   }
@@ -613,10 +604,10 @@ const Map = ({
 }
 
 Map.propTypes = {
-  bounds: ImmutablePropTypes.listOf(PropTypes.number),
+  bounds: PropTypes.arrayOf(PropTypes.number),
   // List of detector locations, provided at map init
-  detectors: ImmutablePropTypes.listOf(
-    ImmutablePropTypes.mapContains({
+  detectors: PropTypes.arrayOf(
+    PropTypes.shape({
       lat: PropTypes.number.isRequired,
       lon: PropTypes.number.isRequired,
     })
@@ -631,7 +622,7 @@ Map.propTypes = {
 }
 
 Map.defaultProps = {
-  bounds: List(),
+  bounds: [],
   species: null,
   selectedFeature: null,
   hasFilters: false,
@@ -640,22 +631,3 @@ Map.defaultProps = {
 }
 
 export default Map
-// Working notes
-
-// highlight points on hover
-// store hover state in local ref?
-// map.setFeatureState({source: 'detectors', id: 303}, {highlight: true})
-// map.setPaintProperty('detectors-points', 'circle-color', ['case', ["boolean", ["feature-state", "highlight"], false], '#F00', ...<other rules>])
-
-// rendering admin units, use setFeatureState (example: https://jsfiddle.net/mapbox/gortd715/)
-// on load of tiles:
-// ids.forEach(id => map.setFeatureState({id, source: 'admin', sourceLayer:'admin1'}, {total: 0}))
-// totals = sumBy(d, 'id', 'detections')
-// totals.entrySeq().forEach(([id, total]) => map.setFeatureState({id, source: 'admin', sourceLayer:'admin1'}, {total}))
-
-// get max for rendering clusters and points, on update of detectors
-// max = Math.max(...map.queryRenderedFeatures({layers: ['detectors-clusters', 'detectors-points']}).map(({properties: {total}}) => total))
-// or
-// max = Math.max(...map.querySourceFeatures("detectors").map(({properties: {total}}) => total))
-// map.setPaintProperty('detectors-clusters', 'circle-radius', ['interpolate', ['linear'], ['get', 'total'], 1,minRadius, max, maxRadius])
-// map.setPaintProperty('detectors-points', 'circle-radius', ['interpolate', ['linear'], ['get', 'total'], 1,minRadius, max, maxRadius])

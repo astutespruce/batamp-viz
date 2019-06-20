@@ -1,10 +1,8 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
-import ImmutablePropTypes from 'react-immutable-proptypes'
 import { css } from 'styled-components'
 import Img from 'gatsby-image'
 
-import MapThumbnail from 'components/Species/MapThumbnail'
 import { Flex, Box } from 'components/Grid'
 import { OutboundLink, Link } from 'components/Link'
 import styled, { themeGet } from 'style'
@@ -73,14 +71,14 @@ const Metric = styled.span`
     isActive &&
     css`
       font-weight: bold;
-      color: ${themeGet('colors.grey.800')};
+      color: ${themeGet('colors.highlight.500')};
     `}
 `
 
 const Map = styled.div``
 
-const ListItem = ({ item, metric, thumbnail, map }) => {
-  const {
+const ListItem = ({
+  item: {
     species,
     commonName,
     sciName,
@@ -89,8 +87,11 @@ const ListItem = ({ item, metric, thumbnail, map }) => {
     detectionNights,
     detectorNights,
     contributors,
-  } = item.toJS()
-
+  },
+  metric,
+  thumbnail,
+  map,
+}) => {
   return (
     <Wrapper>
       <Header>
@@ -177,7 +178,7 @@ const ListItem = ({ item, metric, thumbnail, map }) => {
 }
 
 ListItem.propTypes = {
-  item: ImmutablePropTypes.mapContains({
+  item: PropTypes.shape({
     species: PropTypes.string.isRequired,
     commonName: PropTypes.string.isRequired,
     sciName: PropTypes.string.isRequired,
@@ -201,7 +202,7 @@ ListItem.defaultProps = {
 export default memo(
   ListItem,
   (
-    { item: prevItem, metric: prevMetric },
-    { item: nextItem, metric: nextMetric }
-  ) => prevItem.equals(nextItem) && prevMetric === nextMetric
+    { item: { species: prevSpecies }, metric: prevMetric },
+    { item: { species: nextSpecies }, metric: nextMetric }
+  ) => prevSpecies === nextSpecies && prevMetric === nextMetric
 )

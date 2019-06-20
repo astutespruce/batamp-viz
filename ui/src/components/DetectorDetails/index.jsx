@@ -1,6 +1,6 @@
 import React, { useState, useLayoutEffect, memo } from 'react'
 import PropTypes from 'prop-types'
-import ImmutablePropTypes from 'react-immutable-proptypes'
+import isEqual from 'dequal'
 
 import styled from 'style'
 import { Flex } from 'components/Grid'
@@ -19,7 +19,8 @@ const DetectorDetails = ({
   onClose,
 }) => {
   const [index, setIndex] = useState(0)
-  if (index >= detectors.size) {
+
+  if (index >= detectors.length) {
     // we are rendering with a set of detectors different in size than our previous render
     return null
   }
@@ -31,21 +32,21 @@ const DetectorDetails = ({
 
   const handleIteratorChange = newIndex => {
     setIndex(newIndex)
-    onSetDetector(detectors.get(newIndex).get('id'))
+    onSetDetector(detectors[newIndex].id)
   }
 
   return (
     <Wrapper>
-      {detectors.size > 1 ? (
+      {detectors.length > 1 ? (
         <Iterator
           index={index}
           onChange={handleIteratorChange}
-          count={detectors.size}
+          count={detectors.length}
         />
       ) : null}
 
       <Details
-        detector={detectors.get(index)}
+        detector={detectors[index]}
         selectedSpecies={selectedSpecies}
         onClose={onClose}
       />
@@ -54,8 +55,8 @@ const DetectorDetails = ({
 }
 
 DetectorDetails.propTypes = {
-  detectors: ImmutablePropTypes.listOf(
-    ImmutablePropTypes.mapContains({
+  detectors: PropTypes.arrayOf(
+    PropTypes.shape({
       id: PropTypes.number.isRequired,
     })
   ).isRequired,
@@ -72,5 +73,5 @@ DetectorDetails.defaultProps = {
 export default memo(
   DetectorDetails,
   ({ detectors: prevDetectors }, { detectors: nextDetectors }) =>
-    prevDetectors.equals(nextDetectors)
+    isEqual(prevDetectors, nextDetectors)
 )

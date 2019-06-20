@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Map, Set } from 'immutable'
 import { FaRegTimesCircle, FaCaretDown, FaCaretRight } from 'react-icons/fa'
 
 import { HelpText } from 'components/Text'
@@ -83,14 +82,15 @@ const Filter = ({
   vertical,
 }) => {
   const [isOpen, setIsOpen] = useState(initIsOpen)
-  const { setFilter, state } = useCrossfilter()
+  const { setFilter, state: { filters, dimensionTotals } } = useCrossfilter()
 
-  const filterValues = state.get('filters').get(field, Set())
-  const totals = state.get('dimensionTotals').get(field, Map())
-  const max = totals.max()
+  const filterValues = filters[field] || new Set()
+  const totals = dimensionTotals[field] || {}
+  const max = Math.max(0, ...Object.values(totals))
 
   // Memoize processing of data, since the context changes frequently
   // but the data that impact this filter may not change as frequently
+
   const data = useIsEqualMemo(() => {
     // if not isOpen, we can bypass processing the data
     if (!isOpen) {
@@ -101,10 +101,11 @@ const Filter = ({
     let newData = values.map((value, i) => ({
       value,
       label: labels ? labels[i] : value,
-      quantity: totals.get(value, 0),
+      quantity: totals[value] || 0,
       isFiltered: filterValues.has(value),
-      isExcluded: !filterValues.isEmpty() && !filterValues.has(value),
+      isExcluded: filterValues.size > 0 && !filterValues.has(value),
     }))
+
     if (hideEmpty) {
       newData = newData.filter(
         ({ quantity, isFiltered }) => quantity > 0 || isFiltered
@@ -128,18 +129,25 @@ const Filter = ({
 
   const handleFilterToggle = useIsEqualCallback(
     value => {
-      setFilter(
-        field,
-        filterValues.has(value)
-          ? filterValues.delete(value)
-          : filterValues.add(value)
-      )
+
+      // NOTE: do not mutate filter values or things break 
+      // (not seen as a state update and memoized function above doesn't fire)!  
+      // Copy instead.
+      const newFilterValues = new Set(filterValues)
+
+      if (newFilterValues.has(value)) {
+        newFilterValues.delete(value)
+      } else {
+        newFilterValues.add(value)
+      }
+
+      setFilter(field, newFilterValues)
     },
     [filterValues]
   )
 
   const handleReset = () => {
-    setFilter(field, filterValues.clear())
+    setFilter(field, new Set())
   }
 
   return (

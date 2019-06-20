@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { fromJS } from 'immutable'
 
 import { Text } from 'components/Text'
 import Layout from 'components/Layout'
@@ -21,9 +20,8 @@ const Title = styled(Text).attrs({
 `
 
 const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
-  const species = fromJS(
-    extractNodes(allSpeciesJson).map(d => ({ ...d, ...SPECIES[d.species] }))
-  )
+
+  const species = extractNodes(allSpeciesJson).map(d => ({ ...d, ...SPECIES[d.species] }))
 
   return (
     <Layout title="Explore Bat Species">
@@ -36,7 +34,6 @@ const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
           author:
             'Fringed Myotis (Myotis thysanodes) by José G. Martínez-Fonseca',
         }}
-        // title="Explore Data for North American Bat Species"
       />
       <Container py="2rem">
         <Title>Explore Data for North American Bat Species</Title>

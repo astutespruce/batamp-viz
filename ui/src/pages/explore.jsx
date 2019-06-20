@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
-import { Set } from 'immutable'
 
 import FiltersList from 'components/FiltersList'
 import Layout from 'components/Layout'
@@ -16,8 +15,7 @@ import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
 import { Flex, Box } from 'components/Grid'
 import styled from 'style'
-import { unpackTSData, mergeLocationIntoTS, extractDetectors } from 'util/data'
-import { createIndex } from 'util/immutable'
+import { join, unpackTSData, extractDetectors } from 'util/data'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
@@ -34,27 +32,33 @@ const MapContainer = styled.div`
 const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
 const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
-  const [selected, setSelected] = useState({ features: Set(), feature: null })
+  const [selected, setSelected] = useState({ features: [], feature: null })
 
   // use state initialization to ensure that we only process data when page mounts
   // and not subsequent rerenders when a detector is selected
   const [{
     data,
-    detectorIndex,
+    detectors,
     detectorLocations,
     detectorTS,
     filters,
     visibleFilters,
   }] = useState(() => {
-    const detectors = extractDetectors(allDetectorsJson)
-    const initDetectorTS = unpackTSData(extractNodes(allDetectorTsJson))
+    const ts = unpackTSData(extractNodes(allDetectorTsJson))
+    const initDetectors = extractDetectors(allDetectorsJson)
+    const locations = initDetectors.map(({ id, lat, lon, admin1Name }) => ({
+      id,
+      lat,
+      lon,
+      admin1Name,
+    }))
+    
 
-    // extract location fields for use in the map
-    const initDetectorLocations = detectors.map(d =>
-      d.filter((_, k) => k === 'id' || k === 'lat' || k === 'lon')
+    const initData = join(
+      ts,
+      locations,
+      'id'
     )
-    const initDetectorIndex = createIndex(detectors, 'id')
-    const initData = mergeLocationIntoTS(initDetectorTS, initDetectorIndex)
 
     // data for filter values
     const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
@@ -62,9 +66,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
       ...v,
     }))
 
-    const years = Array.from(
-      Set(initData.map(d => d.get('year'))).values()
-    ).sort()
+    const years = Array.from(new Set(initData.map(({ year }) => year))).sort()
 
     const initFilters = [
       {
@@ -100,7 +102,10 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
         isOpen: false,
         vertical: true,
         values: years,
-        labels: years.map(y => `'${y.toString().slice(2)}`),
+        labels:
+          years.length > 6
+            ? years.map(y => `'${y.toString().slice(2)}`)
+            : years,
       },
       {
         field: 'admin1Name',
@@ -108,37 +113,33 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
         isOpen: false,
         sort: true,
         hideEmpty: true,
-        values: Array.from(
-          Set(initData.map(d => d.get('admin1Name'))).values()
-        ).sort(),
+        values: Array.from(new Set(initData.map(d => d.admin1Name))).sort(),
       },
     ]
 
     return {
       data: initData,
-      detectorIndex: initDetectorIndex,
-      detectorLocations: initDetectorLocations,
-      detectorTS: initDetectorTS,
+      detectors: initDetectors,
+      detectorLocations: locations,
+      detectorTS: ts,
       filters: initFilters,
       visibleFilters: initFilters.filter(({ internal }) => !internal),
     }
   })
 
   const handleSelectFeatures = ids => {
-    const features = detectorIndex
-      .filter((_, k) => ids.has(k))
-      .toList()
-      .map(d =>
-        d.merge({
-          ts: detectorTS.filter(v => v.get('id') === d.get('id')),
-        })
-      )
+    const features = detectors
+      .filter(({ id }) => ids.has(id))
+      .map(d => ({
+        ...d,
+        ts: detectorTS.filter(({ id }) => id === d.id),
+      }))
 
-    console.log('selectedFeatures', features.toJS())
+    console.log('selected features', features)
 
     setSelected({
       features,
-      feature: features.size ? features.first().get('id') : null,
+      feature: features.length ? features[0].id : null,
     })
   }
 
@@ -150,19 +151,19 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
   }
 
   const handleDetailsClose = () => {
-    setSelected({ features: Set(), feature: null })
+    setSelected({ features: [], feature: null })
   }
 
   return (
     <Layout title="Explore Species Occurrences">
       <Wrapper>
         <CrossfilterProvider
-          data={data.toJS()}
+          data={data}
           filters={filters}
           options={{ valueField: 'detectionNights' }}
         >
           <Sidebar allowScroll={false}>
-            {selected.features.size > 0 ? (
+            {selected.features.length > 0 ? (
               <DetectorDetails
                 detectors={selected.features}
                 onSetDetector={handleSetFeature}

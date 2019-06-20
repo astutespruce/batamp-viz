@@ -1,5 +1,4 @@
 import React, { createContext, useContext } from 'react'
-import ImmutablePropTypes from 'react-immutable-proptypes'
 import PropTypes from 'prop-types'
 
 import { Crossfilter } from './Crossfilter'
@@ -16,7 +15,6 @@ export const Provider = ({ data, filters, options, children }) => {
 }
 
 Provider.propTypes = {
-  // data: ImmutablePropTypes.list.isRequired,
   data: PropTypes.array.isRequired,
   filters: PropTypes.array.isRequired,
   options: PropTypes.object,

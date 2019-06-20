@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
-import { Map } from 'immutable'
 import Crossfilter2 from 'crossfilter2'
 import { isDebug } from 'util/dom'
+import { filterObject } from 'util/data'
 import { aggregateByDimension, getRawTotal, getFilteredTotal } from './util'
 
 // returns true if passed in values contains the value
@@ -20,18 +20,7 @@ const initCrossfilter = (data, filters) => {
   filters.forEach(filter => {
     const { field, isArray, getValue } = filter
     // default `getValue` function is identify function for field
-    // const dimensionFunction = getValue || (d => d[field])
-    const dimensionFunction =
-      getValue ||
-      (record => {
-        return record[field]
-        // const value = record.get(field)
-        // // if incoming value is an immutableJS object, convert it to JS first
-        // if (value && value.toJS !== undefined) {
-        //   return value.toJS()
-        // }
-        // return value
-      })
+    const dimensionFunction = getValue || (record => record[field])
 
     const dimension = crossfilter.dimension(dimensionFunction, !!isArray)
     dimension.config = filter
@@ -58,7 +47,7 @@ export const Crossfilter = (data, filters, options = {}) => {
   const [state, setState] = useState(() => {
     const valueField = options.valueField || null
     const total = getRawTotal(crossfilter, valueField)
-    const initialState = Map({
+    const initialState = {
       // passed in data
       data,
       valueField,
@@ -66,13 +55,13 @@ export const Crossfilter = (data, filters, options = {}) => {
       // derived data
       total,
       filteredTotal: total,
-      filters: Map(),
+      filters: {},
       hasVisibleFilters: false,
       dimensionTotals: aggregateByDimension(dimensions, valueField),
-    })
+    }
 
     if (isDebug) {
-      console.log('Initial state', initialState.toJS())
+      console.log('Initial state', initialState)
     }
 
     return initialState
@@ -88,7 +77,7 @@ export const Crossfilter = (data, filters, options = {}) => {
     setState(prevState => {
       if (isDebug) {
         console.log('setFilter', field, filterValue)
-        console.log('Prev state', prevState.toJS())
+        console.log('Prev state', prevState)
       }
 
       const dimension = dimensions[field]
@@ -103,24 +92,30 @@ export const Crossfilter = (data, filters, options = {}) => {
         dimension.filterFunction(filterFunc(filterValue))
       }
 
-      const valueField = prevState.get('valueField')
-      const newFilters = prevState.get('filters').set(field, filterValue)
-      const hasVisibleFilters =
-        newFilters.filter(
-          (v, k) => !v.isEmpty() && !dimensions[k].config.internal
-        ).size > 0
+      const { valueField, filters: prevFilters } = prevState
 
-      const newState = prevState.merge({
-        // convert Array from crossfilter back to an immutable List
+      // Create new instance, don't mutate
+      const newFilters = {
+        ...prevFilters,
+        [field]: filterValue,
+      }
+
+      const hasVisibleFilters =
+        Object.entries(newFilters).filter(
+          ([k, v]) => v && v.size > 0 && !dimensions[k].config.internal
+        ).length > 0
+
+      const newState = {
+        ...prevState,
         data: crossfilter.allFiltered(),
         filters: newFilters,
         hasVisibleFilters,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
-      })
+      }
 
       if (isDebug) {
-        console.log('Next state', newState.toJS())
+        console.log('Next state', newState)
       }
 
       return newState
@@ -137,7 +132,7 @@ export const Crossfilter = (data, filters, options = {}) => {
     setState(prevState => {
       if (isDebug) {
         console.log('setBounds', bounds)
-        console.log('Prev state', prevState.toJS())
+        console.log('Prev state', prevState)
       }
 
       const { lat, lon } = dimensions
@@ -151,18 +146,17 @@ export const Crossfilter = (data, filters, options = {}) => {
         lat.filterRange([ymin, ymax])
       }
 
-      const valueField = prevState.get('valueField')
+      const { valueField } = prevState
 
-      const newState = prevState.merge({
-        // convert Array from crossfilter back to an immutable List
+      const newState = {
+        ...prevState,
         data: crossfilter.allFiltered(),
-        // filters: state.get('filters').set(field, filterValue),
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
-      })
+      }
 
       if (isDebug) {
-        console.log('Next state', newState.toJS())
+        console.log('Next state', newState)
       }
 
       return newState
@@ -173,7 +167,7 @@ export const Crossfilter = (data, filters, options = {}) => {
     setState(prevState => {
       if (isDebug) {
         console.log('resetFilters', fields)
-        console.log('Prev state', prevState.toJS())
+        console.log('Prev state', prevState)
       }
 
       // reset the filters on the dimenions
@@ -181,26 +175,28 @@ export const Crossfilter = (data, filters, options = {}) => {
         dimensions[field].filterAll()
       })
 
-      const valueField = prevState.get('valueField')
+      const { valueField, filters: prevFilters } = prevState
 
-      const newFilters = prevState.get('filters').removeAll(fields)
+      // only retain the OTHER filters than fields
+      const newFilters = filterObject(prevFilters, f => !fields.has(f))
+
       const hasVisibleFilters =
-        newFilters.filter(
-          (v, k) => !v.isEmpty() && !dimensions[k].config.internal
-        ).size > 0
+        Object.entries(filters).filter(
+          ([k, v]) => v && v.size > 0 && !dimensions[k].config.internal
+        ).length > 0
 
-      const newState = state.merge({
-        // convert Array from crossfilter back to an immutable List
+      const newState = {
+        ...prevState,
         data: crossfilter.allFiltered(),
         // remove all filter entries for these fields
         filters: newFilters,
         hasVisibleFilters,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
-      })
+      }
 
       if (isDebug) {
-        console.log('Next state', newState.toJS())
+        console.log('Next state', newState)
       }
 
       return newState
@@ -211,18 +207,19 @@ export const Crossfilter = (data, filters, options = {}) => {
     setState(prevState => {
       if (isDebug) {
         console.log('setValueField', valueField)
-        console.log('Prev state', prevState.toJS())
+        console.log('Prev state', prevState)
       }
 
-      const newState = prevState.merge({
+      const newState = {
+        ...prevState,
         valueField,
         dimensionTotals: aggregateByDimension(dimensions, valueField),
         filteredTotal: getFilteredTotal(crossfilter, valueField),
         total: getRawTotal(crossfilter, valueField),
-      })
+      }
 
       if (isDebug) {
-        console.log('Next state', newState.toJS())
+        console.log('Next state', newState)
       }
 
       return newState

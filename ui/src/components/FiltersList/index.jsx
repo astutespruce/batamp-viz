@@ -68,13 +68,12 @@ const FiltersList = ({ filters }) => {
   const { resetFilters, state } = useCrossfilter()
 
   const handleReset = () => {
-    resetFilters(filters.map(({ field }) => field))
+    resetFilters(new Set(filters.map(({ field }) => field)))
   }
 
-  const metricLabel = METRIC_LABELS[state.get('valueField')]
+  const { valueField, total, filteredTotal, hasVisibleFilters } = state
 
-  const filteredTotal = state.get('filteredTotal')
-  const total = state.get('total')
+  const metricLabel = METRIC_LABELS[valueField]
 
   return (
     <Wrapper>
@@ -92,7 +91,7 @@ const FiltersList = ({ filters }) => {
         ))}
       </Filters>
 
-      {state.get('hasVisibleFilters') && (
+      {hasVisibleFilters && (
         <ResetContainer>
           <ResetButton onClick={handleReset}>
             <ResetIcon />
@@ -113,7 +112,9 @@ FiltersList.propTypes = {
       values: PropTypes.arrayOf(
         PropTypes.oneOfType([PropTypes.string, PropTypes.number])
       ),
-      labels: PropTypes.arrayOf(PropTypes.string),
+      labels: PropTypes.arrayOf(
+        PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      ),
       vertical: PropTypes.bool,
     })
   ).isRequired,

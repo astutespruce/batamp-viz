@@ -2,7 +2,6 @@
 
 import React, { useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import ImmutablePropTypes from 'react-immutable-proptypes'
 
 import { sumBy, countUniqueBy, mapValues } from 'util/data'
 import { useIsEqualMemo } from 'util/hooks'
@@ -18,7 +17,6 @@ const FilteredMap = ({
   const { setBounds, state } = useCrossfilter()
   const filterByBoundsRef = useRef(filterByBounds)
 
-  // TODO: should use bounds after map first loads
   const boundsRef = useRef(null)
 
   useEffect(() => {
@@ -39,8 +37,8 @@ const FilteredMap = ({
     setBounds(bounds)
   }
 
-  const valueField = state.get('valueField')
-  const data = state.get('data')
+  const {data, valueField, hasVisibleFilters} = state
+
   const filteredIds = useIsEqualMemo(() => {
     return new Set(data.map(({ id }) => id))
   }, [data])
@@ -73,15 +71,12 @@ const FilteredMap = ({
   const filteredDetectors = useIsEqualMemo(
     () =>
       detectors
-        .filter(d => filteredIds.has(d.get('id')))
-        .map(d =>
-          d
-            // .filter((_, k) => k === 'id' || k === 'lat' || k === 'lon')
-            .merge({
-              total: totalById[d.get('id')] || 0,
-              max: totalById[d.get('id')] || 0,
-            })
-        ),
+        .filter(({ id }) => filteredIds.has(id))
+        .map(d => ({
+          ...d,
+          total: totalById[d.id] || 0,
+          max: totalById[d.id] || 0,
+        })),
     [filteredIds, totalById]
   )
 
@@ -90,7 +85,7 @@ const FilteredMap = ({
       detectors={filteredDetectors}
       valueField={valueField}
       maxValue={maxValue}
-      hasFilters={state.get('hasVisibleFilters')}
+      hasFilters={hasVisibleFilters}
       onBoundsChange={handleBoundsChange}
       {...props}
     />
@@ -98,8 +93,8 @@ const FilteredMap = ({
 }
 
 FilteredMap.propTypes = {
-  detectors: ImmutablePropTypes.listOf(
-    ImmutablePropTypes.mapContains({
+  detectors: PropTypes.arrayOf(
+    PropTypes.shape({
       lat: PropTypes.number.isRequired,
       lon: PropTypes.number.isRequired,
     })

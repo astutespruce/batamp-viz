@@ -1,6 +1,5 @@
 import React, { useReducer, memo } from 'react'
-import { Set, List, Map } from 'immutable'
-import ImmutablePropTypes from 'react-immutable-proptypes'
+import PropTypes from 'prop-types'
 
 import { useIndex } from 'components/Search'
 import { Box, Flex, Columns, Column } from 'components/Grid'
@@ -12,27 +11,27 @@ import ListItem from './ListItem'
 const sortOptions = [
   {
     label: 'name',
-    sortFunc: (a, b) => (a.get('commonName') > b.get('commonName') ? 1 : -1),
+    sortFunc: (a, b) => (a.commonName > b.commonName ? 1 : -1),
   },
   {
     label: 'scientific name',
-    sortFunc: (a, b) => (a.get('sciName') > b.get('sciName') ? 1 : -1),
+    sortFunc: (a, b) => (a.sciName > b.sciName ? 1 : -1),
   },
   {
     label: 'detections',
-    sortFunc: (a, b) => b.get('detections') - a.get('detections'),
+    sortFunc: (a, b) => b.detections - a.detections,
   },
   {
     label: 'nights detected',
-    sortFunc: (a, b) => b.get('detectionNights') - a.get('detectionNights'),
+    sortFunc: (a, b) => b.detectionNights - a.detectionNights,
   },
   {
     label: 'detectors',
-    sortFunc: (a, b) => b.get('detectors') - a.get('detectors'),
+    sortFunc: (a, b) => b.detectors - a.detectors,
   },
   {
     label: 'contributors',
-    sortFunc: (a, b) => b.get('contributors') - a.get('contributors'),
+    sortFunc: (a, b) => b.contributors - a.contributors,
   },
 ]
 
@@ -60,39 +59,41 @@ export const NoResults = styled(Box)`
 const SpeciesList = ({ species }) => {
   const queryIndex = useIndex()
 
-  const initialState = Map({
+  const initialState = {
     species: species.sort(sortOptions[0].sortFunc),
     query: '',
     sortIdx: 0,
-  })
+  }
 
   const speciesReducer = (state, { type, payload }) => {
     switch (type) {
       case 'query': {
-        if (payload === state.get('query')) return state
+        if (payload === state.query) return state
 
         let newSpecies = species
         if (payload) {
-          const filteredIDs = Set(
+          const filteredIDs = new Set(
             queryIndex(payload).map(({ species: spp }) => spp)
           )
-          newSpecies = species.filter(item =>
-            filteredIDs.has(item.get('species'))
+          newSpecies = species.filter(({ species: spp }) =>
+            filteredIDs.has(spp)
           )
         }
 
-        return state.merge({
+        return {
+          ...state,
           query: payload,
-          species: newSpecies.sort(sortOptions[state.get('sortIdx')].sortFunc),
-        })
+          species: newSpecies.sort(sortOptions[state.sortIdx].sortFunc),
+        }
       }
       case 'sort': {
-        if (payload === state.get('sortIdx')) return state
+        if (payload === state.sortIdx) return state
 
-        return state.merge({
+        return {
+          ...state,
           sortIdx: payload,
-          species: state.get('species').sort(sortOptions[payload].sortFunc),
-        })
+          species: state.species.sort(sortOptions[payload].sortFunc),
+        }
       }
       default: {
         throw new Error(`action type not handled: ${type}`)
@@ -110,8 +111,8 @@ const SpeciesList = ({ species }) => {
     dispatch({ type: 'sort', payload: idx })
   }
 
-  const items = state.get('species', List())
-  const metric = sortOptions[state.get('sortIdx')].label
+  const items = state.species || []
+  const metric = sortOptions[state.sortIdx].label
 
   const thumbnails = useThumbnails()
   const maps = useMapThumbnails()
@@ -120,11 +121,11 @@ const SpeciesList = ({ species }) => {
     <Wrapper>
       <Columns px="1rem" alignItems="baseline">
         <Column>
-          <Count>{items.size} species currently visible</Count>
+          <Count>{items.length} species currently visible</Count>
         </Column>
         <Column>
           <SortBar
-            index={state.get('sortIdx', 0)}
+            index={state.sortIdx || 0}
             options={sortOptions.map(({ label }) => label)}
             onChange={handleSortChange}
           />
@@ -132,20 +133,20 @@ const SpeciesList = ({ species }) => {
       </Columns>
 
       <SearchBar
-        value={state.get('query', '')}
+        value={state.query || ''}
         placeholder="Enter a species name"
         onChange={handleQueryChange}
       />
 
       <div>
-        {items.size > 0 ? (
+        {items.length > 0 ? (
           items.map(item => (
             <ListItem
-              key={item.get('species')}
+              key={item.species}
               item={item}
               metric={metric}
-              thumbnail={thumbnails[item.get('species')] || null}
-              map={maps[item.get('species')] || null}
+              thumbnail={thumbnails[item.species] || null}
+              map={maps[item.species] || null}
             />
           ))
         ) : (
@@ -157,7 +158,16 @@ const SpeciesList = ({ species }) => {
 }
 
 SpeciesList.propTypes = {
-  species: ImmutablePropTypes.list.isRequired,
+  species: PropTypes.arrayOf(
+    PropTypes.shape({
+      species: PropTypes.string.isRequired,
+      detections: PropTypes.number.isRequired,
+      detectionNights: PropTypes.number.isRequired,
+      contributors: PropTypes.number.isRequired,
+      commonName: PropTypes.string.isRequired,
+      sciName: PropTypes.string.isRequired,
+    })
+  ).isRequired,
 }
 
 // only render once on construction

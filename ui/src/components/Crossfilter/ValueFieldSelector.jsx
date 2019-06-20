@@ -27,7 +27,7 @@ const ToggleButton = styled(BaseButton)`
 `
 
 const ValueFieldSelector = ({ fields }) => {
-  const { setValueField, state } = useCrossfilter()
+  const { setValueField, state: {valueField} } = useCrossfilter()
 
   const handleChange = field => {
     setValueField(field)
@@ -42,7 +42,7 @@ const ValueFieldSelector = ({ fields }) => {
     <Wrapper>
       <Label>metric to display:</Label>
       <ToggleButton
-        value={state.get('valueField')}
+        value={valueField}
         options={options}
         onChange={handleChange}
       />

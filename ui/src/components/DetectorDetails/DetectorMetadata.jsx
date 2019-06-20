@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Set } from 'immutable'
 import { FaCheck, FaTimes } from 'react-icons/fa'
 import { css } from 'styled-components'
 
@@ -96,7 +95,7 @@ const DetectorMetadata = ({
 }) => {
   const numContributors = contributors.split(', '.length)
 
-  const detectedSpp = Set(species)
+  const detectedSpp = new Set(species)
   const monitoredSpp = targetSpecies
     .map(spp => {
       const { commonName, sciName } = SPECIES[spp]

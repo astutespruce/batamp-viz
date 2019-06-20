@@ -1,6 +1,5 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
-import ImmutablePropTypes from 'react-immutable-proptypes'
 import { FaRegTimesCircle, FaExclamationTriangle } from 'react-icons/fa'
 
 import { Text, HelpText } from 'components/Text'
@@ -9,7 +8,7 @@ import { useCrossfilter } from 'components/Crossfilter'
 import { Column, Columns, RightColumn, Box, Flex } from 'components/Grid'
 import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
-import { sumBy, groupBy } from 'util/immutable'
+import { sumBy, groupBy, filterObject } from 'util/data'
 import TotalCharts from './TotalCharts'
 import SeasonalityCharts from './SeasonalityCharts'
 import { MONTHS, SPECIES, METRIC_LABELS } from '../../../config/constants'
@@ -89,7 +88,9 @@ const Highlight = styled(Box)`
 
 const Details = ({ detector, selectedSpecies, onClose }) => {
   const { state } = useCrossfilter()
-  let valueField = state.get('valueField')
+
+  const { hasVisibleFilters } = state
+  let { valueField } = state
   if (valueField === 'id' || valueField === 'species') {
     valueField = 'detectionNights'
   }
@@ -103,36 +104,37 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     detectionNights,
     detectorNights,
     dateRange,
-  } = detector.toJS()
+    ts,
+  } = detector
 
-  const ts = detector.get('ts')
+  // calculate totals by species, for non-zero species
+  const bySpp = filterObject(sumBy(ts, 'species', valueField), d => d>0)
 
-  // calculate totals by species
-  const bySpp = sumBy(ts, 'species', valueField)
-
-  const sppTotals = bySpp
-    .entrySeq()
-    .toList()
-    .sort(([sppA, a], [sppB, b]) => (a < b ? 1 : -1))
+  const sppTotals = Object.entries(bySpp).sort(([sppA, a], [sppB, b]) =>
+    a < b ? 1 : -1
+  )
 
   // If we are showing nights, we need to show the true effort which is
   // number of detector nights
   const max =
     valueField === 'detectionNights'
       ? detectorNights
-      : Math.max(...Array.from(sppTotals.map(([_, value]) => value)))
+      : Math.max(0, ...Object.values(bySpp))
 
-  // aggregate full monthly time series by species
-  const monthlyData = groupBy(ts, 'species').map(records => {
-    const byMonth = sumBy(records, 'month', valueField)
-    return MONTHS.map(month => byMonth.get(month, 0))
-  })
+
+      // create a map of species to array of monthly data, with an entry populated for each month
+  const monthlyData = Object.assign(
+    ...Object.entries(groupBy(ts, 'species')).map(([spp, records]) => {
+      const byMonth = sumBy(records, 'month', valueField)
+      return { [spp]: MONTHS.map(month => byMonth[month] || 0) }
+    })
+  )
 
   const seasonalityData = sppTotals.map(([spp]) => {
     return {
       species: spp,
       ...SPECIES[spp],
-      values: monthlyData.get(spp),
+      values: monthlyData[spp],
     }
   })
 
@@ -152,7 +154,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     )
   }
 
-  const filterNote = state.get('hasVisibleFilters') ? (
+  const filterNote = hasVisibleFilters ? (
     <FilterNote>
       <WarningIcon />
       Note: your filters are not applied to the following data.
@@ -197,7 +199,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
           {hasSpecies ? (
             <TotalCharts
-              data={sppTotals.toJS()}
+              data={sppTotals}
               selectedSpecies={selectedSpecies}
               max={max}
             />
@@ -212,7 +214,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
           {hasSpecies ? (
             <SeasonalityCharts
-              data={seasonalityData.toJS()}
+              data={seasonalityData}
               selectedSpecies={selectedSpecies}
             />
           ) : (
@@ -221,10 +223,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
         </Tab>
 
         <Tab id="overview" label="Detector Information">
-          <DetectorMetadata
-            {...detector.toJS()}
-            selectedSpecies={selectedSpecies}
-          />
+          <DetectorMetadata {...detector} selectedSpecies={selectedSpecies} />
         </Tab>
       </TabContainer>
     </Wrapper>
@@ -232,7 +231,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 }
 
 Details.propTypes = {
-  detector: ImmutablePropTypes.mapContains({
+  detector: PropTypes.shape({
     name: PropTypes.string.isRequired,
     lat: PropTypes.number.isRequired,
     lon: PropTypes.number.isRequired,
@@ -244,14 +243,14 @@ Details.propTypes = {
     micType: PropTypes.string,
     reflType: PropTypes.string,
     idMethods: PropTypes.arrayOf(PropTypes.string),
-    datasets: ImmutablePropTypes.listOf(PropTypes.string).isRequired,
+    datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
     detectorNights: PropTypes.number.isRequired,
     detectionNights: PropTypes.number.isRequired,
     dateRange: PropTypes.string.isRequired,
     admin1Name: PropTypes.string.isRequired,
     country: PropTypes.string.isRequired,
-    ts: ImmutablePropTypes.listOf(
-      ImmutablePropTypes.mapContains({
+    ts: PropTypes.arrayOf(
+      PropTypes.shape({
         detections: PropTypes.number,
         detectionNights: PropTypes.number.isRequired,
         month: PropTypes.number.isRequired,
