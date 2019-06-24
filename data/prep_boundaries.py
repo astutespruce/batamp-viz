@@ -3,7 +3,7 @@ Preprocess boundary data as needed to use for spatial joins later.
 
 These are stored in a serialized WKB format inside of feather files for fast loading.
 
-Admin boundaries: select out Canada, US, Mexico, and buffer coastal states / provinces to capture detectors just offshore.
+Admin units were glommed together from country-level sources.
 
 Species: join to species 4-letter code, and merge together species that are effectively the same.
 """
@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 import geopandas as gp
 from geofeather import to_geofeather
-from constants import SPECIES, COASTAL_ADMIN_UNITS
+from constants import SPECIES
 
 
 def to_geojson(df, filename):
@@ -22,46 +22,55 @@ def to_geojson(df, filename):
     df.to_file(filename, driver="GeoJSON")
 
 
+def to_titlecase(text):
+    return " ".join([t.capitalize() for t in text.split(" ")])
+
+
 boundaries_dir = Path("data/boundaries")
 src_dir = boundaries_dir / "src"
 
 
 ### Process admin boundaries
 print("Extracting admin boundaries...")
-admin_df = gp.read_file(src_dir / "ne_10m_admin_1_states_provinces_lakes.shp")
-# select Canada, US, Mexico
-admin_df = (
-    admin_df.loc[admin_df.iso_a2.isin(("CA", "US", "MX"))][
-        ["iso_a2", "iso_3166_2", "name", "geometry"]
-    ]
-    .rename(columns={"iso_a2": "country"})
-    .reset_index(drop=True)
-)  # , "iso_3166_2": "id"
-
-# need a unique numeric ID throughout stack
-admin_df["id"] = (admin_df.index + 1).astype(
-    "uint16"
-)  # note: 0 is not a valid ID according to tippecanoe
-
-# Write out GeoJSON for vector tiles
-to_geojson(admin_df, boundaries_dir / "na_admin1.json")
-
-
-print("Buffering coastal units...")
-admin_df["is_buffer"] = False
-
-# buffer coastal units to capture detectors just offshore
-coastal_df = admin_df.loc[admin_df.iso_3166_2.isin(COASTAL_ADMIN_UNITS)]
-# add 0.1 degree buffer, roughly 5-10km depending on latitude
-buffered = gp.GeoDataFrame(
-    coastal_df[["id", "country", "name", "iso_3166_2"]], geometry=coastal_df.buffer(0.1)
+us_df = gp.read_file(src_dir / "us_state_wgs84.shp").rename(
+    columns={"NAME": "admin1_name"}
 )
-buffered["is_buffer"] = True
+us_df["admin1"] = "US-" + us_df.STUSPS
+us_df["country"] = "US"
 
-admin_df = admin_df.append(buffered, ignore_index=True, sort=False)
+
+ca_df = gp.read_file(src_dir / "canada_province_wgs84.shp").rename(
+    columns={"PRENAME": "admin1_name"}
+)
+ca_df["admin1"] = "CA-" + ca_df.PREABBR.str.replace(".", "")
+ca_df["country"] = "CA"
+
+mx_df = gp.read_file(
+    src_dir / "mexico_state.shp"
+)  # already in 4326, but needs to be simplified
+mx_df.geometry = mx_df.geometry.simplify(0.001)
+mx_df["admin1"] = "MX-" + mx_df.NUM_EDO
+mx_df["admin1_name"] = mx_df.ENTIDAD.apply(to_titlecase)
+mx_df = mx_df.dissolve(by="NUM_EDO")
+mx_df["country"] = "MX"
+
+admin_df = (
+    us_df[["geometry", "admin1", "admin1_name", "country"]]
+    .append(
+        ca_df[["geometry", "admin1", "admin1_name", "country"]],
+        ignore_index=True,
+        sort=False,
+    )
+    .append(
+        mx_df[["geometry", "admin1", "admin1_name", "country"]],
+        ignore_index=True,
+        sort=False,
+    )
+)
+
+admin_df["id"] = admin_df.index.astype("uint8") + 1
+to_geojson(admin_df, boundaries_dir / "na_admin1.json")
 to_geofeather(admin_df, boundaries_dir / "na_admin1.geofeather")
-# for verification
-# admin_df.to_file(boundaries_dir / "na_admin1.shp")
 
 
 ### Process species ranges

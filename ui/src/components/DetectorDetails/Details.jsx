@@ -108,7 +108,8 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
   } = detector
 
   // calculate totals by species, for non-zero species
-  const bySpp = filterObject(sumBy(ts, 'species', valueField), d => d>0)
+
+  const bySpp = filterObject(sumBy(ts, 'species', valueField), d => d > 0)
 
   const sppTotals = Object.entries(bySpp).sort(([sppA, a], [sppB, b]) =>
     a < b ? 1 : -1
@@ -121,8 +122,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
       ? detectorNights
       : Math.max(0, ...Object.values(bySpp))
 
-
-      // create a map of species to array of monthly data, with an entry populated for each month
+  // create a map of species to array of monthly data, with an entry populated for each month
   const monthlyData = Object.assign(
     ...Object.entries(groupBy(ts, 'species')).map(([spp, records]) => {
       const byMonth = sumBy(records, 'month', valueField)

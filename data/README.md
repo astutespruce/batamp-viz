@@ -10,9 +10,23 @@ Data were processed and a single GRTS layer with IDs for 50k and 100k grids usin
 
 ### Admin boundaries
 
-State / province (Admin1) boundaries were downloaded from: https://www.naturalearthdata.com/downloads/10m-cultural-vectors/
-These were selected out for Canada, Mexico, and the US. Coastal units were buffered by 0.1 degrees as a fallback if
-detectors fell slightly offshore.
+US States were downloaded from https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.2018.html
+
+And projected to WGS84 using ogr2ogr:
+
+```
+ogr2ogr -t_srs EPSG:4326 us_state_wgs84.shp us_state.shp
+```
+
+Canadian provinces were downloaded from: https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/bound-limit-2011-eng.cfm
+
+And projected to WGS84 using ogr2ogr:
+
+```
+ogr2ogr -t_srs EPSG:4326 canada_province_wgs84.shp canada_province.shp
+```
+
+Mexican states were downloaded from: http://www.conabio.gob.mx/informacion/metadata/gis/dest_2010gw.xml?_httpcache=yes&_xsl=/db/metadata/xsl/fgdc_html.xsl&_indent=no
 
 ### Bat Species Ranges
 

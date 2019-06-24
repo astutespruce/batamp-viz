@@ -54,12 +54,13 @@ export const objectsToObject = (values, keyField, valueGetter) =>
  * @param {Object} obj
  * @param {function} predicate - function that determines if entry should be kept
  */
-export const filterObject = (obj, predicate) =>
-  Object.assign(
-    ...Object.keys(obj)
-      .filter(key => predicate(obj[key]))
-      .map(key => ({ [key]: obj[key] }))
-  )
+export const filterObject = (obj, predicate) => {
+  const selected = Object.keys(obj)
+    .filter(key => predicate(obj[key]))
+    .map(key => ({ [key]: obj[key] }))
+
+  return selected.length > 0 ? Object.assign(...selected) : {}
+}
 
 /**
  * Round number to the nearest power of 10
