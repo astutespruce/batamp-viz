@@ -227,33 +227,11 @@ admin_df = read_geofeather(boundary_dir / "na_admin1.geofeather").drop(columns=[
 admin_df.admin1 = admin_df.admin1.astype("uint8")
 
 site_admin = gp.sjoin(sites, admin_df, how="left")[['admin1', 'admin1_name', 'country']]
-# admin_cols = ["id", "country", "name"]
 
-# if any sites do not fall nicely within real admin boundaries, use buffered coastal boundaries
-# missing = site_admin.loc[site_admin.id.isnull()][["geometry"]]
-# if len(missing):
-#     missing_admin = gp.sjoin(missing, admin_df.loc[admin_df.is_buffer], how="left")
-#     site_admin.loc[missing_admin.index, admin_cols] = missing_admin[admin_cols]
-
-# site_admin.id = site_admin.id.astype("uint8")
-# site_admin = site_admin[admin_cols].rename(
-#     columns={"id": "admin1", "name": "admin1_name"}
-# )
 
 # extract species list for site based on species ranges
 print("Assigning species ranges to sites...")
 range_df = read_geofeather(boundary_dir / "species_ranges.geofeather")
-
-# spatial join to multiple overlapping ranges
-# site_spps = (
-#     gp.sjoin(sites, range_df, how="left")[location_fields + ["species"]]
-#     .dropna()
-#     .groupby(level=0)
-#     .species.unique()
-#     .apply(sorted)
-# )
-# site_spps.name = "in_range"
-
 
 # TODO: extract GRTS ID for a site
 # print("Assigning grid info to sites...")
