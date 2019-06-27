@@ -59,6 +59,7 @@ const Map = ({
   }
 
   const { accessToken, styles } = config
+  
 
   // Use refs to coordinate values set after map is constructed
   const mapNode = useRef(null)
