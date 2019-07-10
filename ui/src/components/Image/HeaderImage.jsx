@@ -33,7 +33,12 @@ const Overlay = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(0, rgba(0, 0, 0, 0), 30%, rgba(0, 0, 0, 0.7));
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1),
+    50%,
+    rgba(0, 0, 0, 0)
+  );
 `
 
 const TitleContainer = styled(Container)`

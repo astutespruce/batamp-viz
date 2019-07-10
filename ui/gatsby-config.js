@@ -6,9 +6,8 @@ elasticlunr.clearStopWords()
 
 module.exports = {
   siteMetadata: {
-    siteUrl: `https://explorer.batamp.databasin.org`,
-    title: `North American Bat Acoustic Monitoring Explorer`,
-    shortTitle: `Bat Monitoring Explorer`,
+    siteUrl: `https://visualize.batamp.databasin.org`,
+    title: `Bat Acoustic Monitoring Visualization Tool`,
     description: `Data exploration tool for bat acoustic monitoring data across North America.`,
     author: `Brendan C. Ward, Conservation Biology Institute`,
     googleAnalyticsId: process.env.GATSBY_GOOGLE_ANALYTICS_ID,

@@ -22,17 +22,16 @@ const IndexPage = ({
     <Layout title="Home">
       <HeaderImage
         image={img.childImageSharp.fluid}
-        height="100vh"
+        height="60vh"
         minHeight="40rem"
         position="bottom"
         credits={{
           author:
-            'Michael Durham/Minden Pictures, Bat Conservation International',
-          url:
-            'https://www.flickr.com/photos/mypubliclands/46056678782/in/album-72157699760909522/',
+            'Silver-haired Bat (Lasionycteris noctivagans), José G. Martínez-Fonseca',
+          url: 'https://www.instagram.com/svaldvard/?hl=en',
         }}
-        title="Monitoring Bat Species in North America"
-        subtitle="is critical for detecting impacts from climate, disease, and development."
+        title="Acoustic Monitoring"
+        subtitle="is essential for helping study and conserve bats in North America."
       />
 
       <Container pb="3rem">
@@ -80,7 +79,7 @@ IndexPage.propTypes = {
 
 export const pageQuery = graphql`
   query HomePageQuery {
-    headerImage: file(relativePath: { eq: "46056678782_da46dcec08_o.jpg" }) {
+    headerImage: file(relativePath: { eq: "NK1_6322.jpg" }) {
       childImageSharp {
         fluid(maxWidth: 3200) {
           ...GatsbyImageSharpFluid_withWebp

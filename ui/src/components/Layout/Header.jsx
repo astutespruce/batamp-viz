@@ -1,20 +1,18 @@
 import React from 'react'
 
-import { ResponsiveText } from 'components/Text'
+import { Text, ResponsiveText } from 'components/Text'
 import { Flex } from 'components/Grid'
-import { Link } from 'components/Link'
+import { Link, OutboundLink } from 'components/Link'
 import styled, { themeGet } from 'style'
 import Navigation from './Navigation'
 import Search from './Search'
-
-import { siteMetadata } from '../../../gatsby-config'
 
 const Wrapper = styled(Flex).attrs({
   alignItems: 'center',
   justifyContent: 'space-between',
 })`
   background: ${themeGet('colors.primary.800')};
-  padding: 0.5rem 0.25rem;
+  padding: 0.5rem;
 `
 
 const RootLink = styled(Link)`
@@ -32,6 +30,18 @@ const Title = styled(ResponsiveText).attrs({
   font-weight: normal;
 `
 
+const Subtitle = styled(Text).attrs({
+  fontSize: ['0.9rem', '0.9rem', '0.9rem'],
+})`
+  font-style: italic;
+  color: #fff;
+
+  a {
+    color: #fff;
+    text-decoration: underline;
+  }
+`
+
 const MobileTitle = styled(Title).attrs({ display: ['block', 'none'] })``
 
 // const SiteLogo = styled.div`
@@ -45,13 +55,21 @@ const MobileTitle = styled(Title).attrs({ display: ['block', 'none'] })``
 
 const Header = () => (
   <Wrapper as="header">
-    <RootLink to="/">
-      <Flex alignItems="center">
-        {/* <SiteLogo>logo</SiteLogo> */}
-        <Title>{siteMetadata.title}</Title>
-        <MobileTitle>{siteMetadata.shortTitle}</MobileTitle>
-      </Flex>
-    </RootLink>
+    <Flex alignItems="center">
+      {/* <SiteLogo>logo</SiteLogo> */}
+
+      <Title>
+        <RootLink to="/">Bat Acoustic Monitoring Visualization Tool</RootLink>
+        <Subtitle>
+          (a companion to{' '}
+          <OutboundLink to="https://batamp.databasin.org/">BatAMP</OutboundLink>
+          )
+        </Subtitle>
+      </Title>
+      <MobileTitle>
+        <RootLink to="/">Bat Acoustic Monitoring Visualization Tool</RootLink>
+      </MobileTitle>
+    </Flex>
     <Navigation />
     <Search />
   </Wrapper>
