@@ -171,7 +171,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
               />
             ) : (
               <>
-                <Box flex={0}>
+                <Box flex='0 0 auto'>
                   <SidebarHeader title="Species Occurrences" icon="slidersH" />
                   <HelpText>
                     <ExpandableParagraph

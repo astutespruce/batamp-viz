@@ -13,13 +13,14 @@ import { METRIC_LABELS } from '../../../config/constants'
 
 const Wrapper = styled(Flex).attrs({
   flexDirection: 'column',
-  flex: 1,
+  flex: '1 1 auto',
 })`
   height: 100%;
+  min-height: 0;
 `
 
 const Header = styled(Box).attrs({
-  flex: 0,
+  flex: '0 0 auto',
   px: '1rem',
   pb: '0.5rem',
 })`
@@ -35,7 +36,7 @@ const ResetContainer = styled(Flex).attrs({
   justifyContent: 'center',
   py: '0.5rem',
 })`
-  flex: 0;
+  flex: 0 0 auto;
   background: ${themeGet('colors.grey.100')};
   border-top: 1px solid ${themeGet('colors.grey.200')};
 `
@@ -60,7 +61,7 @@ const ResetIcon = styled(FaRegTimesCircle).attrs({
 
 const Filters = styled(Box).attrs({ flex: 1, pr: '1rem' })`
   overflow-y: auto;
-  flex: 1;
+  flex: 1 1 auto;
   height: 100%;
 `
 

@@ -295,7 +295,6 @@ const Map = ({
     map.on('click', 'detectors-clusters', e => {
       const [
         {
-          // geometry: { coordinates },
           properties: { cluster_id: clusterId },
         },
       ] = map.queryRenderedFeatures(e.point, {
@@ -354,7 +353,6 @@ const Map = ({
         : ''
       const tooltipSuffix = `${hasFilterLabel}.<br />Click to zoom in.`
 
-      // within filtered data<br />
       let html = ''
       if (metric === 'id') {
         html = `${point_count} detectors at this location${tooltipSuffix}`
