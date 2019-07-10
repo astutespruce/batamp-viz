@@ -60,6 +60,9 @@ for filename in src_dir.glob("*.csv"):
 
 df = merged.reindex()
 
+# TODO: remove
+# df.to_csv(derived_dir / 'merged_original.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
+
 print("Read {} raw records".format(len(df)))
 
 #### Process source data and clean up ############################################
@@ -128,6 +131,7 @@ df["call_id"] = df[call_id_columns].apply(
 )
 df = df.drop(columns=call_id_columns)
 
+#### Dataset-specific fixes
 # Fix missing first name
 df.loc[
     (df.dataset == "bc04c64da5c042da81098c88902a502a") & (df.last_name == "Burger"),
@@ -171,6 +175,7 @@ print("{} records after dropping complete duplicates".format(len(df)))
 
 
 df.reset_index().to_feather(derived_dir / "merged_raw.feather")
+# df.to_csv(derived_dir / "merged_cleaned.csv", index=False, quoting=csv.QUOTE_NONNUMERIC)
 
 
 #### Get dataset names from Data Basin ##############################
@@ -258,7 +263,6 @@ detectors = (
 #### Join site and detector IDs to df
 # drop all detector related info from df
 df = (
-    # df.drop(columns=DETECTOR_FIELDS)
     df.set_index(location_fields + ["mic_ht"])
     .join(
         detectors.set_index(location_fields + ["mic_ht"])[
@@ -324,7 +328,7 @@ print(
 # Write out merged data
 df.reset_index().to_feather(derived_dir / "merged.feather")
 # For debugging
-# df.to_csv(derived_dir / "merged.csv", index=False, quoting=csv.QUOTE_NONNUMERIC)
+# df.to_csv(derived_dir / "merged_final.csv", index=False, quoting=csv.QUOTE_NONNUMERIC)
 
 
 print("Calculating statistics...")

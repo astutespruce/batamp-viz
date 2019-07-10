@@ -57,6 +57,7 @@ const HorizontalBar = ({
   label,
   quantity,
   max,
+  showCount,
   onClick,
 }) => {
   const position = quantity / max
@@ -70,7 +71,7 @@ const HorizontalBar = ({
     <Wrapper onClick={handleClick} isExcluded={isExcluded}>
       <Labels active={isFiltered}>
         <Column>{label}</Column>
-        <Column flex={0}>{formatNumber(quantity)}</Column>
+        {showCount && <Column flex={0}>{formatNumber(quantity)}</Column>}
       </Labels>
       <IndicatorWrapper>
         {position > 0 && (
@@ -96,12 +97,14 @@ HorizontalBar.propTypes = {
   label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   quantity: PropTypes.number.isRequired,
   max: PropTypes.number.isRequired,
+  showCount: PropTypes.bool,
   onClick: PropTypes.func.isRequired,
 }
 
 HorizontalBar.defaultProps = {
   isFiltered: false,
   isExcluded: false,
+  showCount: true,
 }
 
 // TODO: optimize for changes to the callback

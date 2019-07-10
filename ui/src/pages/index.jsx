@@ -23,7 +23,7 @@ const IndexPage = ({
       <HeaderImage
         image={img.childImageSharp.fluid}
         height="60vh"
-        minHeight="40rem"
+        minHeight="34rem"
         position="bottom"
         credits={{
           author:

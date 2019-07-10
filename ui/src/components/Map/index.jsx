@@ -59,7 +59,6 @@ const Map = ({
   }
 
   const { accessToken, styles } = config
-  
 
   // Use refs to coordinate values set after map is constructed
   const mapNode = useRef(null)
@@ -477,7 +476,7 @@ const Map = ({
         upperValue = niceNumber(maxProperty(visibleDetectors, 'total', 0))
       }
     } else {
-      // console.log('falling back to max value', maxValue, niceNumber(maxValue))
+      // Fall back to max number passed to map, since we can't calculate from clusters
       upperValue = niceNumber(maxValue)
     }
 
@@ -489,11 +488,9 @@ const Map = ({
       upperValue = niceNumber(maxValue)
     }
 
-    // console.log('upper ', upperValue)
-
     if (upperValue === 0) {
       if (detectors.size) {
-        updateLegend(legends.detectors(upperValue))
+        updateLegend(legends.detectors(upperValue, METRIC_LABELS[valueField]))
       } else {
         updateLegend([])
       }
@@ -524,7 +521,7 @@ const Map = ({
     map.setPaintProperty('detectors-clusters', 'circle-radius', radiusExpr)
     map.setPaintProperty('detectors-clusters', 'circle-color', colorExpr)
 
-    updateLegend(legends.detectors(upperValue))
+    updateLegend(legends.detectors(upperValue, METRIC_LABELS[valueField]))
   }
 
   const updateLegend = (detectorLegend = []) => {
@@ -585,7 +582,7 @@ const Map = ({
         entries={legendEntries}
         title={legendTitle}
         note={
-          detectors.size
+          detectors.length
             ? 'Map shows detector locations.  They may be clustered together if near each other.'
             : 'No detector locations visible.'
         }

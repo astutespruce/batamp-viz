@@ -2,8 +2,7 @@ import { interpolate, interpolateRgb } from 'd3-interpolate'
 
 import { formatNumber } from 'util/format'
 import { theme } from 'style'
-import {siteMetadata} from '../../../gatsby-config'
-
+import { siteMetadata } from '../../../gatsby-config'
 
 export const MINRADIUS = 4
 export const MAXRADIUS = 18
@@ -11,7 +10,7 @@ export const NONDETECTIONCOLOR = '#49ac9f'
 export const LIGHTESTCOLOR = '#d2d5ea'
 export const DARKESTCOLOR = '#020d57'
 
-export const config = {  
+export const config = {
   accessToken: siteMetadata.mapboxToken,
   center: [-91.426, 51.711],
   zoom: 2.3,
@@ -101,14 +100,14 @@ export const layers = [
       // other props specified dynamically
     },
   },
-  
 ]
-
 
 // id: "source"
 export const speciesSource = {
   type: 'vector',
-  tiles: ['https://tiles.databasin.org/services/batamp/species_ranges/tiles/{z}/{x}/{y}.pbf'],
+  tiles: [
+    'https://tiles.databasin.org/services/batamp/species_ranges/tiles/{z}/{x}/{y}.pbf',
+  ],
   minzoom: 0,
   maxzoom: 6,
 }
@@ -153,7 +152,7 @@ export const legends = {
     },
   ],
   // TODO: make it based on properties in the map
-  detectors: upperValue => {
+  detectors: (upperValue, label) => {
     const radiusInterpolator = interpolate(MINRADIUS, MAXRADIUS)
     const colorInterpolator = interpolateRgb(DARKESTCOLOR, LIGHTESTCOLOR)
 
@@ -163,7 +162,7 @@ export const legends = {
       entries.push({
         type: 'circle',
         radius: MINRADIUS,
-        label: '1',
+        label: `1 ${label}`,
         color: DARKESTCOLOR,
       })
     } else if (upperValue > 1) {
@@ -178,7 +177,7 @@ export const legends = {
         {
           type: 'circle',
           radius: MAXRADIUS,
-          label: `≥ ${formatNumber(upperValue, 0)}`,
+          label: `≥ ${formatNumber(upperValue, 0)} ${label}`,
           color: LIGHTESTCOLOR,
         },
         ...breaks.map(b => ({
@@ -194,7 +193,7 @@ export const legends = {
     entries.push({
       type: 'circle',
       radius: MINRADIUS,
-      label: 'Not detected',
+      label: `No ${label}`,
       color: NONDETECTIONCOLOR,
     })
 

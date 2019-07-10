@@ -4,7 +4,7 @@ import deepEqual from 'dequal'
 
 import Bar from './HorizontalBar'
 
-const HorizontalBars = ({ data, max, onToggleFilter }) => {
+const HorizontalBars = ({ data, max, showCount, onToggleFilter }) => {
   return (
     <>
       {data.map(({ value, ...props }) => (
@@ -13,6 +13,7 @@ const HorizontalBars = ({ data, max, onToggleFilter }) => {
           value={value}
           {...props}
           max={max}
+          showCount={showCount}
           onClick={onToggleFilter}
         />
       ))}
@@ -27,7 +28,12 @@ HorizontalBars.propTypes = {
     })
   ).isRequired,
   max: PropTypes.number.isRequired,
+  showCount: PropTypes.bool,
   onToggleFilter: PropTypes.func.isRequired,
+}
+
+HorizontalBars.defaultProps = {
+  showCount: true,
 }
 
 // Memoize as a function of data

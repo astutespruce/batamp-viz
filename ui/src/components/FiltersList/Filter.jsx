@@ -82,7 +82,10 @@ const Filter = ({
   vertical,
 }) => {
   const [isOpen, setIsOpen] = useState(initIsOpen)
-  const { setFilter, state: { filters, dimensionTotals } } = useCrossfilter()
+  const {
+    setFilter,
+    state: { valueField, filters, dimensionTotals },
+  } = useCrossfilter()
 
   const filterValues = filters[field] || new Set()
   const totals = dimensionTotals[field] || {}
@@ -129,9 +132,8 @@ const Filter = ({
 
   const handleFilterToggle = useIsEqualCallback(
     value => {
-
-      // NOTE: do not mutate filter values or things break 
-      // (not seen as a state update and memoized function above doesn't fire)!  
+      // NOTE: do not mutate filter values or things break
+      // (not seen as a state update and memoized function above doesn't fire)!
       // Copy instead.
       const newFilterValues = new Set(filterValues)
 
@@ -179,6 +181,7 @@ const Filter = ({
                 <HorizontalBars
                   data={data}
                   max={max}
+                  showCount={!(field === 'species' && valueField === 'species')}
                   onToggleFilter={handleFilterToggle}
                 />
               )}

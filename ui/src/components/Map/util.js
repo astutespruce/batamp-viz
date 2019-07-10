@@ -135,6 +135,11 @@ export const interpolateExpr = ({
   if (hasZero) {
     // if there is nothing to interpolate between, return first output value
     if (min === max) {
+      // const value =
+      //   typeof range[0] === 'number'
+      //     ? (range[1] - range[0]) / 3 + range[0]
+      //     : range[0]
+
       return ['case', ['==', ['get', property], 0], fallback, range[0]]
     }
 
