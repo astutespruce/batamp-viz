@@ -43,6 +43,7 @@ json_dir = Path("ui/data")
 
 
 location_fields = ["lat", "lon"]
+detector_index_fields = location_fields + ["mic_ht", "presence_only"]
 # Due to size limits in Gatsby, just doing by month for now
 time_fields = ["year", "month"]
 
@@ -50,13 +51,21 @@ time_fields = ["year", "month"]
 #### Read raw source data from CSV ############################################
 print("Reading CSV data...")
 merged = None
-for filename in src_dir.glob("*.csv"):
+for filename in (src_dir / "activity").glob("*.csv"):
     df = pd.read_csv(filename)
+    df["presence_only"] = False
 
     if merged is None:
         merged = df
     else:
         merged = merged.append(df, ignore_index=True, sort=False)
+
+for filename in (src_dir / "presence").glob("*.csv"):
+    df = pd.read_csv(filename)
+    df["presence_only"] = True
+
+    merged = merged.append(df, ignore_index=True, sort=False)
+
 
 df = merged.reindex()
 
@@ -93,8 +102,6 @@ index = df.mic_ht_units == "feet"
 df.loc[index, "mic_ht"] = df.loc[index].mic_ht * 0.3048
 df.loc[index, "mic_ht_units"] = "meters"
 
-# IMPORTANT: multiply by 10 to get integer equivalent of 1 dec place
-df.mic_ht = (df.mic_ht * 10).astype("uint16")
 
 # Cleanup text columns
 for col in [
@@ -207,8 +214,10 @@ print("Extracting information for sites and detectors...")
 # Extract out unique detectors
 # Note: some detectors have variation in det_model, etc that doesn't make sense
 # just get detector / mic properties from the first record for each site / mic_ht combination
+# Note: presence_only is an additional permutation.  Some sites are monitored over multiple years,
+# but are presence_only for some records, so we need to treat them as if they are separate detectors
 detectors = (
-    df.groupby(location_fields + ["mic_ht"])[DETECTOR_FIELDS]
+    df.groupby(detector_index_fields)[DETECTOR_FIELDS]
     .first()
     .reset_index()
     .rename(columns={"det_name": "name"})
@@ -226,12 +235,14 @@ sites["site"] = sites.index
 
 # Determine the admin unit (state / province) that contains the site
 print("Assigning admin boundary to sites...")
-admin_df = read_geofeather(boundary_dir / "na_admin1.geofeather").drop(columns=['admin1']).rename(
-    columns={"id": 'admin1'}
+admin_df = (
+    read_geofeather(boundary_dir / "na_admin1.geofeather")
+    .drop(columns=["admin1"])
+    .rename(columns={"id": "admin1"})
 )
 admin_df.admin1 = admin_df.admin1.astype("uint8")
 
-site_admin = gp.sjoin(sites, admin_df, how="left")[['admin1', 'admin1_name', 'country']]
+site_admin = gp.sjoin(sites, admin_df, how="left")[["admin1", "admin1_name", "country"]]
 
 
 # extract species list for site based on species ranges
@@ -259,13 +270,12 @@ detectors = (
     .reset_index()
 )
 
-
 #### Join site and detector IDs to df
 # drop all detector related info from df
 df = (
-    df.set_index(location_fields + ["mic_ht"])
+    df.set_index(detector_index_fields)
     .join(
-        detectors.set_index(location_fields + ["mic_ht"])[
+        detectors.set_index(detector_index_fields)[
             ["detector", "site", "admin1", "admin1_name"]  # "grts", "na50k", "na100k"
         ]
     )
@@ -333,19 +343,27 @@ df.reset_index().to_feather(derived_dir / "merged.feather")
 
 print("Calculating statistics...")
 
-
 ### Calculate high level summary statistics
 summary = {
     "admin1": site_admin.admin1.unique().size,
     "species": len(ACTIVITY_COLUMNS),
     "contributors": df.contributor.unique().size,
     "detectors": len(detectors),
+    "activityDetectors": len(df.loc[~df.presence_only].detector.unique()),
+    "presenceDetectors": len(df.loc[df.presence_only].detector.unique()),
     "allDetections": int(
-        df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum().sum().astype("uint")
+        df.loc[~df.presence_only, ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS]
+        .sum()
+        .sum()
+        .astype("uint")
     ),
-    "sppDetections": int(df[ACTIVITY_COLUMNS].sum().sum().astype("uint")),
+    "sppDetections": int(
+        df.loc[~df.presence_only, ACTIVITY_COLUMNS].sum().sum().astype("uint")
+    ),
     # detector_nights are sampling activity
     "detectorNights": len(df),
+    "activityDetectorNights": len(df.loc[~df.presence_only]),
+    "presenceDetectorNights": len(df.loc[df.presence_only]),
     # detection_nights are nights where at least one species was detected
     "detectionNights": int(
         (df[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].sum(axis=1) > 0)
@@ -360,9 +378,12 @@ with open(json_dir / "summary.json", "w") as outfile:
 
 
 #### Calculate contributor summary statistics
-contributor_gb = df.groupby("contributor")
+# detector nights - total sampling effort
+
+# detections only counted for activity detectors
+contributor_activity_gb = df.loc[~df.presence_only].groupby("contributor")
 contributor_detections = (
-    contributor_gb[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS]
+    contributor_activity_gb[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS]
     .sum()
     .sum(axis=1)
     .astype("uint")
@@ -370,13 +391,15 @@ contributor_detections = (
 )
 
 contributor_spp_detections = (
-    contributor_gb[ACTIVITY_COLUMNS]
+    contributor_activity_gb[ACTIVITY_COLUMNS]
     .sum()
     .sum(axis=1)
     .astype("uint")
     .rename("spp_detections")
 )
 
+
+contributor_gb = df.groupby("contributor")
 # detector nights - total sampling effort
 contributor_nights = contributor_gb.size().astype("uint").rename("detector_nights")
 contributor_detectors = contributor_gb.detector.unique().apply(len).rename("detectors")
@@ -412,19 +435,6 @@ contributor_stats.to_json(json_dir / "contributors.json", orient="records")
 ### Extract only positive detections and activity
 # calculate total effort per detector
 detector_effort = df.groupby("detector").size()
-
-
-### REVISIT DROPPING NONDETECTIONS!
-# # set non-detections to NA, since having them in here complicates a lot of the following logic
-# # for counting nights, since 0 values get counted in those
-# # TODO: revisit this
-# df[ACTIVITY_COLUMNS] = df[ACTIVITY_COLUMNS].replace(0, np.nan)
-
-# # drop any records that have no species information (they may have data only in one of the aggregate columns)
-# df = df.drop(columns=GROUP_ACTIVITY_COLUMNS)
-# df = df.dropna(axis=0, how="all", subset=ACTIVITY_COLUMNS)
-# print("Extracted {} records with species activity".format(len(df)))
-
 
 ### Calculate detector stats
 # Update detectors table with list of unique datasets, species, and contributors
@@ -486,16 +496,25 @@ det_contributors = (
 )
 
 # Tally detections and nights
-det_g = df[["detector"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS].groupby("detector")
 # Note: detections will be 0 for nulls as well as true 0s
 
 # Detections is limited to just species
 det_detections = (
-    det_g[ACTIVITY_COLUMNS].sum().sum(axis=1).astype("uint").rename("detections")
+    df[["detector"] + ACTIVITY_COLUMNS]
+    .groupby("detector")
+    .sum()
+    .sum(axis=1)
+    .astype("uint")
+    .rename("detections")
 )
 
-
-detector_nights = det_g.size().rename("detector_nights")
+# detector nights includes species and group activity
+detector_nights = (
+    df[["detector"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS]
+    .groupby("detector")
+    .size()
+    .rename("detector_nights")
+)
 # detection nights are the sum of nights where there was activity in at least one activity column
 # NOTE: for species + group activity columns ("bats detected on X nights")
 detection_nights = (
@@ -537,9 +556,16 @@ detectors = (
     .join(detector_daterange)
 )
 
-detectors = detectors.rename(columns={"det_mfg": "mfg", "det_model": "model"})
-detectors.columns = camelcase(detectors.columns)
+
+# Multiply by 10 to get integer equivalent of 1 dec place
+detectors.mic_ht = (detectors.mic_ht * 10).astype("uint16")
+detectors.presence_only = detectors.presence_only.astype("uint8")
 detectors[location_fields] = detectors[location_fields].round(5)
+
+detectors = detectors.rename(
+    columns={"det_mfg": "mfg", "det_model": "model", "presence_only": "po"}
+)
+detectors.columns = camelcase(detectors.columns)
 detectors.to_json(json_dir / "detectors.json", orient="records")
 
 # TODO: figure out flat format for detectors
@@ -683,173 +709,3 @@ admin1_stats = (
 
 admin1_stats.columns = ["i", "s", "y", "m", "d", "n", "ds"]
 admin1_stats.to_json(json_dir / "admin1SpeciesTS.json", orient="records")
-
-
-# join in detector / site / species range information and output to JSON
-
-# species present at detector
-# det_spps = det_spp_stats.groupby(level=0).species.unique()
-# det_spps.name = "species_present"
-
-# # distill down to a time series of dicts
-# det_ts = det_spp_stats.groupby(level=0).apply(
-#     lambda g: [{k: v for k, v in zip(g.columns, r)} for r in g.values]
-# )
-# det_ts.name = "ts"
-
-# det_info = (
-#     detectors[
-#         location_fields + ["mic_ht", "admin_id", "grts", "na50k", "na100k"]
-#     ]
-#     .join(det_spps)
-#     .join(det_spp_ranges, rsuffix="_range")
-#     .join(det_ts)
-# )
-
-# det_info.to_json(json_dir / "detectors.json", orient="records", double_precision=5)
-
-########### In progress
-
-# File per species
-
-# # TODO: loop
-# spp = "tabr"  # iter
-# # TODO: include site?
-# spp_df = df.loc[~df[spp].isnull()][
-#     ["latitude", "longitude", "detector", "year", "month", "week", spp]
-# ].copy()
-# spp_df[spp] = spp_df[spp].astype("uint")
-
-# # sum detections and count nights - only for nights detected
-# spp_stats = (
-#     spp_df[spp_df[spp] > 0]
-#     .groupby(["detector"] + time_fields)[[spp]]
-#     .agg(["sum", "count"])
-# )
-# spp_stats.columns = ["detections", "nights"]
-# spp_stats = spp_stats.reset_index()
-
-# TODO: join in detector location info
-
-
-# # create a summary spreadsheet for each species
-# for spp in ACTIVITY_COLUMNS:  # ("laci", "lano"):
-#     if not spp in df.columns:
-#         continue
-
-#     print("Extracting {}".format(spp))
-#     s = df[["night", "latitude", "longitude", spp]].dropna()
-
-#     if not len(s):
-#         print("no records for {}".format(spp))
-#         continue
-
-#     s = (
-#         s.groupby(["night", "latitude", "longitude"])
-#         .sum()
-#         .reset_index()
-#         .rename(columns={0: spp})
-#     )
-#     s.to_csv("data/derived/spp/{}.csv".format(spp), index=False)
-#     print("{0}: {1}".format(spp, len(s)))
-
-
-# # For each column, create a summary spreadsheet
-# for col in [
-#     "contributor",
-#     "year",
-#     "month",
-#     "dayofyear",
-#     "week",
-#     "det_mfg",
-#     "call_id_1",
-# ]:
-#     df.groupby([col]).size().reset_index().rename(
-#         columns={0: "detector_nights"}
-#     ).to_csv("data/derived/{}.csv".format(col), index=False)
-
-
-# # calculcate summary statistics for each species
-# spp_stats = []
-# for spp in ACTIVITY_COLUMNS:
-#     if spp in df.columns:
-#         spp_stats.append([spp, len(df.loc[~df[spp].isnull()])])
-
-# pd.DataFrame(spp_stats, columns=["spp", "detector_nights"]).to_csv(
-#     "data/derived/spp/spp_stats.csv", index=False
-# )
-
-
-# end hack
-
-
-# ARCHIVE - old ideas below
-
-# unique list of species ranges per detector, dropping any that didn't intersect a species range
-# det_spp_ranges = (
-#     (
-#         detectors.set_index(["latitude", "longitude"])
-#         .join(site_spps.set_index(["latitude", "longitude"]))
-#         .dropna()
-#         .set_index("detector")[["species"]]
-#     )
-#     .groupby(level=0)
-#     .species.unique()
-#     .apply(lambda x: "|".join(x).strip("|"))
-# )
-
-
-# pivot from column format to row format and drop non-detections
-# pivot = df[["site_id"] + ACTIVITY_COLUMNS].melt(
-#     id_vars="site_id", var_name="species", value_name="detections"
-# )
-# pivot = pivot.loc[pivot.detections > 0]
-
-# # grouping this on species gives us the count of nights by species and sum of detections
-# pivot.groupby('species').detections.agg(['sum', 'count'])
-
-
-# Pivot species ranges from spatial join to bool columns
-# gp.sjoin(sites, range_df, how="left")[["species"]]
-# .reset_index().groupby(["index", "species"])
-# .size()
-# .unstack()
-# .fillna(0)
-# .astype("bool")
-
-
-# det = (
-#     df[["detector"] + ACTIVITY_COLUMNS + time_fields]
-#     .fillna(0)
-#     .astype("uint")
-#     .set_index("detector")
-#     .stack()
-#     .reset_index()
-# )
-# det.columns = ["detector", "species", "detections"]
-# det = det.loc[det.detections > 0]
-
-# Aggregate count of detections to site
-# df.groupby("site_id")[ACTIVITY_COLUMNS].sum().astype("uint")
-# # Aggregate count of nights to site
-# df.groupby("site_id")[ACTIVITY_COLUMNS].count().astype("uint")
-
-# df.groupby("site_id")[ACTIVITY_COLUMNS].agg(['sum', 'count'])
-
-# # grouped first
-# apply(lambda row: {spp: {'detections': row[spp].sum().astype('uint')} for spp in ACTIVITY_COLUMNS if row[spp].sum() > 0})
-
-
-### NOT USED: Calculate species statistics by detector:
-# det = df[["detector"] + ACTIVITY_COLUMNS].set_index("detector").stack().reset_index()
-# det.columns = ["detector", "species", "detections"]
-# det_stats = det.groupby(["detector", "species"]).agg(["sum", "count"])
-# det_stats.columns = ["detections", "nights"]
-# det_stats.detections = det_stats.detections.astype("uint32")
-# det_stats.nights = det_stats.nights.astype("uint16")
-# det_stats = det_stats.reset_index()
-
-
-# # use short column names
-# det_stats.columns = ["i", "s", "d", "n"]
-# det_stats.to_json(json_dir / "detectorSpecies.json", orient="records")

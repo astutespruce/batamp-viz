@@ -85,6 +85,7 @@ const DetectorMetadata = ({
   micType,
   reflType,
   callId,
+  presenceOnly,
   datasets,
   contributors,
   detectorNights,
@@ -147,6 +148,9 @@ const DetectorMetadata = ({
           {detectionNights === detectorNights
             ? 'Bats detected on all nights.'
             : `Bats detected on ${formatNumber(detectionNights, 0)} nights.`}
+          <br />
+          This detector measured{' '}
+          {presenceOnly ? 'nightly presence only' : 'nightly activity'}.
         </FieldValue>
       </Field>
       <Field>
@@ -244,6 +248,7 @@ DetectorMetadata.propTypes = {
   micType: PropTypes.string,
   reflType: PropTypes.string,
   callId: PropTypes.string,
+  presenceOnly: PropTypes.number,
   datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
   detectorNights: PropTypes.number.isRequired,
   detectionNights: PropTypes.number.isRequired,
@@ -258,6 +263,7 @@ DetectorMetadata.defaultProps = {
   micType: null,
   reflType: null,
   callId: null,
+  presenceOnly: 0,
   species: [],
   selectedSpecies: null,
 }

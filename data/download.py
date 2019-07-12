@@ -8,16 +8,34 @@ from databasin.client import Client
 # generated using https://databasin.org/auth/api-keys/
 from settings import DATABASIN_KEY, DATABASIN_USER
 
+
+def download_datasets(client, dataset_ids, out_dir):
+    for id in dataset_ids:
+        dataset = client.get_dataset(id)
+
+        print("Processing {}".format(dataset.title))
+        if not dataset.user_can_download:
+            print(
+                "ERROR: cannot download data for {} - no download permissions".format(
+                    dataset.id
+                )
+            )
+            continue
+
+        data = dataset.data
+
+        with open(out_dir / "{}.csv".format(id), "w") as outfile:
+            outfile.write(data)
+
+
 client = Client()
 client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
 
 
-out_dir = Path("data/src")
-
-
 # TODO: store known aggregate IDs in database and register them manually
 # The following are known aggregates that we want
-dataset_ids = [
+
+activity_dataset_ids = [
     "4f057a7950b64cb18f6d7f4147503ffc",
     "f3ef386adb8f437483da50cda4250f04",
     "37d8933946344eb3baff39f7f108c0c6",
@@ -33,38 +51,8 @@ dataset_ids = [
     "95921d86cf5042d5b6905b57fd50b63d",
 ]
 
-# TODO: store timestamp of last fetch per dataset in database
-# last_fetch = parse('2019-04-25T16:26:46.007955+08:00')
-last_fetch = parse("2010-01-01T01:00:00+08:00")  # FIXME
-
-# datasets = list(client.list_datasets(filters={"id__in": ",".join(dataset_ids)}))
-
-for id in dataset_ids:
-    dataset = client.get_dataset(id)
-
-    print("Processing {}".format(dataset.title))
-    if not dataset.user_can_download:
-        print(
-            "ERROR: cannot download data for {} - no download permissions".format(
-                dataset.id
-            )
-        )
-        continue
-
-    mod_date = parse(dataset.modify_date)
-    if mod_date > last_fetch:
-        data = dataset.data
-
-        # TODO: revisit storing individual files
-        with open(out_dir / "{}.csv".format(id), "w") as outfile:
-            outfile.write(data)
+presence_dataset_ids = ["58bda89bcb10454c80312b609ee629e6"]
 
 
-
-for id in df.dataset.unique():
-    try:
-        ds = client.get_dataset(id)
-        print(ds.title)
-
-
-
+download_datasets(client, activity_dataset_ids, Path("data/src/activity"))
+download_datasets(client, presence_dataset_ids, Path("data/src/presence"))

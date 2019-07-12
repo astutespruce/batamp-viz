@@ -1,1 +1,1 @@
-{"admin1": 31, "species": 31, "contributors": 50, "detectors": 1019, "allDetections": 25155304, "sppDetections": 4480746, "detectorNights": 174052, "detectionNights": 91760, "years": 13}
+{"admin1": 33, "species": 32, "contributors": 76, "detectors": 1184, "activityDetectors": 1019, "presenceDetectors": 165, "allDetections": 25155304, "sppDetections": 4480746, "detectorNights": 174945, "activityDetectorNights": 174052, "presenceDetectorNights": 893, "detectionNights": 92577, "years": 13}

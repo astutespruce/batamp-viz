@@ -36,29 +36,20 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
 
   // use state initialization to ensure that we only process data when page mounts
   // and not subsequent rerenders when a detector is selected
-  const [{
-    data,
-    detectors,
-    detectorLocations,
-    detectorTS,
-    filters,
-    visibleFilters,
-  }] = useState(() => {
+  const [
+    { data, detectors, detectorLocations, detectorTS, filters, visibleFilters },
+  ] = useState(() => {
     const ts = unpackTSData(extractNodes(allDetectorTsJson))
     const initDetectors = extractDetectors(allDetectorsJson)
-    const locations = initDetectors.map(({ id, lat, lon, admin1Name }) => ({
+    const locations = initDetectors.map(({ id, lat, lon, admin1Name, presenceOnly }) => ({
       id,
       lat,
       lon,
       admin1Name,
+      presenceOnly
     }))
-    
 
-    const initData = join(
-      ts,
-      locations,
-      'id'
-    )
+    const initData = join(ts, locations, 'id')
 
     // data for filter values
     const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
@@ -114,6 +105,13 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
         sort: true,
         hideEmpty: true,
         values: Array.from(new Set(initData.map(d => d.admin1Name))).sort(),
+      },
+      {
+        field: 'presenceOnly',
+        title: 'Type of Monitoring',
+        isOpen: false,
+        values: [0, 1],
+        labels: ['Monitored Activity', 'Monitored Presence Only'],
       },
     ]
 
@@ -171,7 +169,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
               />
             ) : (
               <>
-                <Box flex='0 0 auto'>
+                <Box flex="0 0 auto">
                   <SidebarHeader title="Species Occurrences" icon="slidersH" />
                   <HelpText>
                     <ExpandableParagraph
@@ -229,6 +227,7 @@ ExplorePage.propTypes = {
         mfg: PropTypes.string,
         model: PropTypes.string,
         callId: PropTypes.string,
+        presenceOnly: PropTypes.number,
         datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
         contributors: PropTypes.string.isRequired,
         species: PropTypes.arrayOf(PropTypes.string),
@@ -276,6 +275,7 @@ export const pageQuery = graphql`
           dateRange
           species
           targetSpecies
+          presenceOnly: po
         }
       }
     }
