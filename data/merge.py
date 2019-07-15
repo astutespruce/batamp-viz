@@ -380,8 +380,8 @@ with open(json_dir / "summary.json", "w") as outfile:
 #### Calculate contributor summary statistics
 # detector nights - total sampling effort
 
-# detections only counted for activity detectors
-contributor_activity_gb = df.loc[~df.presence_only].groupby("contributor")
+# DECIDED AGAINST: detections only counted for activity detectors (.loc[~df.presence_only])
+contributor_activity_gb = df.groupby("contributor")
 contributor_detections = (
     contributor_activity_gb[ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS]
     .sum()
@@ -568,15 +568,14 @@ detectors = detectors.rename(
 detectors.columns = camelcase(detectors.columns)
 detectors.to_json(json_dir / "detectors.json", orient="records")
 
-# TODO: figure out flat format for detectors
-# detectors.to_feather(derived_dir / "detectors.feather")
-
 #### Calculate species statistics
-# Total activity by species
+# Total activity by species - only where activity was being recorded
 spp_detections = df[ACTIVITY_COLUMNS].sum().astype("uint").rename("detections")
+spp_po_detections = df.loc[df.presence_only, ACTIVITY_COLUMNS].sum().astype("uint").rename("po_detections")
 
 # Count total nights of detections and nondetections - ONLY for species columns
 spp_detector_nights = (df[ACTIVITY_COLUMNS] >= 0).sum().rename("detector_nights")
+spp_po_detector_nights = (df.loc[df.presence_only, ACTIVITY_COLUMNS] >= 0).sum().rename("po_detector_nights")
 
 # Count of non-zero nights by species
 spp_detection_nights = (df[ACTIVITY_COLUMNS] > 0).sum().rename("detection_nights")
@@ -602,12 +601,26 @@ spp_detectors = (
     .rename("detectors")
 )
 
+spp_po_detectors = (
+    df.loc[df.presence_only].set_index("detector")[ACTIVITY_COLUMNS]
+    .stack()
+    .reset_index()
+    .groupby("level_1")
+    .detector.unique()
+    .apply(len)
+    .rename("po_detectors")
+)
+
+
 spp_stats = (
     pd.DataFrame(spp_detections)
+    .join(spp_po_detections)
     .join(spp_detector_nights)
+    .join(spp_po_detector_nights)
     .join(spp_detection_nights)
     .join(spp_contributors)
     .join(spp_detectors)
+    .join(spp_po_detectors)
     .reset_index()
     .rename(columns={"index": "species"})
 )

@@ -75,7 +75,14 @@ const Metric = styled.span`
     `}
 `
 
-const Map = styled.div``
+const Footnote = styled.div`
+  font-size: 0.8rem;
+  color: ${themeGet('colors.grey.700')};
+`
+
+const Map = styled.div`
+  margin-left: 1rem;
+`
 
 const ListItem = ({
   item: {
@@ -83,9 +90,12 @@ const ListItem = ({
     commonName,
     sciName,
     detectors,
+    presenceOnlyDetectors,
     detections,
+    presenceOnlyDetections,
     detectionNights,
     detectorNights,
+    presenceOnlyDetectorNights,
     contributors,
   },
   metric,
@@ -153,6 +163,17 @@ const ListItem = ({
             <Metric isActive={metric === 'contributors'}>{contributors}</Metric>{' '}
             {quantityLabel('contributors', contributors)}
           </li>
+
+          {!!presenceOnlyDetectors && (
+            <li>
+              <Footnote>
+                Note: {formatNumber(presenceOnlyDetections, 0)} detections on
+                the {formatNumber(presenceOnlyDetectorNights, 0)} nights
+                monitored at {formatNumber(presenceOnlyDetectors, 0)} detectors
+                only recorded species presence, not activity.
+              </Footnote>
+            </li>
+          )}
         </Stats>
 
         <Map>
@@ -183,9 +204,12 @@ ListItem.propTypes = {
     commonName: PropTypes.string.isRequired,
     sciName: PropTypes.string.isRequired,
     detectors: PropTypes.number.isRequired,
+    presenceOnlyDetectors: PropTypes.number,
     detections: PropTypes.number.isRequired,
+    presenceOnlyDetections: PropTypes.number,
     detectionNights: PropTypes.number.isRequired,
     detectorNights: PropTypes.number.isRequired,
+    presenceOnlyDetectorNights: PropTypes.number,
     contributors: PropTypes.number.isRequired,
   }).isRequired,
   metric: PropTypes.string.isRequired,

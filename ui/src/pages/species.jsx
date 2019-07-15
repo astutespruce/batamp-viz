@@ -20,8 +20,10 @@ const Title = styled(Text).attrs({
 `
 
 const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
-
-  const species = extractNodes(allSpeciesJson).map(d => ({ ...d, ...SPECIES[d.species] }))
+  const species = extractNodes(allSpeciesJson).map(d => ({
+    ...d,
+    ...SPECIES[d.species],
+  }))
 
   return (
     <Layout title="Explore Bat Species">
@@ -52,9 +54,12 @@ SpeciesPage.propTypes = {
           node: PropTypes.shape({
             species: PropTypes.string.isRequired,
             detectors: PropTypes.number.isRequired,
+            presenceOnlyDetectors: PropTypes.number,
             detections: PropTypes.number.isRequired,
+            presenceOnlyDetections: PropTypes.number,
             detectionNights: PropTypes.number.isRequired,
             detectorNights: PropTypes.number.isRequired,
+            presenceOnlyDetectorNights: PropTypes.number,
             contributors: PropTypes.number.isRequired,
           }).isRequired,
         })
@@ -78,9 +83,12 @@ export const pageQuery = graphql`
         node {
           species
           detectors
+          presenceOnlyDetectors: poDetectors
           detections
+          presenceOnlyDetections: poDetections
           detectionNights
           detectorNights
+          presenceOnlyDetectorNights: poDetectorNights
           contributors
         }
       }

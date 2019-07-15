@@ -22,7 +22,7 @@ export const config = {
 export const sources = {
   detectors: {
     type: 'geojson',
-    data: {},
+    data: null,
     cluster: true,
     clusterMaxZoom: 10, // show clusters at lowest zoom since there may be multiple detectors at a site
     clusterRadius: 12,

@@ -84,6 +84,7 @@ const FilterNote = styled(HelpText)`
 
 const Highlight = styled(Box)`
   color: ${themeGet('colors.highlight.500')};
+  margin-bottom: 2rem;
 `
 
 const Details = ({ detector, selectedSpecies, onClose }) => {
@@ -103,6 +104,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     species,
     detectionNights,
     detectorNights,
+    presenceOnly,
     dateRange,
     ts,
   } = detector
@@ -142,9 +144,21 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
   const hasSpecies = species && species.length > 0
 
-  let noSpeciesWarning = null
+  let speciesWarning = null
+  let presenceOnlyWarning = null
+
+  if (presenceOnly && metric === 'detections') {
+    presenceOnlyWarning = (
+      <Highlight>
+        <WarningIcon />
+        This detector monitored nightly occurrence instead of nightly activity.
+        Only one detection was recorded per night for each species.
+      </Highlight>
+    )
+  }
+
   if (!hasSpecies) {
-    noSpeciesWarning = (
+    speciesWarning = (
       <Highlight>
         <WarningIcon />
         No species were detected on any night.
@@ -197,14 +211,14 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
           {filterNote}
           <SectionHeader>Total {metric}</SectionHeader>
 
-          {hasSpecies ? (
+          {presenceOnlyWarning}
+
+          {speciesWarning || (
             <TotalCharts
               data={sppTotals}
               selectedSpecies={selectedSpecies}
               max={max}
             />
-          ) : (
-            noSpeciesWarning
           )}
         </Tab>
         <Tab id="seasonality" label="Seasonality">
@@ -212,13 +226,13 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
           <SectionHeader>{metric} per month</SectionHeader>
 
-          {hasSpecies ? (
+          {presenceOnlyWarning}
+
+          {speciesWarning || (
             <SeasonalityCharts
               data={seasonalityData}
               selectedSpecies={selectedSpecies}
             />
-          ) : (
-            noSpeciesWarning
           )}
         </Tab>
 
@@ -243,6 +257,7 @@ Details.propTypes = {
     micType: PropTypes.string,
     reflType: PropTypes.string,
     idMethods: PropTypes.arrayOf(PropTypes.string),
+    presenceOnly: PropTypes.number,
     datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
     detectorNights: PropTypes.number.isRequired,
     detectionNights: PropTypes.number.isRequired,

@@ -44,12 +44,15 @@ const SpeciesTemplate = ({
   ] = useState(() => {
     const ts = unpackTSData(extractNodes(allDetectorTsJson))
     const initDetectors = extractDetectors(allDetectorsJson)
-    const locations = initDetectors.map(({ id, lat, lon, admin1Name }) => ({
-      id,
-      lat,
-      lon,
-      admin1Name,
-    }))
+    const locations = initDetectors.map(
+      ({ id, lat, lon, admin1Name, presenceOnly }) => ({
+        id,
+        lat,
+        lon,
+        admin1Name,
+        presenceOnly,
+      })
+    )
 
     const initData = join(
       ts.filter(d => d.species === selectedSpecies),
@@ -96,6 +99,13 @@ const SpeciesTemplate = ({
         sort: true,
         hideEmpty: true,
         values: Array.from(new Set(initData.map(d => d.admin1Name))).sort(),
+      },
+      {
+        field: 'presenceOnly',
+        title: 'Type of Monitoring',
+        isOpen: true,
+        values: [0, 1],
+        labels: ['Monitored Activity', 'Monitored Presence Only'],
       },
     ]
 
@@ -201,6 +211,7 @@ SpeciesTemplate.propTypes = {
         mfg: PropTypes.string,
         model: PropTypes.string,
         callId: PropTypes.string,
+        presenceOnly: PropTypes.number,
         datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
         contributors: PropTypes.string.isRequired,
         species: PropTypes.arrayOf(PropTypes.string),
@@ -256,6 +267,7 @@ export const pageQuery = graphql`
           dateRange
           species
           targetSpecies
+          presenceOnly: po
         }
       }
     }
