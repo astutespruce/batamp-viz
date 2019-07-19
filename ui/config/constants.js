@@ -26,6 +26,9 @@ export const MONTH_LABELS = [
 export const PROFILE_ROOT_URL =
   'http://www.batcon.org/resources/media-education/species-profiles/detail'
 
+export const ECOS_ROOT_URL =
+  'https://ecos.fws.gov/ecp0/profile/speciesProfile?sId='
+
 export const SPECIES = {
   anpa: {
     sciName: 'Antrozous pallidus',
@@ -247,6 +250,13 @@ export const SPECIES = {
     commonName: 'Mexican Free-tailed Bat',
     profileId: 1738,
   },
+  // Hawaiian Hoary bat
+  haba: {
+    sciName: 'Lasiurus cinereus semotus',
+    commonName: 'Hawaiian Hoary Bat',
+    ecosId: 770, // NOTE: this is ECOS ID, not BCI
+    imageCredits: 'Jack Jeffery',
+  },
 }
 
 export const SPECIES_ID = {
@@ -294,6 +304,7 @@ export const SPECIES_ID = {
   41: 'pahe',
   42: 'pesu',
   43: 'tabr',
+  44: 'haba',
 }
 
 export const METRIC_LABELS = {

@@ -8,7 +8,11 @@ import { Box, Flex } from 'components/Grid'
 import FiltersList from 'components/FiltersList'
 import BaseThumbnail from 'components/Species/SmallThumbnail' // { Thumbnail as BaseThumbnail }
 import styled, { themeGet } from 'style'
-import { SPECIES, PROFILE_ROOT_URL } from '../../../config/constants'
+import {
+  SPECIES,
+  PROFILE_ROOT_URL,
+  ECOS_ROOT_URL,
+} from '../../../config/constants'
 
 const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
   height: 100%;
@@ -50,7 +54,9 @@ const ProfileLinkIcon = styled(FaExternalLinkAlt)`
 const ProfileLink = styled(OutboundLink)``
 
 const index = ({ species, filters }) => {
-  const { commonName, sciName, profileId } = SPECIES[species]
+  const { commonName, sciName, profileId, ecosId, imageCredits } = SPECIES[
+    species
+  ]
 
   return (
     <Wrapper>
@@ -59,36 +65,44 @@ const index = ({ species, filters }) => {
           <div>
             <Thumbnail species={species} />
             <ImageCredits>
-              credit:{' '}
-              <OutboundLink from="/species" to="https://www.merlintuttle.org">
-                MerlinTuttle.org
-              </OutboundLink>{' '}
-              |{' '}
-              <OutboundLink from="/species" to="http://www.batcon.org/">
-                BCI
-              </OutboundLink>
+              credit:
+              {imageCredits || (
+                <>
+                  <OutboundLink
+                    from="/species"
+                    to="https://www.merlintuttle.org"
+                  >
+                    MerlinTuttle.org
+                  </OutboundLink>{' '}
+                  |{' '}
+                  <OutboundLink from="/species" to="http://www.batcon.org/">
+                    BCI
+                  </OutboundLink>
+                </>
+              )}
             </ImageCredits>
           </div>
           <div>
             <CommonName>{commonName}</CommonName>
             <ScientificName>{sciName}</ScientificName>
             <br />
-            <ProfileLink
-              from="/species"
-              to={`${PROFILE_ROOT_URL}/${profileId}`}
-            >
-              Species profile <ProfileLinkIcon />
-            </ProfileLink>
+            {profileId && (
+              <ProfileLink
+                from="/species"
+                to={`${PROFILE_ROOT_URL}/${profileId}`}
+              >
+                Species profile <ProfileLinkIcon />
+              </ProfileLink>
+            )}
+
+            {ecosId && (
+              <ProfileLink from="/species" to={`${ECOS_ROOT_URL}${ecosId}`}>
+                Species profile <ProfileLinkIcon />
+              </ProfileLink>
+            )}
           </div>
         </Flex>
       </Header>
-
-      {/* <Box my="1rem">
-                  <TimePlayer
-                    timesteps={MONTHS}
-                    timestepLabels={MONTH_LABELS}
-                  />
-                </Box> */}
 
       <Box m="1rem">
         <HelpText>

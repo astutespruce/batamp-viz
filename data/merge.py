@@ -70,6 +70,12 @@ for filename in (src_dir / "presence").glob("*.csv"):
 df = merged.reindex()
 
 # TODO: remove
+# make sure to add "haba" column while we are waiting for this to be added to the aggregate dataset
+if not "haba" in df.columns:
+    df['haba'] = np.nan
+
+
+# TODO: remove
 # df.to_csv(derived_dir / 'merged_original.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
 
 print("Read {} raw records".format(len(df)))
@@ -282,10 +288,12 @@ df = (
     .reset_index()
 )
 
-# Set "laci" field to "bat" value for records in Hawaii (only the one species present)
-# PENDING DECISION FROM CONTRIBUTOR
-# index = df.laci.isnull() & (df.admin1_name == "Hawaii")
-# df.loc[index, "laci"] = df.loc[index].bat
+# Set "haba" field to "bat" value for records in Hawaii (only the one species is present there)
+hi_index = df.admin1_name == "Hawaii"
+df.loc[hi_index, "haba"] = df.loc[hi_index].bat
+# make sure this is now present in the activity columns
+if 'haba' not in ACTIVITY_COLUMNS:
+    ACTIVITY_COLUMNS += ['haba'] 
 
 
 ### Coalesce duplicate nights and detectors

@@ -91,7 +91,7 @@ const Top = ({
             understand their behaviors and monitor their population status.
             <br />
             <br />
-            To get around this challenge, bat biologists use bat detectors to
+            To get around this challenge, biologists use bat detectors to
             better understand bat ecology. These devices record the echolocation
             calls of nearby bats, and combined with specialized software and
             expert knowledge, biologists can often identify bat species from

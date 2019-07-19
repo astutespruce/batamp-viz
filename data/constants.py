@@ -46,6 +46,8 @@ SPECIES = {
     "pahe": {"SNAME": "Parastrellus hesperus", "CNAME": "Canyon Bat"},
     "pesu": {"SNAME": "Perimyotis subflavus", "CNAME": "Tricolored Bat"},
     "tabr": {"SNAME": "Tadarida brasiliensis", "CNAME": "Mexican Free-tailed Bat"},
+    # Hawaiian hoary bat
+    "haba": {"SNAME": "Lasiurus cinereus semotus", "CNAME": "Hawaiian Hoary Bat"},
 }
 
 # Species IDs for shorter reference in data
@@ -97,6 +99,7 @@ SPECIES_ID = {
     "pahe": 41,
     "pesu": 42,
     "tabr": 43,
+    "haba": 44,
 }
 
 # Activity colum

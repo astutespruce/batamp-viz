@@ -11,8 +11,16 @@ Species: join to species 4-letter code, and merge together species that are effe
 import os
 from pathlib import Path
 import geopandas as gp
+from shapely.geometry import Polygon
 from geofeather import to_geofeather
 from constants import SPECIES
+
+HAWAII_BOUNDS = [-166.317558,12.803013,-148.124199,27.129348]
+
+def bounds_to_poly(bounds):
+    xmin, ymin, xmax, ymax = bounds
+    return Polygon([[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin]])
+
 
 
 def to_geojson(df, filename):
@@ -75,17 +83,31 @@ to_geofeather(admin_df, boundaries_dir / "na_admin1.geofeather")
 
 ### Process species ranges
 print("Processing species ranges...")
+# create lookup of species scientific name to code
+sci_name_lut = {value["SNAME"]: key for key, value in SPECIES.items()}
 
 range_df = gp.read_file("data/boundaries/src/species_ranges.shp")
 
-# create lookup of species scientific name to code
-sci_name_lut = {value["SNAME"]: key for key, value in SPECIES.items()}
+# split hoary bat into Hawaiian vs mainland
+laci = range_df.loc[range_df.SCI_NAME=='Lasiurus cinereus']
+Hawaii = bounds_to_poly(HAWAII_BOUNDS)
+haba = laci.copy()
+# add new geometry for haba
+haba.geometry = laci.intersection(Hawaii)
+haba.SCI_NAME = SPECIES['haba']['SNAME']
+haba.COMMON_NAM = SPECIES['haba']['CNAME']
+range_df = range_df.append(haba, ignore_index=True, sort=False)
+
+# clip out Hawaii from laci
+range_df.loc[range_df.SCI_NAME=='Lasiurus cinereus', 'geometry'] = laci.difference(Hawaii)
+
 # add in alias of Myotis melanorhinus to Myotis ciliolabrum
 sci_name_lut["Myotis melanorhinus"] = "myci"
 range_df["species"] = range_df.SCI_NAME.map(sci_name_lut)
 
 # dissolve on species
 range_df = range_df.dissolve(by="species").reset_index()
+
 
 to_geofeather(range_df, boundaries_dir / "species_ranges.geofeather")
 to_geojson(range_df, boundaries_dir / "species_ranges.json")
