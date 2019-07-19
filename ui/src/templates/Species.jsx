@@ -50,7 +50,7 @@ const SpeciesTemplate = ({
         lat,
         lon,
         admin1Name,
-        presenceOnly,
+        activity: presenceOnly ? [0] : [0, 1]
       })
     )
 
@@ -95,17 +95,19 @@ const SpeciesTemplate = ({
       {
         field: 'admin1Name',
         title: 'State / Province',
-        isOpen: true,
+        isOpen: false,
         sort: true,
         hideEmpty: true,
         values: Array.from(new Set(initData.map(d => d.admin1Name))).sort(),
       },
       {
-        field: 'presenceOnly',
-        title: 'Type of Monitoring',
-        isOpen: true,
+        field: 'activity',
+        title: 'Was activity or presence monitored?',
+        isOpen: false,
+        isArray: true,
         values: [0, 1],
-        labels: ['Monitored Activity', 'Monitored Presence Only'],
+        labels: ['Presence', 'Activity'],
+        help: 'Some detectors monitored only the presence of a species on a given night, whereas other detectors monitored total activity during the night.'
       },
     ]
 

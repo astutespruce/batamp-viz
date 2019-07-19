@@ -1,11 +1,11 @@
 const nav = [
   {
-    label: 'Explore data',
-    shortLabel: 'Explore',
-    path: '/explore',
+    label: 'Explore species occurrences',
+    shortLabel: 'Occurrences',
+    path: '/presence',
   },
   {
-    label: 'Explore species',
+    label: 'Explore individual species',
     shortLabel: 'Species',
     path: '/species',
   },

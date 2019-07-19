@@ -37,9 +37,9 @@ const IndexPage = ({
       <Container pb="3rem">
         <TopSection {...summaryJson} />
 
-        <AboutSection />
+        {/* <AboutSection /> */}
 
-        <BatAMPSection />
+        {/* <BatAMPSection /> */}
 
         <ContributorsSection contributors={contributors} totals={summaryJson} />
 

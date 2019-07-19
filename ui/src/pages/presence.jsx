@@ -31,7 +31,7 @@ const MapContainer = styled.div`
 
 const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
-const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
+const PresencePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
   const [selected, setSelected] = useState({ features: [], feature: null })
 
   // use state initialization to ensure that we only process data when page mounts
@@ -46,7 +46,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
       lat,
       lon,
       admin1Name,
-      presenceOnly
+      // activity: presenceOnly ? [0] : [0, 1]
     }))
 
     const initData = join(ts, locations, 'id')
@@ -106,13 +106,15 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
         hideEmpty: true,
         values: Array.from(new Set(initData.map(d => d.admin1Name))).sort(),
       },
-      {
-        field: 'presenceOnly',
-        title: 'Type of Monitoring',
-        isOpen: false,
-        values: [0, 1],
-        labels: ['Monitored Activity', 'Monitored Presence Only'],
-      },
+      // {
+      //   field: 'activity',
+      //   title: 'Was activity or presence monitored?',
+      //   isOpen: false,
+      //   isArray: true,
+      //   values: [0, 1],
+      //   labels: ['Presence', 'Activity'],
+      //   help: 'Some detectors monitored only the presence of a species on a given night, whereas other detectors monitored total activity during the night.'
+      // },
     ]
 
     return {
@@ -158,7 +160,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
         <CrossfilterProvider
           data={data}
           filters={filters}
-          options={{ valueField: 'detectionNights' }}
+          options={{ valueField: 'species' }}
         >
           <Sidebar allowScroll={false}>
             {selected.features.length > 0 ? (
@@ -197,9 +199,6 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
             )}
           </Sidebar>
           <MapContainer>
-            <TopBar>
-              <ValueFieldSelector fields={['detectionNights', 'species']} />
-            </TopBar>
 
             <Map
               detectors={detectorLocations}
@@ -213,7 +212,7 @@ const ExplorePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
   )
 }
 
-ExplorePage.propTypes = {
+PresencePage.propTypes = {
   data: PropTypes.shape({
     allDetectorsJson: GraphQLArrayPropType(
       PropTypes.shape({
@@ -250,7 +249,7 @@ ExplorePage.propTypes = {
 }
 
 export const pageQuery = graphql`
-  query ExplorePageQuery {
+  query PresencePageQuery {
     allDetectorsJson {
       edges {
         node {
@@ -292,4 +291,4 @@ export const pageQuery = graphql`
   }
 `
 
-export default ExplorePage
+export default PresencePage

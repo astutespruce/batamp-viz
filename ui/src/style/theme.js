@@ -5,7 +5,7 @@ const colors = {
   pageBackground: 'hsl(228, 33%, 97%)',
   white: 'hsl(0, 0%, 100%)',
   black: 'hsl(0, 0%, 0%)',
-  link: '#004d84',
+  link: '#0f6bbc',
   primary: {
     100: '#e6edf3',
     200: '#cbdae5',

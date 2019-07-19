@@ -186,7 +186,11 @@ const Filter = ({
                 />
               )}
 
-              {help && <HelpText>{help}</HelpText>}
+              {help && (
+                <HelpText fontSize="0.8rem" mb="1rem">
+                  {help}
+                </HelpText>
+              )}
             </Container>
           ) : (
             <EmptyMessage>No data available</EmptyMessage>

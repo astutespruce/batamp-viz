@@ -77,11 +77,6 @@ const WarningIcon = styled(FaExclamationTriangle)`
   height: 1em;
 `
 
-const FilterNote = styled(HelpText)`
-  font-size: 0.8rem;
-  margin-bottom: 1rem;
-`
-
 const Highlight = styled(Box)`
   color: ${themeGet('colors.highlight.500')};
   margin-bottom: 2rem;
@@ -144,6 +139,11 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
   const hasSpecies = species && species.length > 0
 
+  const hasMultipleYears = ts.reduce(
+    (prev, { year }) => Object.assign(prev, { [year]: 1 }),
+    {}
+  )
+
   let speciesWarning = null
   let presenceOnlyWarning = null
 
@@ -169,10 +169,10 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
   }
 
   const filterNote = hasVisibleFilters ? (
-    <FilterNote>
+    <HelpText fontSize="0.8rem" mb="1rem">
       <WarningIcon />
       Note: your filters are not applied to the following data.
-    </FilterNote>
+    </HelpText>
   ) : null
 
   return (
@@ -224,7 +224,13 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
         <Tab id="seasonality" label="Seasonality">
           {filterNote}
 
-          <SectionHeader>{metric} per month</SectionHeader>
+          <SectionHeader>{metric} by month</SectionHeader>
+
+          {hasMultipleYears && (
+            <HelpText fontSize="0.8rem" mb="1rem">
+              Note: monthly data may include multiple years.
+            </HelpText>
+          )}
 
           {presenceOnlyWarning}
 

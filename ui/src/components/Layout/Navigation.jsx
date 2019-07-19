@@ -4,6 +4,7 @@ import { Flex } from 'components/Grid'
 import { ResponsiveText } from 'components/Text'
 import { Link } from 'components/Link'
 import styled, { themeGet } from 'style'
+import { hasWindow } from 'util/dom'
 import nav from '../../../config/nav'
 
 const NavBar = styled(Flex).attrs({
@@ -32,9 +33,6 @@ const NavLink = styled(Link)`
     transition: background-color 0.5s;
   }
 `
-
-// make sure that window is available (not available in Gatsby build)
-const hasWindow = typeof window !== 'undefined' && window
 
 const isActive = path => hasWindow && window.location.pathname.startsWith(path)
 
