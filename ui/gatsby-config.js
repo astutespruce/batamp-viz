@@ -81,20 +81,9 @@ module.exports = {
             species: ({ species }) => species,
             path: ({ species }) => `/species/${species}`,
           },
-          // Site pages deliberately not searchable
-          // SitePage: {
-          //   title: node =>
-          //     node.isCreatedByStatefulCreatePages && node.fields
-          //       ? node.fields.title
-          //       : null,
-          //   path: node =>
-          //     node.isCreatedByStatefulCreatePages && node.fields
-          //       ? node.path
-          //       : null,
-          // },
         },
-        // only include nodes that have a path defined
-        filter: node => !!node.path,
+        // only include species
+        filter: node => node.species,
       },
     },
   ],

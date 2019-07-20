@@ -41,12 +41,11 @@ const PresencePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
   ] = useState(() => {
     const ts = unpackTSData(extractNodes(allDetectorTsJson))
     const initDetectors = extractDetectors(allDetectorsJson)
-    const locations = initDetectors.map(({ id, lat, lon, admin1Name, presenceOnly }) => ({
+    const locations = initDetectors.map(({ id, lat, lon, admin1Name }) => ({
       id,
       lat,
       lon,
       admin1Name,
-      // activity: presenceOnly ? [0] : [0, 1]
     }))
 
     const initData = join(ts, locations, 'id')
@@ -106,15 +105,6 @@ const PresencePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
         hideEmpty: true,
         values: Array.from(new Set(initData.map(d => d.admin1Name))).sort(),
       },
-      // {
-      //   field: 'activity',
-      //   title: 'Was activity or presence monitored?',
-      //   isOpen: false,
-      //   isArray: true,
-      //   values: [0, 1],
-      //   labels: ['Presence', 'Activity'],
-      //   help: 'Some detectors monitored only the presence of a species on a given night, whereas other detectors monitored total activity during the night.'
-      // },
     ]
 
     return {

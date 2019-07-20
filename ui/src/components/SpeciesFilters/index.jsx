@@ -6,7 +6,7 @@ import { OutboundLink } from 'components/Link'
 import { Text, HelpText, ExpandableParagraph } from 'components/Text'
 import { Box, Flex } from 'components/Grid'
 import FiltersList from 'components/FiltersList'
-import BaseThumbnail from 'components/Species/SmallThumbnail' // { Thumbnail as BaseThumbnail }
+import BaseThumbnail from 'components/Species/SmallThumbnail'
 import styled, { themeGet } from 'style'
 import {
   SPECIES,
