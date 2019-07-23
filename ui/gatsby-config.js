@@ -49,8 +49,12 @@ module.exports = {
     {
       resolve: `gatsby-transformer-json`,
       options: {
-        // name the top-level type after the filename
-        typeName: ({ node }) => `${node.name}Json`,
+        // lump all the species JSON files into a single data structure,
+        // keep the others separate based on their filenames
+        typeName: ({ node }) =>
+          node.relativeDirectory === 'speciesTS'
+            ? 'speciesTSJson'
+            : `${node.name}Json`,
       },
     },
     {

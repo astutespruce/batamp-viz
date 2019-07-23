@@ -16,8 +16,13 @@ import styled from 'style'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import TopBar from 'components/Map/TopBar'
 import SpeciesFilters from 'components/SpeciesFilters'
-import { unpackTSData, join, extractDetectors } from 'util/data'
-import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
+import { join, extractDetectors } from 'util/data'
+import {
+  MONTHS,
+  MONTH_LABELS,
+  SPECIES,
+  SPECIES_ID,
+} from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -30,7 +35,7 @@ const MapContainer = styled.div`
 `
 
 const SpeciesTemplate = ({
-  data: { speciesJson, allDetectorsJson, allDetectorTsJson },
+  data: { speciesJson, allSpeciesTsJson, allDetectorsJson, allDetectorTsJson },
 }) => {
   const { species: selectedSpecies } = speciesJson
   const { commonName, sciName } = SPECIES[selectedSpecies]
@@ -42,7 +47,42 @@ const SpeciesTemplate = ({
   const [
     { data, detectors, detectorLocations, detectorTS, filters, visibleFilters },
   ] = useState(() => {
-    const ts = unpackTSData(extractNodes(allDetectorTsJson))
+    const speciesTS = extractNodes(allSpeciesTsJson).map(
+      ({
+        id,
+        y: year,
+        m: month,
+        dn: detectorNights,
+        dtn: detectionNights,
+        dt: detections,
+      }) => ({
+        id,
+        species: selectedSpecies,
+        year,
+        month,
+        detectorNights,
+        detectionNights,
+        detections,
+      })
+    )
+
+    const ts = extractNodes(allDetectorTsJson).map(
+      ({
+        id,
+        s: speciesId,
+        m: month,
+        dn: detectorNights,
+        dtn: detectionNights,
+        dt: detections,
+      }) => ({
+        id,
+        species: SPECIES_ID[speciesId],
+        month,
+        detectorNights,
+        detectionNights,
+        detections,
+      })
+    )
     const initDetectors = extractDetectors(allDetectorsJson)
     const locations = initDetectors.map(
       ({ id, lat, lon, admin1Name, presenceOnly }) => ({
@@ -50,15 +90,11 @@ const SpeciesTemplate = ({
         lat,
         lon,
         admin1Name,
-        activity: presenceOnly ? [0] : [0, 1]
+        activity: presenceOnly ? [0] : [0, 1],
       })
     )
 
-    const initData = join(
-      ts.filter(d => d.species === selectedSpecies),
-      locations,
-      'id'
-    )
+    const initData = join(speciesTS, locations, 'id')
 
     // data for filter values
     const years = Array.from(new Set(initData.map(({ year }) => year))).sort()
@@ -107,7 +143,8 @@ const SpeciesTemplate = ({
         isArray: true,
         values: [0, 1],
         labels: ['Presence', 'Activity'],
-        help: 'Some detectors monitored only the presence of a species on a given night, whereas other detectors monitored total activity during the night.'
+        help:
+          'Some detectors monitored only the presence of a species on a given night, whereas other detectors monitored total activity during the night.',
       },
     ]
 
@@ -222,21 +259,34 @@ SpeciesTemplate.propTypes = {
         detectorNights: PropTypes.number.isRequired,
         detectionNights: PropTypes.number.isRequired,
         dateRange: PropTypes.string.isRequired,
+        years: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    allSpeciesTsJson: GraphQLArrayPropType(
+      PropTypes.shape({
+        id: PropTypes.number.isRequired,
+
+        y: PropTypes.number.isRequired,
+        m: PropTypes.number.isRequired,
+        dn: PropTypes.number.isRequired,
+        dtn: PropTypes.number.isRequired,
+        dt: PropTypes.number.isRequired,
       })
     ).isRequired,
     allDetectorTsJson: GraphQLArrayPropType(
       PropTypes.shape({
         id: PropTypes.number.isRequired,
-        speciesId: PropTypes.number.isRequired,
-        timestamp: PropTypes.number.isRequired,
-        value: PropTypes.string.isRequired,
+        s: PropTypes.number.isRequired,
+        m: PropTypes.number.isRequired,
+        dtn: PropTypes.number.isRequired,
+        dt: PropTypes.number.isRequired,
       })
     ).isRequired,
   }).isRequired,
 }
 
 export const pageQuery = graphql`
-  query SpeciesPageQuery($species: String!) {
+  query SpeciesPageQuery($species: String!, $speciesId: Int!) {
     speciesJson(species: { eq: $species }) {
       species
       detections
@@ -270,6 +320,20 @@ export const pageQuery = graphql`
           species
           targetSpecies
           presenceOnly: po
+          years
+        }
+      }
+    }
+
+    allSpeciesTsJson(filter: { s: { eq: $speciesId } }) {
+      edges {
+        node {
+          id: i
+          y
+          m
+          dn
+          dtn
+          dt
         }
       }
     }
@@ -278,9 +342,10 @@ export const pageQuery = graphql`
       edges {
         node {
           id: i
-          speciesId: s
-          timestamp: t
-          value: v
+          s
+          m
+          dtn
+          dt
         }
       }
     }

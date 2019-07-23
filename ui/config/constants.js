@@ -259,6 +259,7 @@ export const SPECIES = {
   },
 }
 
+// Important: there must be corresponding entries in the gatsby-node.js file
 export const SPECIES_ID = {
   0: 'anpa',
   1: 'chme',

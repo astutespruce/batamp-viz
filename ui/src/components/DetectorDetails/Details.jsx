@@ -101,6 +101,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     detectorNights,
     presenceOnly,
     dateRange,
+    years,
     ts,
   } = detector
 
@@ -120,12 +121,15 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
       : Math.max(0, ...Object.values(bySpp))
 
   // create a map of species to array of monthly data, with an entry populated for each month
-  const monthlyData = Object.assign(
-    ...Object.entries(groupBy(ts, 'species')).map(([spp, records]) => {
-      const byMonth = sumBy(records, 'month', valueField)
-      return { [spp]: MONTHS.map(month => byMonth[month] || 0) }
-    })
-  )
+  const monthlyData =
+    ts.length > 0
+      ? Object.assign(
+          ...Object.entries(groupBy(ts, 'species')).map(([spp, records]) => {
+            const byMonth = sumBy(records, 'month', valueField)
+            return { [spp]: MONTHS.map(month => byMonth[month] || 0) }
+          })
+        )
+      : []
 
   const seasonalityData = sppTotals.map(([spp]) => {
     return {
@@ -137,12 +141,8 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
   const metric = METRIC_LABELS[valueField]
 
+  const hasBats = detectionNights > 0
   const hasSpecies = species && species.length > 0
-
-  const hasMultipleYears = ts.reduce(
-    (prev, { year }) => Object.assign(prev, { [year]: 1 }),
-    {}
-  )
 
   let speciesWarning = null
   let presenceOnlyWarning = null
@@ -157,7 +157,14 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     )
   }
 
-  if (!hasSpecies) {
+  if (!hasBats) {
+    speciesWarning = (
+      <Highlight>
+        <WarningIcon />
+        No bats were detected on any night.
+      </Highlight>
+    )
+  } else if (!hasSpecies) {
     speciesWarning = (
       <Highlight>
         <WarningIcon />
@@ -209,36 +216,39 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
       <TabContainer>
         <Tab id="species" label="Species Detected">
           {filterNote}
-          <SectionHeader>Total {metric}</SectionHeader>
-
-          {presenceOnlyWarning}
 
           {speciesWarning || (
-            <TotalCharts
-              data={sppTotals}
-              selectedSpecies={selectedSpecies}
-              max={max}
-            />
+            <>
+              <SectionHeader>Total {metric}</SectionHeader>
+              {presenceOnlyWarning}
+              <TotalCharts
+                data={sppTotals}
+                selectedSpecies={selectedSpecies}
+                max={max}
+              />
+            </>
           )}
         </Tab>
         <Tab id="seasonality" label="Seasonality">
           {filterNote}
 
-          <SectionHeader>{metric} by month</SectionHeader>
-
-          {hasMultipleYears && (
-            <HelpText fontSize="0.8rem" mb="1rem">
-              Note: monthly data may include multiple years.
-            </HelpText>
-          )}
-
-          {presenceOnlyWarning}
-
           {speciesWarning || (
-            <SeasonalityCharts
-              data={seasonalityData}
-              selectedSpecies={selectedSpecies}
-            />
+            <>
+              <SectionHeader>{metric} by month</SectionHeader>
+
+              {years > 1 && (
+                <HelpText fontSize="0.8rem" mb="1rem">
+                  Note: monthly data may include multiple years.
+                </HelpText>
+              )}
+
+              {presenceOnlyWarning}
+
+              <SeasonalityCharts
+                data={seasonalityData}
+                selectedSpecies={selectedSpecies}
+              />
+            </>
           )}
         </Tab>
 
@@ -268,6 +278,7 @@ Details.propTypes = {
     detectorNights: PropTypes.number.isRequired,
     detectionNights: PropTypes.number.isRequired,
     dateRange: PropTypes.string.isRequired,
+    years: PropTypes.number.isRequired,
     admin1Name: PropTypes.string.isRequired,
     country: PropTypes.string.isRequired,
     ts: PropTypes.arrayOf(
@@ -275,7 +286,6 @@ Details.propTypes = {
         detections: PropTypes.number,
         detectionNights: PropTypes.number.isRequired,
         month: PropTypes.number.isRequired,
-        year: PropTypes.number.isRequired,
       })
     ).isRequired,
   }).isRequired,

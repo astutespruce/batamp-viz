@@ -25,7 +25,7 @@ export const useSmallThumbnails = () => {
             id
             species: name
             childImageSharp {
-              fixed(width: 150, height: 100, quality: 100) {
+              fixed(width: 150, height: 100, quality: 90) {
                 ...GatsbyImageSharpFixed
               }
             }

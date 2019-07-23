@@ -10,6 +10,20 @@ Data were processed from multiple source datasets using `pandas` in `Python`. Th
 
 The user interface is built using `GatsbyJS`. All JSON data are 'baked in' at build time. The build step needs to be repeated each time the data are updated.
 
+This application is deployed to [Netlify](https://www.netlify.com/).
+
+## Gatsby Build
+
+Due to the large volume of data points included in the `/data` files in this project, the default setup of NodeJS runs out of memory during the build step.
+
+In order to get around this, you need to set the environment variable:
+
+```
+export NODE_OPTIONS="--max_old_space_size=4096"
+```
+
+This environment needs to be set for the Netlify build as well.
+
 ## Credits
 
 Development of this application was supported by a grant from the U.S. Department of Agriculture Forest Service - Pacific Southwest Research Station.

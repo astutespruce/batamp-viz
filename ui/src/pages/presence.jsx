@@ -4,20 +4,23 @@ import { graphql } from 'gatsby'
 
 import FiltersList from 'components/FiltersList'
 import Layout from 'components/Layout'
-import TopBar from 'components/Map/TopBar'
 import { HelpText as BaseHelpText, ExpandableParagraph } from 'components/Text'
 import {
   Provider as CrossfilterProvider,
   FilteredMap as Map,
-  ValueFieldSelector,
 } from 'components/Crossfilter'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
 import { Flex, Box } from 'components/Grid'
 import styled from 'style'
-import { join, unpackTSData, extractDetectors } from 'util/data'
+import { join, extractDetectors } from 'util/data'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
-import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
+import {
+  MONTHS,
+  MONTH_LABELS,
+  SPECIES,
+  SPECIES_ID,
+} from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -31,7 +34,7 @@ const MapContainer = styled.div`
 
 const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
-const PresencePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
+const PresencePage = ({ data: { allDetectorsJson, allSpeciesTsJson } }) => {
   const [selected, setSelected] = useState({ features: [], feature: null })
 
   // use state initialization to ensure that we only process data when page mounts
@@ -39,7 +42,24 @@ const PresencePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
   const [
     { data, detectors, detectorLocations, detectorTS, filters, visibleFilters },
   ] = useState(() => {
-    const ts = unpackTSData(extractNodes(allDetectorTsJson))
+    const ts = extractNodes(allSpeciesTsJson).map(
+      ({
+        id,
+        s: speciesId,
+        y: year,
+        m: month,
+        dtn: detectionNights,
+        dt: detections,
+      }) => ({
+        id,
+        species: SPECIES_ID[speciesId],
+        year,
+        month,
+        detectionNights,
+        detections,
+      })
+    )
+
     const initDetectors = extractDetectors(allDetectorsJson)
     const locations = initDetectors.map(({ id, lat, lon, admin1Name }) => ({
       id,
@@ -50,6 +70,8 @@ const PresencePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
 
     const initData = join(ts, locations, 'id')
 
+    console.log('initDAta ', initData)
+
     // data for filter values
     const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
       species,
@@ -57,6 +79,8 @@ const PresencePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
     }))
 
     const years = Array.from(new Set(initData.map(({ year }) => year))).sort()
+
+    console.log('years', years)
 
     const initFilters = [
       {
@@ -189,7 +213,6 @@ const PresencePage = ({ data: { allDetectorsJson, allDetectorTsJson } }) => {
             )}
           </Sidebar>
           <MapContainer>
-
             <Map
               detectors={detectorLocations}
               selectedFeature={selected.feature}
@@ -225,16 +248,18 @@ PresencePage.propTypes = {
         detectorNights: PropTypes.number.isRequired,
         detectionNights: PropTypes.number.isRequired,
         dateRange: PropTypes.string.isRequired,
+        years: PropTypes.number.isRequired,
       })
     ).isRequired,
-    allDetectorTsJson: GraphQLArrayPropType(
+    allSpeciesTsJson: GraphQLArrayPropType(
       PropTypes.shape({
         id: PropTypes.number.isRequired,
-        speciesId: PropTypes.number.isRequired,
-        timestamp: PropTypes.number.isRequired,
-        value: PropTypes.string.isRequired,
+        s: PropTypes.number.isRequired,
+        m: PropTypes.number.isRequired,
+        dtn: PropTypes.number.isRequired,
+        dt: PropTypes.number.isRequired,
       })
-    ),
+    ).isRequired,
   }).isRequired,
 }
 
@@ -265,16 +290,19 @@ export const pageQuery = graphql`
           species
           targetSpecies
           presenceOnly: po
+          years
         }
       }
     }
-    allDetectorTsJson {
+    allSpeciesTsJson {
       edges {
         node {
           id: i
-          speciesId: s
-          timestamp: t
-          value: v
+          s
+          y
+          m
+          dtn
+          dt
         }
       }
     }

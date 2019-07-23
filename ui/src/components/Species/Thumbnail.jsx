@@ -26,8 +26,8 @@ export const useThumbnails = () => {
             id
             species: name
             childImageSharp {
-              fluid(quality: 100) {
-                ...GatsbyImageSharpFluid_withWebp
+              fluid(quality: 90) {
+                ...GatsbyImageSharpFluid
               }
             }
           }

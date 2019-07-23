@@ -187,7 +187,7 @@ export const unpackTSData = data =>
     let detections = 0
     let detectorNights = 0
     if (value.includes('|')) {
-      ;[detectorNights, detectionNights, detections] = value
+      [detectorNights, detectionNights, detections] = value
         .split('|')
         .map(d => parseInt(d, 10))
     } else {

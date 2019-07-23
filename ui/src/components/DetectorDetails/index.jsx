@@ -20,15 +20,15 @@ const DetectorDetails = ({
 }) => {
   const [index, setIndex] = useState(0)
 
-  if (index >= detectors.length) {
-    // we are rendering with a set of detectors different in size than our previous render
-    return null
-  }
-
   useLayoutEffect(() => {
     // reset to first index on new set of detectors
     setIndex(0)
-  }, [detectors])
+  }, [detectors, detectors.length])
+
+  // if (index >= detectors.length) {
+  //   // we are rendering with a set of detectors different in size than our previous render
+  //   return null
+  // }
 
   const handleIteratorChange = newIndex => {
     setIndex(newIndex)
