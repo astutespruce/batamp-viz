@@ -228,23 +228,24 @@ PresencePage.propTypes = {
         id: PropTypes.number.isRequired,
         lat: PropTypes.number.isRequired,
         lon: PropTypes.number.isRequired,
-        admin1Name: PropTypes.string.isRequired,
-        micHt: PropTypes.number.isRequired,
-        micType: PropTypes.string,
-        reflType: PropTypes.string,
-        mfg: PropTypes.string,
-        model: PropTypes.string,
-        callId: PropTypes.string,
-        presenceOnly: PropTypes.number,
-        datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
-        contributors: PropTypes.string.isRequired,
-        species: PropTypes.arrayOf(PropTypes.string),
-        targetSpecies: PropTypes.arrayOf(PropTypes.string),
-        detections: PropTypes.number.isRequired,
-        detectorNights: PropTypes.number.isRequired,
-        detectionNights: PropTypes.number.isRequired,
-        dateRange: PropTypes.string.isRequired,
-        years: PropTypes.number.isRequired,
+        ad1: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        ad1n: PropTypes.string.isRequired,
+        mh: PropTypes.number.isRequired,
+        mt: PropTypes.string,
+        rt: PropTypes.string,
+        mf: PropTypes.string,
+        mo: PropTypes.string,
+        ci: PropTypes.string,
+        po: PropTypes.number,
+        ds: PropTypes.arrayOf(PropTypes.string).isRequired,
+        co: PropTypes.string.isRequired,
+        sp: PropTypes.arrayOf(PropTypes.number),
+        st: PropTypes.arrayOf(PropTypes.number),
+        dt: PropTypes.number.isRequired,
+        dn: PropTypes.number.isRequired,
+        dtn: PropTypes.number.isRequired,
+        dr: PropTypes.string.isRequired,
+        y: PropTypes.number.isRequired,
       })
     ).isRequired,
     allSpeciesTsJson: GraphQLArrayPropType(
@@ -264,29 +265,29 @@ export const pageQuery = graphql`
     allDetectorsJson {
       edges {
         node {
-          id: detector
+          id: i
           name
           lat
           lon
-          micHt
-          micType
-          reflType
-          mfg
-          model
-          callId
-          datasets
-          contributors
-          admin1
-          admin1Name
-          country
-          detections
-          detectorNights
-          detectionNights
-          dateRange
-          species
-          targetSpecies
-          presenceOnly: po
-          years
+          mh
+          mt
+          rt
+          mf
+          mo
+          ci
+          ds
+          co
+          ad1
+          ad1n
+          ad0
+          dt
+          dtn
+          dn
+          dr
+          sp
+          st
+          po
+          y
         }
       }
     }

@@ -25,11 +25,6 @@ const DetectorDetails = ({
     setIndex(0)
   }, [detectors, detectors.length])
 
-  // if (index >= detectors.length) {
-  //   // we are rendering with a set of detectors different in size than our previous render
-  //   return null
-  // }
-
   const handleIteratorChange = newIndex => {
     setIndex(newIndex)
     onSetDetector(detectors[newIndex].id)

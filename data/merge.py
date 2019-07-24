@@ -72,7 +72,7 @@ df = merged.reindex()
 # TODO: remove
 # make sure to add "haba" column while we are waiting for this to be added to the aggregate dataset
 if not "haba" in df.columns:
-    df['haba'] = np.nan
+    df["haba"] = np.nan
 
 
 # TODO: remove
@@ -292,8 +292,8 @@ df = (
 hi_index = df.admin1_name == "Hawaii"
 df.loc[hi_index, "haba"] = df.loc[hi_index].bat
 # make sure this is now present in the activity columns
-if 'haba' not in ACTIVITY_COLUMNS:
-    ACTIVITY_COLUMNS += ['haba'] 
+if "haba" not in ACTIVITY_COLUMNS:
+    ACTIVITY_COLUMNS += ["haba"]
 
 
 ### Coalesce duplicate nights and detectors
@@ -474,20 +474,28 @@ print("{} detectors have species records".format(len(detectors)))
 
 # Calculate list of unique species present or targeted per detector
 # We are setting null data to -1 so we can filter it out
-stacked = df[["detector"] + ACTIVITY_COLUMNS].fillna(-1).set_index("detector").stack().reset_index()
-stacked['species_id'] = stacked.level_1.map(SPECIES_ID)
+stacked = (
+    df[["detector"] + ACTIVITY_COLUMNS]
+    .fillna(-1)
+    .set_index("detector")
+    .stack()
+    .reset_index()
+)
+stacked["species_id"] = stacked.level_1.map(SPECIES_ID)
 
 det_spps = (
-    stacked[stacked > 0].groupby("detector")
-    .level_1.unique()
+    stacked[stacked[0] > 0]
+    .groupby("detector")
+    .species_id.unique()
     .apply(sorted)
     .rename("species")
 )
 
 # NOTE: this includes species that were targeted but not detected at a detector!
 target_spps = (
-    stacked[stacked >= 0].groupby("detector")
-    .level_1.unique()
+    stacked[stacked[0] >= 0]
+    .groupby("detector")
+    .species_id.unique()
     .apply(sorted)
     .rename("target_species")
 )
@@ -550,7 +558,7 @@ detector_daterange = (
     .rename("date_range")
 )
 
-detector_years = df.groupby('detector').year.unique().map(len).rename('years')
+detector_years = df.groupby("detector").year.unique().map(len).rename("years")
 
 
 detectors = (
@@ -571,8 +579,30 @@ detectors.mic_ht = (detectors.mic_ht * 10).astype("uint16")
 detectors.presence_only = detectors.presence_only.astype("uint8")
 detectors[location_fields] = detectors[location_fields].round(5)
 
+# rename to shorter keys
 detectors = detectors.rename(
-    columns={"det_mfg": "mfg", "det_model": "model", "presence_only": "po"}
+    columns={
+        "detector": "i",
+        "mic_ht": "mh",
+        "mic_type": "mt",
+        "det_mfg": "mf",
+        "det_model": "mo",
+        "refl_type": "rt",
+        "call_id": "ci",
+        "datasets": "ds",
+        "contributors": "co",
+        "admin1": "ad1",
+        "admin1_name": "ad1n",
+        "country": "ad0",
+        "detections": "dt",
+        "detection_nights": "dtn",
+        "detector_nights": "dn",
+        "date_range": "dr",
+        "species": "sp",
+        "target_species": "st",
+        "presence_only": "po",
+        "years": 'y'
+    }
 )
 detectors.columns = camelcase(detectors.columns)
 detectors.to_json(json_dir / "detectors.json", orient="records")
@@ -580,11 +610,18 @@ detectors.to_json(json_dir / "detectors.json", orient="records")
 #### Calculate species statistics
 # Total activity by species - only where activity was being recorded
 spp_detections = df[ACTIVITY_COLUMNS].sum().astype("uint").rename("detections")
-spp_po_detections = df.loc[df.presence_only, ACTIVITY_COLUMNS].sum().astype("uint").rename("po_detections")
+spp_po_detections = (
+    df.loc[df.presence_only, ACTIVITY_COLUMNS]
+    .sum()
+    .astype("uint")
+    .rename("po_detections")
+)
 
 # Count total nights of detections and nondetections - ONLY for species columns
 spp_detector_nights = (df[ACTIVITY_COLUMNS] >= 0).sum().rename("detector_nights")
-spp_po_detector_nights = (df.loc[df.presence_only, ACTIVITY_COLUMNS] >= 0).sum().rename("po_detector_nights")
+spp_po_detector_nights = (
+    (df.loc[df.presence_only, ACTIVITY_COLUMNS] >= 0).sum().rename("po_detector_nights")
+)
 
 # Count of non-zero nights by species
 spp_detection_nights = (df[ACTIVITY_COLUMNS] > 0).sum().rename("detection_nights")
@@ -611,7 +648,8 @@ spp_detectors = (
 )
 
 spp_po_detectors = (
-    df.loc[df.presence_only].set_index("detector")[ACTIVITY_COLUMNS]
+    df.loc[df.presence_only]
+    .set_index("detector")[ACTIVITY_COLUMNS]
     .stack()
     .reset_index()
     .groupby("level_1")
@@ -637,9 +675,15 @@ spp_stats = (
 spp_stats["commonName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["CNAME"])
 spp_stats["sciName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["SNAME"])
 
+# use shorter json keys - not used yet
+# spp_stats = spp_stats.rename(columns={
+#         "detections": "dt",
+#         "detection_nights": "dtn",
+#         "detector_nights": "dn",
+# })
+
 spp_stats.columns = camelcase(spp_stats.columns)
 spp_stats.to_json(json_dir / "species.json", orient="records")
-
 
 
 ### Calculate detector - species stats per year, month
@@ -648,10 +692,9 @@ spp_stats.to_json(json_dir / "species.json", orient="records")
 # get around processing timeouts in GatsbyJS
 
 
-
 # transpose species columns to rows
 # NOTE: we are filling nodata as -1 so we can filter these out from true 0's below
-print('creating detector time series for species detail pages...')
+print("creating detector time series for species detail pages...")
 stacked = (
     df[["detector"] + ACTIVITY_COLUMNS + time_fields]
     .fillna(-1)
@@ -678,14 +721,24 @@ det_ts.detections = det_ts.detections.fillna(0).astype("uint")
 det_ts.detection_nights = det_ts.detection_nights.fillna(0).astype("uint")
 
 # Create a file for each species
-det_ts['s'] = det_ts.species.map(SPECIES_ID).astype("uint")
-det_ts = det_ts[['species', 'detector', 's', 'year', 'month', 'detector_nights', 'detection_nights', 'detections']]
-det_ts.columns = ['species', "i", "s", "y", 'm', "dn", 'dtn', 'dt']
+det_ts["s"] = det_ts.species.map(SPECIES_ID).astype("uint")
+det_ts = det_ts[
+    [
+        "species",
+        "detector",
+        "s",
+        "year",
+        "month",
+        "detector_nights",
+        "detection_nights",
+        "detections",
+    ]
+]
+det_ts.columns = ["species", "i", "s", "y", "m", "dn", "dtn", "dt"]
 for spp in det_ts.species.unique():
-    det_ts.loc[det_ts.species==spp, ["i", "s", "y", 'm', "dn", 'dtn', 'dt']].to_json(json_dir / "speciesTS" / "{}.json".format(spp), orient="records")
-
-
-
+    det_ts.loc[det_ts.species == spp, ["i", "s", "y", "m", "dn", "dtn", "dt"]].to_json(
+        json_dir / "speciesTS" / "{}.json".format(spp), orient="records"
+    )
 
 
 ### Calculate detector - species stats per month

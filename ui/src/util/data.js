@@ -1,5 +1,5 @@
 import { extractNodes } from './graphql'
-import { SPECIES_ID } from '../../config/constants'
+import { SPECIES_ID, SPECIES } from '../../config/constants'
 
 /**
  * Generates an monotonically increasing array from start to stop.
@@ -161,16 +161,61 @@ export const groupBy = (data, groupField) => {
 /**
  * Extract graphql detectorJson data to Array of objects.
  * Update height to correct value.
+ * Map short field names to longer ones
  *
  * @param {Array} detectorsJson - array of graphql edges
  */
 export const extractDetectors = detectorsJson =>
-  extractNodes(detectorsJson).map(d => ({
-    // note: detector height is multiplied by 10 to make into integer,
-    // reverse that here
-    ...d,
-    micHt: d.micHt / 10,
-  }))
+  extractNodes(detectorsJson).map(
+    ({
+      mh,
+      mt,
+      mo,
+      mf,
+      rt,
+      ci,
+      ds,
+      co,
+      ad1,
+      ad1n,
+      ad0,
+      dt,
+      dtn,
+      dn,
+      dr,
+      sp,
+      st,
+
+      po,
+      y,
+
+      ...rest
+    }) => ({
+      // note: detector height is multiplied by 10 to make into integer,
+      // reverse that here
+      ...rest,
+      model: mo,
+      micType: mt,
+      mfg: mf,
+      micHt: mh / 10,
+      reflType: rt,
+      callId: ci,
+      datasets: ds,
+      contributors: co,
+      admin1: ad1,
+      admin1Name: ad1n,
+      country: ad0,
+      detections: dt,
+      detectionNights: dtn,
+      detectorNights: dn,
+      dateRange: dr,
+      species: sp ? sp.map(speciesId => SPECIES_ID[speciesId]) : [],
+      targetSpecies: st ? st.map(speciesId => SPECIES_ID[speciesId]) : [],
+
+      presenceOnly: po,
+      years: y,
+    })
+  )
 
 /** Unpack the packed detector time series data
  *
@@ -187,7 +232,7 @@ export const unpackTSData = data =>
     let detections = 0
     let detectorNights = 0
     if (value.includes('|')) {
-      [detectorNights, detectionNights, detections] = value
+      ;[detectorNights, detectionNights, detections] = value
         .split('|')
         .map(d => parseInt(d, 10))
     } else {
