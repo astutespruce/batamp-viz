@@ -70,8 +70,6 @@ const PresencePage = ({ data: { allDetectorsJson, allSpeciesTsJson } }) => {
 
     const initData = join(ts, locations, 'id')
 
-    console.log('initDAta ', initData)
-
     // data for filter values
     const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
       species,
@@ -79,8 +77,6 @@ const PresencePage = ({ data: { allDetectorsJson, allSpeciesTsJson } }) => {
     }))
 
     const years = Array.from(new Set(initData.map(({ year }) => year))).sort()
-
-    console.log('years', years)
 
     const initFilters = [
       {

@@ -474,11 +474,11 @@ print("{} detectors have species records".format(len(detectors)))
 
 # Calculate list of unique species present or targeted per detector
 # We are setting null data to -1 so we can filter it out
-stacked = df[["detector"] + ACTIVITY_COLUMNS].fillna(-1).set_index("detector").stack()
+stacked = df[["detector"] + ACTIVITY_COLUMNS].fillna(-1).set_index("detector").stack().reset_index()
+stacked['species_id'] = stacked.level_1.map(SPECIES_ID)
+
 det_spps = (
-    stacked[stacked > 0]
-    .reset_index()
-    .groupby("detector")
+    stacked[stacked > 0].groupby("detector")
     .level_1.unique()
     .apply(sorted)
     .rename("species")
@@ -486,9 +486,7 @@ det_spps = (
 
 # NOTE: this includes species that were targeted but not detected at a detector!
 target_spps = (
-    stacked[stacked >= 0]
-    .reset_index()
-    .groupby("detector")
+    stacked[stacked >= 0].groupby("detector")
     .level_1.unique()
     .apply(sorted)
     .rename("target_species")

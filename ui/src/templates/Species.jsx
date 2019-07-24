@@ -16,7 +16,7 @@ import styled from 'style'
 import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
 import TopBar from 'components/Map/TopBar'
 import SpeciesFilters from 'components/SpeciesFilters'
-import { join, extractDetectors } from 'util/data'
+import { join, extractDetectors, groupBy } from 'util/data'
 import {
   MONTHS,
   MONTH_LABELS,
@@ -66,23 +66,55 @@ const SpeciesTemplate = ({
       })
     )
 
-    const ts = extractNodes(allDetectorTsJson).map(
-      ({
+    // aggregate species data up to detector / month for this species so we can merge into detectorsTS below
+    const grouped = groupBy(
+      speciesTS.map(({ id, month, ...rest }) => ({
         id,
-        s: speciesId,
-        m: month,
-        dn: detectorNights,
-        dtn: detectionNights,
-        dt: detections,
-      }) => ({
-        id,
-        species: SPECIES_ID[speciesId],
         month,
-        detectorNights,
-        detectionNights,
-        detections,
-      })
+        ...rest,
+        key: `${id}-${month}`,
+      })),
+      'key'
     )
+    const speciesMonthlyTS = Object.values(grouped).map(v =>
+      v.reduce(
+        (
+          prev,
+          { id, species, month, detections, detectionNights, detectorNights }
+        ) =>
+          Object.assign(prev, {
+            id,
+            species,
+            month,
+            detections: (detections || 0) + (prev.detections || 0),
+            detectionNights:
+              (detectionNights || 0) + (prev.detectionNights || 0),
+            detectorNights: (detectorNights || 0) + (prev.detectorNights || 0),
+          }),
+        {}
+      )
+    )
+
+    const ts = extractNodes(allDetectorTsJson)
+      .map(
+        ({
+          id,
+          s: speciesId,
+          m: month,
+          dn: detectorNights,
+          dtn: detectionNights,
+          dt: detections,
+        }) => ({
+          id,
+          species: SPECIES_ID[speciesId],
+          month,
+          detectorNights,
+          detectionNights,
+          detections,
+        })
+      )
+      .concat(speciesMonthlyTS)
+
     const initDetectors = extractDetectors(allDetectorsJson)
     const locations = initDetectors.map(
       ({ id, lat, lon, admin1Name, presenceOnly }) => ({
@@ -338,7 +370,7 @@ export const pageQuery = graphql`
       }
     }
 
-    allDetectorTsJson {
+    allDetectorTsJson: allSpeciesTsJson(filter: { s: { ne: $speciesId } }) {
       edges {
         node {
           id: i
