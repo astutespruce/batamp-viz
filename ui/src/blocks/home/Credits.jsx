@@ -9,6 +9,7 @@ import USFSLogo from 'images/usfs_logo.png'
 import { Section as BaseSection } from './styles'
 
 const Section = styled(BaseSection)`
+  border-top: 0.5rem solid ${themeGet('colors.primary.700')};
   p {
     font-size: 0.9rem;
   }

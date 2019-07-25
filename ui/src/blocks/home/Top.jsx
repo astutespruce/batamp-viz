@@ -2,20 +2,17 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import Img from 'gatsby-image'
 import { graphql, useStaticQuery } from 'gatsby'
+import { FaExclamationTriangle } from 'react-icons/fa'
 
 import { Credits } from 'components/Image'
-import { OutboundLink } from 'components/Link'
-import { Text } from 'components/Text'
-import { CallToActionBox } from 'components/Layout'
+import { Link, OutboundLink } from 'components/Link'
+import { Text, HelpText } from 'components/Text'
 import { Columns, Column, Box } from 'components/Grid'
 
 import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
-import { Section, Title } from './styles'
+import { Section, Subtitle, Subheading } from './styles'
 
-const Subtitle = styled(Title).attrs({ fontSize: ['1.5rem', '2rem'] })``
-
-// mx: '2rem',
 const HighlightBox = styled(Box).attrs({ mb: '3rem', p: '1rem' })`
   background: ${themeGet('colors.highlight.100')};
   border-radius: 1rem;
@@ -38,10 +35,15 @@ const NarrowColumn = styled(Column).attrs({
 
 const List = styled.ul`
   margin-bottom: 0;
+  color: ${themeGet('colors.grey.800')};
 `
 
 const ImgWrapper = styled.div`
   position: relative;
+`
+
+const Image = styled(Img)`
+  border: 1px solid ${themeGet('colors.grey.500')};
 `
 
 const PlaceHolder = styled.div`
@@ -51,6 +53,11 @@ const PlaceHolder = styled.div`
   margin: 1rem;
   background-color: ${themeGet('colors.grey.300')};
   text-align: center;
+`
+
+const WarningIcon = styled(FaExclamationTriangle)`
+  width: 1.5em;
+  height: 1em;
 `
 
 const Top = ({
@@ -69,6 +76,22 @@ const Top = ({
         childImageSharp {
           fluid(maxWidth: 3200) {
             ...GatsbyImageSharpFluid_withWebp
+          }
+        }
+      }
+      speciesScreenshot: file(relativePath: { eq: "explore_species.jpg" }) {
+        childImageSharp {
+          fixed(width: 550) {
+            ...GatsbyImageSharpFixed_withWebp
+          }
+        }
+      }
+      presenceScreenshot: file(
+        relativePath: { eq: "explore_occurrences.jpg" }
+      ) {
+        childImageSharp {
+          fixed(width: 550) {
+            ...GatsbyImageSharpFixed_withWebp
           }
         }
       }
@@ -91,13 +114,13 @@ const Top = ({
             understand their behaviors and monitor their population status.
             <br />
             <br />
-            To get around this challenge, biologists use bat detectors to
-            better understand bat ecology. These devices record the echolocation
-            calls of nearby bats, and combined with specialized software and
-            expert knowledge, biologists can often identify bat species from
-            these detections. Biologists deploy these detectors for one or more
-            nights at locations across the continent throughout the year, and
-            may monitor presence or activity of various bat species each night.
+            To get around this challenge, biologists use bat detectors to better
+            understand bat ecology. These devices record the echolocation calls
+            of nearby bats, and combined with specialized software and expert
+            knowledge, biologists can often identify bat species from these
+            detections. Biologists deploy these detectors for one or more nights
+            at locations across the continent throughout the year, and may
+            monitor presence or activity of various bat species each night.
           </p>
         </WideColumn>
 
@@ -170,35 +193,88 @@ const Top = ({
       <Columns>
         <Column>
           <p>
-            This application enables you to explore bat monitoring data for
-            several species across North America, allowing you to explore
-            seasonal trends, ...
+            This application enables you to explore bat monitoring data for{' '}
+            {species} species across North America, allowing you to explore
+            seasonal trends in species detections and explore bat activity for a
+            particular location.
           </p>
         </Column>
         <Column />
       </Columns>
 
-      {/* <Columns>
+      <Subheading>
+        <Link to="/species">Explore individual species</Link>
+      </Subheading>
+      <p style={{ marginBottom: '0.5rem' }}>
+        Explore detailed monitoring data for each of the species included in
+        this application. Each species has a dedicated visualization page that
+        enables you to:
+      </p>
+      <Columns>
         <Column>
-          <p>
-            This application enables you to explore bat monitoring data for
-            several species across North America, allowing you to explore
-            seasonal trends, ...
-          </p>
+          <List>
+            <li>
+              explore seasonal trends in activity or detections for different
+              locations around North America.
+            </li>
+            <li>
+              explore locations where the species has been detected compared to
+              areas where the species was not detected.
+            </li>
+            <li>
+              filter the data to explore trends for a given state or province as
+              well as a given time period or season. You are able to combine
+              multiple filters for season, year, state / province, and more.
+            </li>
+            <li>view detailed detection information for each bat detector.</li>
+          </List>
         </Column>
+
         <Column>
-          <PlaceHolder>screenshot here</PlaceHolder>
+          <ImgWrapper>
+            <Image
+              fixed={data.speciesScreenshot.childImageSharp.fixed}
+              alt=""
+            />
+          </ImgWrapper>
         </Column>
       </Columns>
 
+      <Subheading mt="4rem">
+        <Link to="/presence">Explore species occurrences</Link>
+      </Subheading>
+      <p style={{ marginBottom: '0.5rem' }}>
+        Explore occurrence data aggregated across all species within this
+        application. This allows you to:
+      </p>
       <Columns>
         <Column>
-          <p>You can also ...</p>
+          <List>
+            <li>explore trends in species co-occurrence.</li>
+            <li>
+              see how many species have been detected at a given location based
+              on sampling effort.
+            </li>
+            <li>
+              explore which species are detected in particular regions simply by
+              zooming the map to the area you are interested in.
+            </li>
+            <li>identify species mis-identification and information gaps.</li>
+          </List>
         </Column>
         <Column>
-          <PlaceHolder>screenshot here</PlaceHolder>
+          <Image fixed={data.presenceScreenshot.childImageSharp.fixed} alt="" />
         </Column>
-      </Columns> */}
+      </Columns>
+
+      <HelpText mt="2rem">
+        <WarningIcon />
+        Note: due to the methods involved in identifying echolocation calls
+        accurately to species, some species may be mis-identified may be present
+        in the data used by this application. You should be particularly
+        cautious with detections that are well outside the known range for the
+        species.
+      </HelpText>
     </Section>
   )
 }

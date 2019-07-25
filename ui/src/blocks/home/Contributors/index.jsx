@@ -5,13 +5,9 @@ import { Flex } from 'components/Grid'
 import { SortBar } from 'components/List'
 import styled from 'style'
 import { formatNumber } from 'util/format'
-import { Section, Title } from '../styles'
+import { Section, Subtitle, Subheading } from '../styles'
 import Contributor from './Contributor'
 import { METRIC_LABELS } from '../../../../config/constants'
-
-const Subtitle = styled.h3`
-  margin-bottom: 0.5rem;
-`
 
 const NameList = styled.p`
   margin-top: 1rem;
@@ -59,7 +55,7 @@ const Contributors = ({ contributors, totals }) => {
 
   return (
     <Section>
-      <Title>Made possible by contributors like you</Title>
+      <Subtitle>Made possible by contributors like you</Subtitle>
       <p>
         This application leverages the combined efforts of{' '}
         <b>{contributors.length}</b> contributors and would not be possible
@@ -72,7 +68,7 @@ const Contributors = ({ contributors, totals }) => {
       </p>
 
       <Flex alignItems="center" justifyContent="space-between">
-        <Subtitle>Top contributors</Subtitle>
+        <Subheading>Top contributors</Subheading>
         <SortBar
           index={sortIdx}
           options={sortOptions}

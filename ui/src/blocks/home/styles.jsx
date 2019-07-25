@@ -8,10 +8,6 @@ export const Section = styled(Box).attrs({ py: '3rem' })`
     font-size: 1.1rem;
     color: ${themeGet('colors.grey.800')};
   }
-
-  &:not(:first-child) {
-    border-top: 0.5rem solid ${themeGet('colors.primary.800')};
-  }
 `
 
 export const Title = styled(Text).attrs({
@@ -22,3 +18,10 @@ export const Title = styled(Text).attrs({
   font-weight: bold;
   line-height: 1.2;
 `
+
+export const Subtitle = styled(Title).attrs({ fontSize: ['1.5rem', '2rem'] })``
+
+export const Subheading = styled(Text).attrs({
+  fontSize: '1.25rem',
+  fontWeight: 'bold',
+})``

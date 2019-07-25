@@ -37,10 +37,6 @@ const IndexPage = ({
       <Container pb="3rem">
         <TopSection {...summaryJson} />
 
-        {/* <AboutSection /> */}
-
-        {/* <BatAMPSection /> */}
-
         <ContributorsSection contributors={contributors} totals={summaryJson} />
 
         <CreditsSection />
