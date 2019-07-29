@@ -175,10 +175,10 @@ const Top = ({
         <WideColumn>
           <p>
             BatAMP provides a central platform where biologists can upload their
-            detection data, to help biologists better understand the
-            distribution, seasonal movement patterns, and population status of
-            bats across North America. These data are then compiled for
-            visualization within this tool.
+            detection data in order to better understand the distribution,
+            seasonal movement patterns, and population status of bats across
+            North America. These data are then compiled for visualization within
+            this tool.
             <br />
             <br />
             <OutboundLink from="/" to="https://batamp.databasin.org">
@@ -269,11 +269,10 @@ const Top = ({
 
       <HelpText mt="2rem">
         <WarningIcon />
-        Note: due to the methods involved in identifying echolocation calls
-        accurately to species, some species may be mis-identified may be present
-        in the data used by this application. You should be particularly
-        cautious with detections that are well outside the known range for the
-        species.
+        Note: due to the methods involved in identifying echolocation calls to
+        species, some species may be mis-identified may be present in the data
+        used by this application. You should be particularly cautious with
+        detections that are well outside the known range for the species.
       </HelpText>
     </Section>
   )

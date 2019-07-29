@@ -14,15 +14,38 @@ This application is deployed to [Netlify](https://www.netlify.com/).
 
 ## Gatsby Build
 
+### Environmnent variables
+
+You need to create a `/ui/.env.development` for developing this site locally, with the following variables:
+
+```
+GATSBY_MAPBOX_API_TOKEN=<api token>
+```
+
 Due to the large volume of data points included in the `/data` files in this project, the default setup of NodeJS runs out of memory during the build step.
 
-In order to get around this, you need to set the environment variable:
+In order to get around this, you need to set the environment variable (needs to be set while calling build, can't be part of the `.env.development` file):
 
 ```
 export NODE_OPTIONS="--max_old_space_size=4096"
 ```
 
-This environment needs to be set for the Netlify build as well.
+This environment variable needs to be set for the Netlify build as well.
+
+## Deployment
+
+Analytics are monitored using [Google Analytics](analytics.google.com).
+
+Errors are monitored using [Sentry](https://sentry.io).
+
+This site is currently deployed to [Netlify](https://netlify.com). The following environment variables need to be set in Netlify's dashboard:
+
+```
+GATSBY_MAPBOX_API_TOKEN=<api token>
+GATSBY_SENTRY_DSN=<sentry DSN>
+GATSBY_GOOGLE_ANALYTICS_ID=<google analytics ID>
+NODE_OPTIONS="--max_old_space_size=4096"
+```
 
 ## Credits
 

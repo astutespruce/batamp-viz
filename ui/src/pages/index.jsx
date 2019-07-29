@@ -5,13 +5,7 @@ import { graphql } from 'gatsby'
 import { HeaderImage } from 'components/Image'
 import Layout from 'components/Layout'
 import { Container } from 'components/Grid'
-import {
-  TopSection,
-  AboutSection,
-  BatAMPSection,
-  ContributorsSection,
-  CreditsSection,
-} from 'blocks/home'
+import { TopSection, ContributorsSection, CreditsSection } from 'blocks/home'
 
 const IndexPage = ({
   data: { headerImage: img, summaryJson, allContributorsJson },

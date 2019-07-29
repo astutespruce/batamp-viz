@@ -42,13 +42,14 @@ const About = () => (
             Conservation Biology Institute
           </OutboundLink>
           &nbsp; (CBI) in partnership with{' '}
-          <a href="mailto:ted.weller@usda.gov">Ted Weller</a> at the&nbsp;
           <OutboundLink
             from="/"
-            to=""
-            target="_blank"
-            rel="noopener noreferrer"
+            to="https://www.fs.fed.us/psw/programs/cb/staff/tweller/"
           >
+            Ted Weller
+          </OutboundLink>{' '}
+          at the&nbsp;
+          <OutboundLink from="/" to="https://www.fs.fed.us/psw/index.shtml">
             U.S. Department of Agriculture Forest Service - Pacific Southwest
             Research Station
           </OutboundLink>
