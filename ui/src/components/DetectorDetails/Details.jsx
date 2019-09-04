@@ -52,6 +52,7 @@ const CloseIcon = styled(FaRegTimesCircle).attrs({ size: '1.5rem' })`
 const TabContainer = styled(Tabs)`
   flex: 1;
   height: 100%;
+  overflow: hidden;
 `
 
 const Tab = styled(BaseTab)`

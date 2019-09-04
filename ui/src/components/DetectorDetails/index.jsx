@@ -10,7 +10,9 @@ import Iterator from './Iterator'
 
 const Wrapper = styled(Flex).attrs({
   flexDirection: 'column',
-})``
+})`
+  height: 100%;
+`
 
 const DetectorDetails = ({
   detectors,
