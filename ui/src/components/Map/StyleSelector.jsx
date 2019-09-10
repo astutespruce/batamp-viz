@@ -3,6 +3,10 @@ import PropTypes from 'prop-types'
 
 import styled, { css, themeGet } from 'style'
 
+import LightIcon from 'images/light-v9.png'
+import StreetsIcon from 'images/streets-v11.png'
+import SatelliteIcon from 'images/satellite-streets-v11.jpg'
+
 const Wrapper = styled.div`
   cursor: pointer;
   position: absolute;
@@ -29,12 +33,23 @@ const Basemap = styled.img`
   }
 `
 
-const getSrc = ({ styleID, z, x, y, token }) =>
-  `https://api.mapbox.com/styles/v1/mapbox/${styleID}/tiles/256/${z}/${x}/${y}?access_token=${token}`
+// Original method heavily used the Mapbox raster tile API, resulting in costs!
+// const getSrc = ({ styleID, z, x, y, token }) => {
+//   console.log('get src', styleID)
+//   return `https://api.mapbox.com/styles/v1/mapbox/${styleID}/tiles/256/${z}/${x}/${y}?access_token=${token}`
+// }
 
-const StyleSelector = ({ token, styles, tile, size, onChange }) => {
+const styleImages = {
+  'light-v9': LightIcon,
+  'satellite-streets-v11': SatelliteIcon,
+  'streets-v11': StreetsIcon,
+}
+
+const StyleSelector = ({ token, styles, size, onChange }) => {
   const [basemap, setBasemap] = useState(styles[0])
   const [isOpen, setIsOpen] = useState(false)
+
+  console.log('basemap switcher rerender')
 
   const handleBasemapClick = newBasemap => {
     setIsOpen(false)
@@ -61,7 +76,7 @@ const StyleSelector = ({ token, styles, tile, size, onChange }) => {
       <Wrapper>
         <Basemap
           size={size}
-          src={getSrc({ styleID: nextBasemap, token, ...tile })}
+          src={styleImages[nextBasemap]}
           onClick={() => handleBasemapClick(nextBasemap)}
         />
       </Wrapper>
@@ -76,7 +91,7 @@ const StyleSelector = ({ token, styles, tile, size, onChange }) => {
         <>
           <Basemap
             size={size}
-            src={getSrc({ styleID: nextBasemap, token, ...tile })}
+            src={styleImages[nextBasemap]}
             onClick={() => handleBasemapClick(nextBasemap)}
           />
           {styles
@@ -86,7 +101,7 @@ const StyleSelector = ({ token, styles, tile, size, onChange }) => {
                 key={styleID}
                 isActive={styleID === basemap}
                 size={size}
-                src={getSrc({ styleID, token, ...tile })}
+                src={styleImages[styleID]}
                 onClick={() => handleBasemapClick(styleID)}
               />
             ))}
@@ -94,7 +109,7 @@ const StyleSelector = ({ token, styles, tile, size, onChange }) => {
       ) : (
         <Basemap
           size={size}
-          src={getSrc({ styleID: nextBasemap, token, ...tile })}
+          src={styleImages[nextBasemap]}
           onClick={toggleOpen}
         />
       )}
@@ -103,24 +118,13 @@ const StyleSelector = ({ token, styles, tile, size, onChange }) => {
 }
 
 StyleSelector.propTypes = {
-  token: PropTypes.string.isRequired,
-  // list of mapbox style IDs
+  // list of mapbox style IDs.  NOTE: these are hard-coded to images above
   styles: PropTypes.arrayOf(PropTypes.string).isRequired,
-  tile: PropTypes.shape({
-    x: PropTypes.number.isRequired,
-    y: PropTypes.number.isRequired,
-    z: PropTypes.number.isRequired,
-  }),
   size: PropTypes.string,
   onChange: PropTypes.func.isRequired,
 }
 
 StyleSelector.defaultProps = {
-  tile: {
-    x: 0,
-    y: 0,
-    z: 0,
-  },
   size: '64px',
 }
 
