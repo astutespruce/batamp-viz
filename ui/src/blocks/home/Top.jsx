@@ -46,15 +46,6 @@ const Image = styled(Img)`
   border: 1px solid ${themeGet('colors.grey.500')};
 `
 
-const PlaceHolder = styled.div`
-  padding: 4rem;
-  border: 1px solid ${themeGet('colors.grey.600')};
-  box-shadow: 1px 1px 3px ${themeGet('colors.grey.500')};
-  margin: 1rem;
-  background-color: ${themeGet('colors.grey.300')};
-  text-align: center;
-`
-
 const WarningIcon = styled(FaExclamationTriangle)`
   width: 1.5em;
   height: 1em;
@@ -166,10 +157,6 @@ const Top = ({
         <NarrowColumn>
           <ImgWrapper>
             <Img fluid={data.image.childImageSharp.fluid} alt="" />
-            <Credits
-              url="https://www.instagram.com/svaldvard/?hl=en"
-              author="Hoary Bat, José G. Martínez-Fonseca"
-            />
           </ImgWrapper>
         </NarrowColumn>
         <WideColumn>
