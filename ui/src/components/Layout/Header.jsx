@@ -1,9 +1,11 @@
 import React from 'react'
+import { Image } from 'rebass'
 
 import { Text, ResponsiveText } from 'components/Text'
 import { Flex } from 'components/Grid'
 import { Link, OutboundLink } from 'components/Link'
 import styled, { themeGet } from 'style'
+import LogoSVG from 'images/logo.svg'
 import Navigation from './Navigation'
 import Search from './Search'
 
@@ -11,52 +13,45 @@ const Wrapper = styled(Flex).attrs({
   alignItems: 'center',
   justifyContent: 'space-between',
 })`
-  background: ${themeGet('colors.primary.800')};
+  border-bottom: 0.25rem solid ${themeGet('colors.primary.800')};
   padding: 0.5rem;
+`
+
+const SiteLogo = styled(Image).attrs({ src: LogoSVG })`
+  margin-right: 0.25rem;
+  height: 2.5rem;
 `
 
 const RootLink = styled(Link)`
   text-decoration: none;
-  color: #fff !important;
+  color: ${themeGet('colors.primary.800')} !important;
 `
 
 const Title = styled(ResponsiveText).attrs({
   my: 0,
-  mx: '0.25rem',
   as: 'h1',
   fontSize: ['1rem', '1rem', '1.5rem'],
   display: ['none', 'block'],
-})`
-  font-weight: normal;
-`
+})``
 
 const Subtitle = styled(Text).attrs({
   fontSize: ['0.9rem', '0.9rem', '0.9rem'],
 })`
   font-style: italic;
-  color: #fff;
+  color: ${themeGet('colors.primary.800')};
 
   a {
-    color: #fff;
+    color: ${themeGet('colors.primary.800')};
     text-decoration: underline;
   }
 `
 
 const MobileTitle = styled(Title).attrs({ display: ['block', 'none'] })``
 
-// const SiteLogo = styled.div`
-//   margin: -0.25em 0.5em -0.25em 0;
-//   padding: 0.75em 1em;
-//   border-radius: 2rem;
-//   background: #fff;
-//   color: #aaa;
-//   font-size: 0.6em;
-// `
-
 const Header = () => (
   <Wrapper as="header">
     <Flex alignItems="center">
-      {/* <SiteLogo>logo</SiteLogo> */}
+      <SiteLogo></SiteLogo>
 
       <Title>
         <RootLink to="/">Bat Acoustic Monitoring Visualization Tool</RootLink>
