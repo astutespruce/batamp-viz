@@ -18,18 +18,18 @@ const NavBar = styled(Flex).attrs({
 `
 
 const NavLink = styled(Link)`
-  color: #fff !important;
   text-decoration: none;
-  border: 1px solid #fff;
+  color: ${themeGet('colors.primary.800')};
+  background: ${themeGet('colors.primary.100')};
   border-radius: 0.5em;
-  padding: 0.1em 0.25em;
+  padding: 0.5em 1em;
 
   &:not(:first-child) {
-    margin-left: 2em;
+    margin-left: 0.5em;
   }
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background: ${themeGet('colors.primary.200')};
     transition: background-color 0.5s;
   }
 `
