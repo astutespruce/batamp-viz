@@ -47,6 +47,29 @@ tippecanoe -f -Z0 -z6 --no-tile-stats -l species_ranges -o tiles/species_ranges.
 
 The GRTS vector tile from the [BatAMP Grid Selection Tool](https://github.com/consbio/fuzzybat) was used here.
 
+## Bat Presence and Activity
+
+Bat presence and activity datasets are downloaded from Data Basin. You must have download permissions for these datasets granted by Ted Weller (owner of the aggregates) for the account you are using to download.
+
+### Prerequisites
+
+You must have a `.env` file in the root of this project that defines the following environment variables:
+
+```
+DATABASIN_USER=<your username>
+DATABASIN_KEY=<your key>
+```
+
+To create the above variables, you must first have a Data Basin account with the appropriate privileges, then go to https://databasin.org/auth/api-keys/ and create an API key for your user account.
+
+### Download
+
+Use `data/download.py` to download the activity and presence-only datasets. Each is based on a list of dataset IDs that are known in advance, and correspond to the IDs of aggregate datasets. There is generally one per year from 2006 to present.
+
+### Merge
+
+Use `data/merge.py` to merge the downloaded datasets into the structure needed for this tool.
+
 ## Map Images
 
 Map images are generated using [`mbgl-renderer`](https://github.com/consbio/mbgl-renderer).

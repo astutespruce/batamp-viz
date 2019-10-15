@@ -198,10 +198,11 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
         <Summary>
           <Columns>
             <Column>
-              <b>
-                {admin1Name}, {country}
-              </b>
-
+              {admin1Name ? (
+                <b>
+                  {admin1Name}, {country}
+                </b>
+              ) : null}
               <br />
               {dateRange}
             </Column>

@@ -229,7 +229,7 @@ PresencePage.propTypes = {
         lat: PropTypes.number.isRequired,
         lon: PropTypes.number.isRequired,
         ad1: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-        ad1n: PropTypes.string.isRequired,
+        ad1n: PropTypes.string,
         mh: PropTypes.number.isRequired,
         mt: PropTypes.string,
         rt: PropTypes.string,

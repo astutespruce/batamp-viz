@@ -2,7 +2,7 @@
   "name": "batamp-viz",
   "private": true,
   "description": "Data visualization of Bat Acoustic Monitoring Data across North America",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Brendan C. Ward <bcward@consbio.org>",
   "dependencies": {
     "@gatsby-contrib/gatsby-plugin-elasticlunr-search": "^2.3.0",
@@ -49,6 +49,7 @@
   ],
   "license": "MIT",
   "scripts": {
+    "clean": "gatsby clean",
     "start": "NODE_OPTIONS='--max_old_space_size=4096' gatsby develop",
     "build": "NODE_OPTIONS='--max_old_space_size=4096' gatsby build",
     "format": "prettier --write \"src/**/*.js\"",

@@ -1,31 +1,23 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
 pandas = "*"
 geopandas = "*"
 feather-format = "*"
-python-databasin = {git = "https://github.com/consbio/python-databasin.git", editable = true, ref = "master"}
+python-databasin = {git = "https://github.com/consbio/python-databasin.git",editable = true,ref = "master"}
 python-dotenv = "*"
 rtree = "*"
-
+geofeather = "*"
 
 [dev-packages]
-
 pylint = "*"
 black = "==19.3b0"
 
-
 [requires]
-
-python_version = "3.6"
-
+python_version = "3"
 
 [pipenv]
-
 allow_prereleases = true

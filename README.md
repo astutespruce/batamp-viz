@@ -12,9 +12,13 @@ The user interface is built using `GatsbyJS`. All JSON data are 'baked in' at bu
 
 This application is deployed to [Netlify](https://www.netlify.com/).
 
+## Data Pre-processing
+
+See `data/README.md`.
+
 ## Gatsby Build
 
-### Environmnent variables
+### Environment variables
 
 You need to create a `/ui/.env.development` for developing this site locally, with the following variables:
 

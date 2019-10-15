@@ -1,3 +1,4 @@
+import os
 import json
 from pathlib import Path
 from datetime import datetime
@@ -10,19 +11,19 @@ from feather import read_dataframe
 from shapely.geometry import Point
 from databasin.client import Client
 
-from geofeather import read_geofeather
-from constants import (
+from geofeather import from_geofeather
+from data.constants import (
     SPECIES,
     ACTIVITY_COLUMNS,
     GROUP_ACTIVITY_COLUMNS,
     DETECTOR_FIELDS,
     SPECIES_ID,
 )
-from util import camelcase
+from data.util import camelcase
 
 # API key stored in .env.
 # generated using https://databasin.org/auth/api-keys/
-from settings import DATABASIN_KEY, DATABASIN_USER
+from data.settings import DATABASIN_KEY, DATABASIN_USER
 
 client = Client()
 client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
@@ -41,6 +42,8 @@ derived_dir = Path("data/derived")
 boundary_dir = Path("data/boundaries")
 json_dir = Path("ui/data")
 
+if not os.path.exists(derived_dir):
+    os.makedirs(derived_dir)
 
 location_fields = ["lat", "lon"]
 detector_index_fields = location_fields + ["mic_ht", "presence_only"]
@@ -242,7 +245,7 @@ sites["site"] = sites.index
 # Determine the admin unit (state / province) that contains the site
 print("Assigning admin boundary to sites...")
 admin_df = (
-    read_geofeather(boundary_dir / "na_admin1.geofeather")
+    from_geofeather(boundary_dir / "na_admin1.geofeather")
     .drop(columns=["admin1"])
     .rename(columns={"id": "admin1"})
 )
@@ -253,11 +256,11 @@ site_admin = gp.sjoin(sites, admin_df, how="left")[["admin1", "admin1_name", "co
 
 # extract species list for site based on species ranges
 print("Assigning species ranges to sites...")
-range_df = read_geofeather(boundary_dir / "species_ranges.geofeather")
+range_df = from_geofeather(boundary_dir / "species_ranges.geofeather")
 
 # TODO: extract GRTS ID for a site
 # print("Assigning grid info to sites...")
-# grts_df = read_geofeather(boundary_dir / "na_grts.geofeather")
+# grts_df = from_geofeather(boundary_dir / "na_grts.geofeather")
 # site_grts = gp.sjoin(sites, grts_df, how="left")[["grts", "na50k", "na100k"]]
 
 # Join site info together
@@ -266,7 +269,7 @@ sites = (
     sites.drop(columns=["geometry"]).join(site_admin)
     # .join(site_grts)  # .join(site_spps)
 )
-# sites.to_feather(derived_dir / "sites.feather")
+sites.to_feather(derived_dir / "sites.feather")
 
 # join sites back to detectors
 # this gives us top-level detector location and metadata information

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from datetime import datetime
 from dateutil.parser import parse
@@ -7,6 +8,16 @@ from databasin.client import Client
 # API key stored in .env.
 # generated using https://databasin.org/auth/api-keys/
 from settings import DATABASIN_KEY, DATABASIN_USER
+
+data_dir = Path("data/src")
+activity_dir = data_dir / "activity"
+presence_dir = data_dir / "presence"
+
+if not os.path.exists(activity_dir):
+    os.makedirs(activity_dir)
+
+if not os.path.exists(presence_dir):
+    os.makedirs(presence_dir)
 
 
 def download_datasets(client, dataset_ids, out_dir):
@@ -32,11 +43,9 @@ client = Client()
 client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
 
 
-# TODO: store known aggregate IDs in database and register them manually
-# The following are known aggregates that we want
-
+### Download activity datasets
+# these are known IDs added manually
 activity_dataset_ids = [
-    "4f057a7950b64cb18f6d7f4147503ffc",
     "f3ef386adb8f437483da50cda4250f04",
     "37d8933946344eb3baff39f7f108c0c6",
     "651a6494655443c6987002176b736dd3",
@@ -49,10 +58,13 @@ activity_dataset_ids = [
     "c75da33515eb4a8380845ab79c40e0f8",
     "e74dd6ba43c84a09b16e105f5cd82374",
     "95921d86cf5042d5b6905b57fd50b63d",
+    "4f057a7950b64cb18f6d7f4147503ffc",
+    "4ee2bb7e949644f19d131a601e7a0036",
 ]
 
+download_datasets(client, activity_dataset_ids, activity_dir)
+
+
+### Download presence-only datasets
 presence_dataset_ids = ["58bda89bcb10454c80312b609ee629e6"]
-
-
-download_datasets(client, activity_dataset_ids, Path("data/src/activity"))
-download_datasets(client, presence_dataset_ids, Path("data/src/presence"))
+download_datasets(client, presence_dataset_ids, presence_dir)
