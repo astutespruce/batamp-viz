@@ -66,5 +66,9 @@ download_datasets(client, activity_dataset_ids, activity_dir)
 
 
 ### Download presence-only datasets
-presence_dataset_ids = ["58bda89bcb10454c80312b609ee629e6"]
+presence_dataset_ids = [
+    "58bda89bcb10454c80312b609ee629e6",
+    "3bce959e8a914f35882806d667b3c126",
+    "eaec6b31f7d24273aa8de56590613134",
+]
 download_datasets(client, presence_dataset_ids, presence_dir)
