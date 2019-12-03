@@ -72,26 +72,10 @@ const letterSpacings = {
  */
 const radii = [0, 2, 4, 8, 16]
 
-const buttons = {
-  default: {
-    backgroundColor: colors.grey[800],
-  },
-  primary: {
-    backgroundColor: colors.primary[700],
-  },
-  secondary: {
-    backgroundColor: colors.primary[500],
-  },
-  disabled: {
-    backgroundColor: colors.grey[300],
-  },
-}
-
 export const theme = {
   name: 'Default',
   breakpoints,
   colors,
-  buttons,
   space,
   fontSizes,
   lineHeights,

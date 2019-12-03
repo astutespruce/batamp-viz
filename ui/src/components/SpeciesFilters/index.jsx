@@ -20,7 +20,7 @@ const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
 
 const Header = styled(Box).attrs({ p: '0.5rem' })`
   line-height: 1.2;
-  flex: 0;
+  flex: 0 0 auto;
 `
 
 const Thumbnail = styled(BaseThumbnail)`

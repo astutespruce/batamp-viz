@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import Crossfilter2 from 'crossfilter2'
 import { isDebug } from 'util/dom'
-import { filterObject } from 'util/data'
+import { filterObjectByKey } from 'util/data'
 import { aggregateByDimension, getRawTotal, getFilteredTotal } from './util'
 
 // returns true if passed in values contains the value
@@ -172,13 +172,15 @@ export const Crossfilter = (data, filters, options = {}) => {
 
       // reset the filters on the dimenions
       fields.forEach(field => {
+        console.log('filtering all for field', field)
         dimensions[field].filterAll()
       })
 
       const { valueField, filters: prevFilters } = prevState
 
       // only retain the OTHER filters than fields
-      const newFilters = filterObject(prevFilters, f => !fields.has(f))
+      const newFilters = filterObjectByKey(prevFilters, f => !fields.has(f))
+      console.log('prev filters', prevFilters, 'new filters', newFilters)
 
       const hasVisibleFilters =
         Object.entries(filters).filter(

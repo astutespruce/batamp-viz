@@ -63,6 +63,20 @@ export const filterObject = (obj, predicate) => {
 }
 
 /**
+ * Filter an object to only those keys that meet the predicate function.
+ * Returns a new object.
+ * @param {*} obj
+ * @param {*} predicate
+ */
+export const filterObjectByKey = (obj, predicate) => {
+  const selected = Object.keys(obj)
+    .filter(key => predicate(key))
+    .map(key => ({ [key]: obj[key] }))
+
+  return selected.length > 0 ? Object.assign(...selected) : {}
+}
+
+/**
  * Round number to the nearest power of 10
  * @param {Number} number
  */
@@ -176,7 +190,6 @@ export const extractDetectors = detectorsJson =>
       ci,
       ds,
       co,
-      ad1,
       ad1n,
       ad0,
       dt,
@@ -202,7 +215,6 @@ export const extractDetectors = detectorsJson =>
       callId: ci,
       datasets: ds,
       contributors: co,
-      admin1: ad1,
       admin1Name: ad1n,
       country: ad0,
       detections: dt,

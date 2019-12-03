@@ -55,12 +55,12 @@ const SummaryUnitDetails = ({
     <Wrapper>
       <Header>
         <Columns>
-          <Column flex={1}>
+          <Column flex="1 1 auto">
             <Title>
               {name}, <Country>{COUNTRIES[country]}</Country>
             </Title>
           </Column>
-          <Column flex={0}>
+          <Column flex="0 0 auto">
             <CloseIcon onClick={onClose} />
           </Column>
         </Columns>

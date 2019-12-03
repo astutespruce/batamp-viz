@@ -73,7 +73,7 @@ const HorizontalBarChart = ({ label, sublabel, quantity, max, highlight }) => {
             {sublabel ? <Sublabel>{sublabel}</Sublabel> : null}
           </Label>
         </Column>
-        <Column flex={0}>
+        <Column flex="0 0 auto">
           <Quantity>{formatNumber(quantity)}</Quantity>
         </Column>
       </Labels>

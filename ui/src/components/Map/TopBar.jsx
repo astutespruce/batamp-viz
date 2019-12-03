@@ -1,6 +1,3 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-
 import { Flex } from 'components/Grid'
 import styled, { themeGet } from 'style'
 
@@ -13,17 +10,5 @@ const TopBar = styled(Flex).attrs({ padding: '0.5rem' })`
   top: 0;
   left: 1rem;
 `
-
-// const TopBar = ({children}) => {
-//     return (
-//         <Wrapper>
-//             {children}
-//         </Wrapper>
-//     )
-// }
-
-// TopBar.propTypes = {
-// children: PropTypes.node.isRequired
-// }
 
 export default TopBar

@@ -73,7 +73,7 @@ const ValueLabel = styled(Text)`
   font-size: 0.6rem;
   color: ${themeGet('colors.grey.800')};
   text-align: center;
-  flex: 0;
+  flex: 0 0 auto;
 `
 
 const BarChart = ({ title, subtitle, data, scale, highlight }) => {

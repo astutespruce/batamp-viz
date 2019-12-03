@@ -7,7 +7,7 @@ import styled, { themeGet } from 'style'
 
 const Wrapper = styled(Flex).attrs({
   justifyContent: 'space-between',
-  flex: 0,
+  flex: '0 0 auto',
   px: '1rem',
 })`
   background: ${themeGet('colors.grey.700')};

@@ -42,12 +42,11 @@ const ResetContainer = styled(Flex).attrs({
 `
 
 const ResetButton = styled(Button).attrs({ secondary: true })`
-  display: flex;
-  align-items: center;
-  font-size: 0.8rem;
-  padding: 0.1rem 0.5rem;
-
-  background: ${themeGet('colors.highlight.500')};
+  display: flex !important;
+  align-items: center !important;
+  font-size: 0.8rem !important;
+  padding: 0.1rem 0.5rem !important;
+  background-color: ${themeGet('colors.highlight.500')} !important;
 `
 
 const ResetIcon = styled(FaRegTimesCircle).attrs({

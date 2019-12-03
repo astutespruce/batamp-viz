@@ -43,7 +43,7 @@ const CircleContainer = styled(Flex).attrs({
 `
 
 const Patch = styled(Box).attrs({
-  flex: 0,
+  flex: '0 0 auto',
 })`
   flex: 0 0 1.25rem;
   width: 1.25rem;

@@ -8,7 +8,7 @@ import Button from './Button'
 const Wrapper = styled(Flex).attrs({
   alignItem: 'center',
   justifyContent: 'space-between',
-  flex: 0,
+  flex: '0 0 auto',
 })`
   background-color: ${themeGet('colors.grey.100')};
   font-size: 0.9rem;

@@ -4,7 +4,6 @@ import Img from 'gatsby-image'
 import { graphql, useStaticQuery } from 'gatsby'
 import { FaExclamationTriangle } from 'react-icons/fa'
 
-import { Credits } from 'components/Image'
 import { Link, OutboundLink } from 'components/Link'
 import { Text, HelpText } from 'components/Text'
 import { Columns, Column, Box } from 'components/Grid'
@@ -197,62 +196,71 @@ const Top = ({
         this application. Each species has a dedicated visualization page that
         enables you to:
       </p>
-      <Columns>
-        <Column>
-          <List>
-            <li>
-              explore seasonal trends in activity or detections for different
-              locations around North America.
-            </li>
-            <li>
-              explore locations where the species has been detected compared to
-              areas where the species was not detected.
-            </li>
-            <li>
-              filter the data to explore trends for a given state or province as
-              well as a given time period or season. You are able to combine
-              multiple filters for season, year, state / province, and more.
-            </li>
-            <li>view detailed detection information for each bat detector.</li>
-          </List>
-        </Column>
 
-        <Column>
-          <ImgWrapper>
+      <Box>
+        <Columns>
+          <Column>
+            <List>
+              <li>
+                explore seasonal trends in activity or detections for different
+                locations around North America.
+              </li>
+              <li>
+                explore locations where the species has been detected compared
+                to areas where the species was not detected.
+              </li>
+              <li>
+                filter the data to explore trends for a given state or province
+                as well as a given time period or season. You are able to
+                combine multiple filters for season, year, state / province, and
+                more.
+              </li>
+              <li>
+                view detailed detection information for each bat detector.
+              </li>
+            </List>
+          </Column>
+
+          <Column>
+            <ImgWrapper>
+              <Image
+                fixed={data.speciesScreenshot.childImageSharp.fixed}
+                alt=""
+              />
+            </ImgWrapper>
+          </Column>
+        </Columns>
+
+        <Subheading mt="4rem">
+          <Link to="/presence">Explore species occurrences</Link>
+        </Subheading>
+        <p style={{ marginBottom: '0.5rem' }}>
+          Explore occurrence data aggregated across all species within this
+          application. This allows you to:
+        </p>
+        <Columns>
+          <Column>
+            <List>
+              <li>explore trends in species co-occurrence.</li>
+              <li>
+                see how many species have been detected at a given location
+                based on sampling effort.
+              </li>
+              <li>
+                explore which species are detected in particular regions simply
+                by zooming the map to the area you are interested in.
+              </li>
+              <li>identify species mis-identification and information gaps.</li>
+            </List>
+          </Column>
+          <Column>
             <Image
-              fixed={data.speciesScreenshot.childImageSharp.fixed}
+              fixed={data.presenceScreenshot.childImageSharp.fixed}
               alt=""
             />
-          </ImgWrapper>
-        </Column>
-      </Columns>
-
-      <Subheading mt="4rem">
-        <Link to="/presence">Explore species occurrences</Link>
-      </Subheading>
-      <p style={{ marginBottom: '0.5rem' }}>
-        Explore occurrence data aggregated across all species within this
-        application. This allows you to:
-      </p>
-      <Columns>
-        <Column>
-          <List>
-            <li>explore trends in species co-occurrence.</li>
-            <li>
-              see how many species have been detected at a given location based
-              on sampling effort.
-            </li>
-            <li>
-              explore which species are detected in particular regions simply by
-              zooming the map to the area you are interested in.
-            </li>
-            <li>identify species mis-identification and information gaps.</li>
-          </List>
-        </Column>
-        <Column>
-          <Image fixed={data.presenceScreenshot.childImageSharp.fixed} alt="" />
-        </Column>
-      </Columns>
+          </Column>
+        </Columns>
+      </Box>
 
       <HelpText mt="2rem">
         <WarningIcon />

@@ -29,6 +29,7 @@
     "import/prefer-default-export": 0,
     "react/no-danger": 0,
     "react/forbid-prop-types": 0,
+    "react/jsx-props-no-spreading": "warn",
     "react/display-name": 1,
     "react/react-in-jsx-scope": 0,
     "react/jsx-filename-extension": [

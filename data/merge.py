@@ -251,7 +251,10 @@ admin_df = (
 )
 admin_df.admin1 = admin_df.admin1.astype("uint8")
 
-site_admin = gp.sjoin(sites, admin_df, how="left")[["admin1", "admin1_name", "country"]]
+site_admin = gp.sjoin(sites, admin_df, how="left")[["admin1_name", "country"]] # "admin1",
+# Fill missing admin areas - these are most likely offshore
+site_admin.admin1_name = site_admin.admin1_name.fillna('Offshore')
+site_admin.country = site_admin.country.fillna('')
 
 
 # extract species list for site based on species ranges
@@ -285,7 +288,7 @@ df = (
     df.set_index(detector_index_fields)
     .join(
         detectors.set_index(detector_index_fields)[
-            ["detector", "site", "admin1", "admin1_name"]  # "grts", "na50k", "na100k"
+            ["detector", "site", "admin1_name"]  # "admin1", "grts", "na50k", "na100k"
         ]
     )
     .reset_index()
@@ -356,7 +359,7 @@ print("Calculating statistics...")
 
 ### Calculate high level summary statistics
 summary = {
-    "admin1": site_admin.admin1.unique().size,
+    "admin1": site_admin.admin1_name.unique().size,
     "species": len(ACTIVITY_COLUMNS),
     "contributors": df.contributor.unique().size,
     "detectors": len(detectors),
@@ -594,7 +597,7 @@ detectors = detectors.rename(
         "call_id": "ci",
         "datasets": "ds",
         "contributors": "co",
-        "admin1": "ad1",
+        # "admin1": "ad1",
         "admin1_name": "ad1n",
         "country": "ad0",
         "detections": "dt",

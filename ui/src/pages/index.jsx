@@ -13,7 +13,7 @@ const IndexPage = ({
   const contributors = allContributorsJson.edges.map(({ node }) => node)
 
   return (
-    <Layout title="Home">
+    <Layout>
       <HeaderImage
         image={img.childImageSharp.fluid}
         height="60vh"

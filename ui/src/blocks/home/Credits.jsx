@@ -21,10 +21,9 @@ const Column = styled(BaseColumn).attrs({
 
 const Logos = styled(Flex).attrs({ alignItems: 'center', flexWrap: 'wrap' })``
 
-const Logo = styled(Image).attrs({
-  my: ['0.5rem', '0.5rem', '0.5rem', 0],
-  mx: ['1rem'],
-})``
+const Logo = styled.img`
+  margin: 0.5rem 1rem;
+`
 
 const About = () => (
   <Section>

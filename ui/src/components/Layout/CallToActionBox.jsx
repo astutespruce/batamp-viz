@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Text } from 'rebass'
 
+import { Text } from 'components/Text'
 import { Box, Flex } from 'components/Grid'
 import { Link } from 'components/Link'
 import FaIcon from 'components/Icon/FaIcon'

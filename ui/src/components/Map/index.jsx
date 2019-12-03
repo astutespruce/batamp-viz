@@ -168,21 +168,6 @@ const Map = ({
       onBoundsChange(lowerLeft.concat(upperRight))
     })
 
-    map.on('click', 'admin1-fill', e => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['admin1-fill'],
-      })
-      if (features) {
-        console.log(
-          'clicked admin features',
-          features,
-          features.map(({ properties }) => properties)
-        )
-        // TODO: process selected features and highlight
-        // onSelectFeature(feature.properties)
-      }
-    })
-
     map.on('click', e => {
       const features = map.queryRenderedFeatures(e.point, {
         layers: ['detectors-points'],
@@ -569,9 +554,7 @@ const Map = ({
 
   const legendTitle =
     valueField === 'id'
-      ? `Number of ${METRIC_LABELS[valueField]} that detected ${
-          SPECIES[species].commonName
-        }`
+      ? `Number of ${METRIC_LABELS[valueField]} that detected ${SPECIES[species].commonName}`
       : `Number of ${METRIC_LABELS[valueField]}`
 
   return (

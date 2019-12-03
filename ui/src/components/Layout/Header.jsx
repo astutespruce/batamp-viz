@@ -1,5 +1,4 @@
 import React from 'react'
-import { Image } from 'rebass'
 
 import { Text, ResponsiveText } from 'components/Text'
 import { Flex } from 'components/Grid'
@@ -17,9 +16,10 @@ const Wrapper = styled(Flex).attrs({
   padding: 0.5rem;
 `
 
-const SiteLogo = styled(Image).attrs({ src: LogoSVG })`
+const SiteLogo = styled.img.attrs({ src: LogoSVG })`
   margin-right: 0.25rem;
   height: 2.5rem;
+  width: auto;
 `
 
 const RootLink = styled(Link)`
@@ -51,7 +51,7 @@ const MobileTitle = styled(Title).attrs({ display: ['block', 'none'] })``
 const Header = () => (
   <Wrapper as="header">
     <Flex alignItems="center">
-      <SiteLogo></SiteLogo>
+      <SiteLogo />
 
       <Title>
         <RootLink to="/">Bat Acoustic Monitoring Visualization Tool</RootLink>

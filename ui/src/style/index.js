@@ -1,10 +1,7 @@
 import * as styledComponents from 'styled-components'
-import { themeGet, px } from 'styled-system'
+import { themeGet } from '@styled-system/theme-get'
 
 import { theme } from './theme'
-
-// Utility function to get pixel values from a unitless scale in our custom theme
-const themePx = (...args) => props => px(themeGet(...args)(props))
 
 const {
   default: styled,
@@ -14,14 +11,6 @@ const {
   ThemeProvider,
 } = styledComponents
 
-export {
-  css,
-  createGlobalStyle,
-  keyframes,
-  ThemeProvider,
-  theme,
-  themeGet,
-  themePx,
-}
+export { css, createGlobalStyle, keyframes, ThemeProvider, theme, themeGet }
 
 export default styled

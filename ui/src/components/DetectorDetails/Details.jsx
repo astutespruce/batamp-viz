@@ -20,7 +20,7 @@ const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
 `
 
 const Header = styled.div`
-  flex: 0;
+  flex: 0 0 auto;
   padding: 1rem 1rem 0.5rem;
   background-color: ${themeGet('colors.highlight.100')};
   line-height: 1.2;
@@ -187,10 +187,10 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     <Wrapper>
       <Header>
         <Columns>
-          <Column flex={1}>
+          <Column flex="1 1 auto">
             <Title>{name}</Title>
           </Column>
-          <Column flex={0}>
+          <Column flex="0 0 auto">
             <CloseIcon onClick={onClose} />
           </Column>
         </Columns>
@@ -200,7 +200,8 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
             <Column>
               {admin1Name ? (
                 <b>
-                  {admin1Name}, {country}
+                  {admin1Name}
+                  {country ? `, ${country}` : null}
                 </b>
               ) : null}
               <br />
@@ -283,6 +284,7 @@ Details.propTypes = {
     years: PropTypes.number.isRequired,
     admin1Name: PropTypes.string.isRequired,
     country: PropTypes.string.isRequired,
+    species: PropTypes.arrayOf(PropTypes.string).isRequired,
     ts: PropTypes.arrayOf(
       PropTypes.shape({
         detections: PropTypes.number,

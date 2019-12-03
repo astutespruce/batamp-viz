@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Text } from 'rebass'
 
+import { Text } from 'components/Text'
 import { Flex } from 'components/Grid'
 import FaIcon from 'components/Icon/FaIcon'
 import styled, { themeGet } from 'style'

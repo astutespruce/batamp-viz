@@ -24,10 +24,14 @@ const ToggleButton = styled(BaseButton)`
     padding: 4px 8px;
     font-size: smaller;
     font-weight: normal;
+  }
 `
 
 const ValueFieldSelector = ({ fields }) => {
-  const { setValueField, state: {valueField} } = useCrossfilter()
+  const {
+    setValueField,
+    state: { valueField },
+  } = useCrossfilter()
 
   const handleChange = field => {
     setValueField(field)

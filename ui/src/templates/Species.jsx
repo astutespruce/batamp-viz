@@ -268,7 +268,6 @@ SpeciesTemplate.propTypes = {
         id: PropTypes.number.isRequired,
         lat: PropTypes.number.isRequired,
         lon: PropTypes.number.isRequired,
-        ad1: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         ad1n: PropTypes.string,
         mh: PropTypes.number.isRequired,
         mt: PropTypes.string,
@@ -327,7 +326,6 @@ export const pageQuery = graphql`
           ci
           ds
           co
-          ad1
           ad1n
           ad0
           dt

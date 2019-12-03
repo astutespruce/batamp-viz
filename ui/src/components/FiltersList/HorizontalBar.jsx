@@ -71,7 +71,7 @@ const HorizontalBar = ({
     <Wrapper onClick={handleClick} isExcluded={isExcluded}>
       <Labels active={isFiltered}>
         <Column>{label}</Column>
-        {showCount && <Column flex={0}>{formatNumber(quantity)}</Column>}
+        {showCount && <Column flex="0 0 auto">{formatNumber(quantity)}</Column>}
       </Labels>
       <IndicatorWrapper>
         {position > 0 && (

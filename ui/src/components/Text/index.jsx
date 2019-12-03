@@ -1,9 +1,14 @@
-import { Text } from 'rebass'
-import { display } from 'styled-system'
+import { Text as BaseText } from 'rebass'
+import { display, fontSize, margin } from 'styled-system'
 
 import styled, { themeGet } from 'style'
 
 import ExpandableParagraph from './ExpandableParagraph'
+
+const Text = styled(BaseText)`
+  ${fontSize};
+  ${margin};
+`
 
 const HelpText = styled(Text)`
   line-height: 1.4;
