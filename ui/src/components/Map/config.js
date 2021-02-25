@@ -193,7 +193,7 @@ export const legends = {
     entries.push({
       type: 'circle',
       radius: MINRADIUS,
-      label: `No ${label}`,
+      label: `No detections`,
       color: NONDETECTIONCOLOR,
     })
 

@@ -396,7 +396,7 @@ const Map = ({
 
     source.setData(toGeoJSONPoints(detectors))
 
-    if (detectors.size === 0) {
+    if (detectors.length === 0) {
       // update legend to remove detectors altogether
       updateLegend([])
     }
@@ -433,12 +433,12 @@ const Map = ({
   }, [selectedFeature])
 
   const styleDetectorsImpl = (calculateMax = false) => {
-    // console.log('style detectors', calculateMax, detectorsRef.current.size)
+    // console.log('style detectors', calculateMax, detectorsRef.current.length)
     const { current: map } = mapRef
     const { current: metric } = valueFieldRef
 
     // if there are no detectors to style, don't update style
-    if (detectorsRef.current.size === 0) {
+    if (detectorsRef.current.length === 0) {
       return
     }
 
@@ -474,7 +474,14 @@ const Map = ({
     }
 
     if (upperValue === 0) {
-      if (detectors.size) {
+      // no detections
+      map.setPaintProperty('detectors-points', 'circle-radius', MINRADIUS)
+      map.setPaintProperty('detectors-points', 'circle-color', NONDETECTIONCOLOR)
+
+      map.setPaintProperty('detectors-clusters', 'circle-radius', MINRADIUS)
+      map.setPaintProperty('detectors-clusters', 'circle-color', NONDETECTIONCOLOR)
+
+      if (detectors.length) {
         updateLegend(legends.detectors(upperValue, METRIC_LABELS[valueField]))
       } else {
         updateLegend([])

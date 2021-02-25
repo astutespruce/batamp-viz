@@ -65,7 +65,11 @@ const FilteredMap = ({
     }
   }, [data, valueField])
 
-  const maxValue = Math.max(...Object.values(totalById))
+  let maxValue = Math.max(...Object.values(totalById))
+  if (Math.abs(maxValue) === Infinity) {
+    // no values present
+    maxValue = 0
+  }
 
   // Only show the detectors that currently meet the applied filters
   const filteredDetectors = useIsEqualMemo(

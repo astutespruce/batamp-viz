@@ -31,7 +31,7 @@ const About = () => (
       <Column>
         <p>
           This application was created by{' '}
-          <a href="mailto:bcward@consbio.org">Brendan C. Ward</a> at the&nbsp;
+          <a href="mailto:bcward@astutespruce.com">Brendan C. Ward</a> at the&nbsp;
           <OutboundLink
             from="/"
             to="https://consbio.org"
@@ -40,7 +40,12 @@ const About = () => (
           >
             Conservation Biology Institute
           </OutboundLink>
-          &nbsp; (CBI) in partnership with{' '}
+          &nbsp; (CBI),
+          now with <OutboundLink from="/" to="https://astutespruce.com/" target="_blank">
+Astute Spruce, LLC
+          </OutboundLink>
+
+          in partnership with{' '}
           <OutboundLink
             from="/"
             to="https://www.fs.fed.us/psw/programs/cb/staff/tweller/"

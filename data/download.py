@@ -61,7 +61,8 @@ activity_dataset_ids = [
     "37d8933946344eb3baff39f7f108c0c6",  # 2017
     "f3ef386adb8f437483da50cda4250f04",  # 2018
     "4ee2bb7e949644f19d131a601e7a0036",  # 2019
-    "56acf94b0e244d668c959ccba340347a"  # 2020
+    "56acf94b0e244d668c959ccba340347a",  # 2020
+    "3594409e092e4ed98f27ab4ce886b1b3" # 2021
 ]
 
 download_datasets(client, activity_dataset_ids, activity_dir)

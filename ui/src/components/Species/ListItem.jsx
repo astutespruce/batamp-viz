@@ -8,7 +8,7 @@ import { OutboundLink, Link } from 'components/Link'
 import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
 import {
-  SPECIES
+  SPECIES,
 } from '../../../config/constants'
 
 const Wrapper = styled.div`
@@ -129,8 +129,8 @@ const {imageCredits } = SPECIES[species]
           credit:{' '}
 
             {imageCredits || (
-              
-          <>  
+
+          <>
             <OutboundLink from="/species" to="https://www.merlintuttle.org">
               MerlinTuttle.org
             </OutboundLink>{' '}
@@ -138,7 +138,7 @@ const {imageCredits } = SPECIES[species]
             <OutboundLink from="/species" to="http://www.batcon.org/">
               batcon.org
             </OutboundLink>
-            
+
             </>
             )}
           </ImageCredits>

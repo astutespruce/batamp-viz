@@ -22,9 +22,9 @@ export const MONTH_LABELS = [
   'December',
 ]
 
-// Bat Conservation International's species profile pages.  Add profileId to end of this.
+// Bat Conservation International's species profile pages.  Add profileId to the end of this
 export const PROFILE_ROOT_URL =
-  'http://www.batcon.org/resources/media-education/species-profiles/detail'
+  'https://www.batcon.org/bat/'
 
 export const ECOS_ROOT_URL =
   'https://ecos.fws.gov/ecp0/profile/speciesProfile?sId='
@@ -33,227 +33,187 @@ export const SPECIES = {
   anpa: {
     sciName: 'Antrozous pallidus',
     commonName: 'Pallid Bat',
-    profileId: 2181,
+    profileId: 'antrozous-pallidus-2',
   },
   chme: {
     sciName: 'Choeronycteris mexicana',
     commonName: 'Mexican Long-tongued Bat',
-    profileId: 2091,
   },
   cora: {
     sciName: 'Corynorhinus rafinesquii',
     commonName: "Rafinesque's Big-eared Bat",
-    profileId: 2249,
   },
   coto: {
     sciName: 'Corynorhinus townsendii',
     commonName: "Townsend's Big-eared Bat",
-    profileId: 2379,
   },
   epfu: {
     sciName: 'Eptesicus fuscus',
     commonName: 'Big Brown Bat',
-    profileId: 1890,
   },
   eufl: {
     sciName: 'Eumops floridanus',
     commonName: 'Florida Bonneted Bat',
-    profileId: 1903,
   },
   euma: {
     sciName: 'Euderma maculatum',
     commonName: 'Spotted Bat',
-    profileId: 2058,
   },
   eupe: {
     sciName: 'Eumops perotis',
     commonName: 'Western Mastiff Bat',
-    profileId: 2203,
   },
   euun: {
     sciName: 'Eumops underwoodi',
     commonName: "Underwood's Bonneted Bat",
-    profileId: 2398,
   },
   idph: {
     sciName: 'Idionycteris phyllotis',
     commonName: "Allen's Big-eared Bat",
-    profileId: 2215,
   },
   lano: {
     sciName: 'Lasionycteris noctivagans',
     commonName: 'Silver-haired Bat',
-    profileId: 2160,
   },
   labl: {
     sciName: 'Lasiurus blossevillii',
     commonName: 'Western Red Bat',
-    profileId: 1718,
   },
   labo: {
     sciName: 'Lasiurus borealis',
     commonName: 'Eastern Red Bat',
-    profileId: 1728,
   },
   laci: {
     sciName: 'Lasiurus cinereus',
     commonName: 'Hoary Bat',
-    profileId: 2457,
   },
   laeg: {
     sciName: 'Lasiurus ega',
     commonName: 'Southern Yellow Bat',
-    profileId: 1844,
   },
   lain: {
     sciName: 'Lasiurus intermedius',
     commonName: 'Northern Yellow Bat',
-    profileId: 1974,
   },
   lase: {
     sciName: 'Lasiurus seminolus',
     commonName: 'Seminole Bat',
-    profileId: 2303,
   },
   laxa: {
     sciName: 'Lasiurus xanthinus',
     commonName: 'Western Yellow Bat',
-    profileId: 2431,
   },
   lecu: {
     sciName: 'Leptonycteris yerbabuenae',
     commonName: 'Lesser Long-nosed Bat',
-    profileId: 2432,
   },
   leni: {
     sciName: 'Leptonycteris nivalis',
     commonName: 'Greater Long-nosed Bat',
-    profileId: 2158,
   },
   maca: {
     sciName: 'Macrotus californicus',
     commonName: 'California Leaf-nosed Bat',
-    profileId: 2441,
   },
   mome: {
     sciName: 'Mormoops megalophylla',
     commonName: 'Ghost-faced Bat',
-    profileId: 2081,
   },
   myar: {
     sciName: 'Myotis auriculus',
     commonName: 'Southwestern Myotis',
-    profileId: 1686,
   },
   myau: {
     sciName: 'Myotis austroriparius',
     commonName: 'Southeastern Myotis',
-    profileId: 1693,
   },
   myca: {
     sciName: 'Myotis californicus',
     commonName: 'California Myotis',
-    profileId: 1750,
   },
   myci: {
     sciName: 'Myotis ciliolabrum',
     commonName: 'Western Small-footed Bat',
-    profileId: 1779,
   },
   myev: {
     sciName: 'Myotis evotis',
     commonName: 'Long-Eared Myotis',
-    profileId: 1858,
   },
   mygr: {
     sciName: 'Myotis grisescens',
     commonName: 'Gray Bat',
-    profileId: 1915,
   },
   myke: {
     sciName: 'Myotis keenii',
     commonName: "Keen's Myotis",
-    profileId: 1995,
   },
   myle: {
     sciName: 'Myotis leibii',
     commonName: 'Eastern Small-footed Myotis',
-    profileId: 2014,
+    noBCIProfile: true, // cannot find profile anymore
   },
   mylu: {
     sciName: 'Myotis lucifugus',
     commonName: 'Little Brown Bat',
-    profileId: 2040,
   },
   myoc: {
     sciName: 'Myotis occultus',
     commonName: 'Arizona Myotis',
-    profileId: 2170,
   },
   myse: {
     sciName: 'Myotis septentrionalis',
     commonName: 'Northern Long-eared Myotis',
-    profileId: 2306,
   },
   myso: {
     sciName: 'Myotis sodalis',
     commonName: 'Indiana Bat',
-    profileId: 2323,
   },
   myth: {
     sciName: 'Myotis thysanodes',
     commonName: 'Fringed Bat',
-    profileId: 2369,
   },
   myve: {
     sciName: 'Myotis velifer',
     commonName: 'Cave Myotis',
-    profileId: 2405,
   },
   myvo: {
     sciName: 'Myotis volans',
     commonName: 'Long-legged Myotis',
-    profileId: 2415,
   },
   myyu: {
     sciName: 'Myotis yumanensis',
     commonName: 'Yuma Myotis',
-    profileId: 2435,
   },
   nyhu: {
     sciName: 'Nycticeius humeralis',
     commonName: 'Evening Bat',
-    profileId: 1952,
   },
   nyfe: {
     sciName: 'Nyctinomops femorosaccus',
     commonName: 'Pocketed Free-tailed Bat',
-    profileId: 1862,
   },
   nyma: {
     sciName: 'Nyctinomops macrotis',
     commonName: 'Big Free-tailed Bat',
-    profileId: 2055,
   },
   pahe: {
     sciName: 'Parastrellus hesperus',
     commonName: 'Canyon Bat',
-    profileId: 1937,
   },
   pesu: {
     sciName: 'Perimyotis subflavus',
     commonName: 'Tricolored Bat',
-    profileId: 2345,
+    noBCIProfile: true, // cannot find profile anymore
   },
   tabr: {
     sciName: 'Tadarida brasiliensis',
     commonName: 'Mexican Free-tailed Bat',
-    profileId: 1738,
   },
   // Hawaiian Hoary bat
   haba: {
     sciName: 'Lasiurus cinereus semotus',
     commonName: 'Hawaiian Hoary Bat',
+    noBCIProfile: true,
     ecosId: 770, // NOTE: this is ECOS ID, not BCI
     imageCredits: 'Jack Jeffery',
   },
