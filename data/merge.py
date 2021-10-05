@@ -251,10 +251,12 @@ admin_df = (
 )
 admin_df.admin1 = admin_df.admin1.astype("uint8")
 
-site_admin = gp.sjoin(sites, admin_df, how="left")[["admin1_name", "country"]] # "admin1",
+site_admin = gp.sjoin(sites, admin_df, how="left")[
+    ["admin1_name", "country"]
+]  # "admin1",
 # Fill missing admin areas - these are most likely offshore
-site_admin.admin1_name = site_admin.admin1_name.fillna('Offshore')
-site_admin.country = site_admin.country.fillna('')
+site_admin.admin1_name = site_admin.admin1_name.fillna("Offshore")
+site_admin.country = site_admin.country.fillna("")
 
 
 # extract species list for site based on species ranges
@@ -607,7 +609,7 @@ detectors = detectors.rename(
         "species": "sp",
         "target_species": "st",
         "presence_only": "po",
-        "years": 'y'
+        "years": "y",
     }
 )
 detectors.columns = camelcase(detectors.columns)
@@ -677,6 +679,9 @@ spp_stats = (
     .reset_index()
     .rename(columns={"index": "species"})
 )
+
+spp_stats["po_detectors"] = spp_stats.po_detectors.fillna(0).astype("uint")
+
 
 spp_stats["commonName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["CNAME"])
 spp_stats["sciName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["SNAME"])
