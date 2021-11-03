@@ -78,8 +78,8 @@ df = merged.reindex()
 if not "haba" in df.columns:
     df["haba"] = np.nan
 
-if not "lyse" in df.columns:
-    df["lyse"] = np.nan
+if not "leye" in df.columns:
+    df["leye"] = np.nan
 
 
 # TODO: remove

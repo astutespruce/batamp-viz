@@ -22,7 +22,7 @@ const SPECIES2ID = {
   laxa: 18,
   lecu: 19,
   leni: 20,
-  lyse: 21,
+  leye: 21,
   maca: 22,
   mome: 23,
   myar: 24,

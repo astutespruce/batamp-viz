@@ -110,7 +110,7 @@ export const SPECIES = {
     sciName: 'Leptonycteris nivalis',
     commonName: 'Greater Long-nosed Bat',
   },
-  lyse: {
+  leye: {
     sciName: 'Leptonycteris yerbabuenae',
     commonName: 'Lesser Long-nosed Bat',
     imageCredits: 'J. Scott Altenbach',
@@ -246,7 +246,7 @@ export const SPECIES_ID = {
   18: 'laxa',
   19: 'lecu',
   20: 'leni',
-  21: 'lyse',
+  21: 'leye',
   22: 'maca',
   23: 'mome',
   24: 'myar',
