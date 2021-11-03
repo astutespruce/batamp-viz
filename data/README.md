@@ -76,7 +76,7 @@ Map images are generated using [`mbgl-renderer`](https://github.com/consbio/mbgl
 
 You must have a `.env` file that defines `MAPBOX_TOKEN` in the `/maps` directory.
 
-In `/maps` directory, using a version of NodeJS that is compatible with `mbgl-renderer` (Node 8):
+In `/maps` directory, using a version of NodeJS that is compatible with `mbgl-renderer` (Node 8-10):
 
 -   `npm install`
 -   `npm run maps`

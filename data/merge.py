@@ -1,17 +1,16 @@
 import os
 import json
 from pathlib import Path
-from datetime import datetime
-import csv
+import warnings
 
 import pandas as pd
 import geopandas as gp
+import pygeos as pg
 import numpy as np
-from feather import read_dataframe
-from shapely.geometry import Point
+from pyogrio import read_dataframe, write_dataframe
+
 from databasin.client import Client
 
-from geofeather import from_geofeather
 from data.constants import (
     SPECIES,
     ACTIVITY_COLUMNS,
@@ -24,6 +23,9 @@ from data.util import camelcase
 # API key stored in .env.
 # generated using https://databasin.org/auth/api-keys/
 from data.settings import DATABASIN_KEY, DATABASIN_USER
+
+warnings.filterwarnings("ignore", message=".*initial implementation of Parquet.*")
+
 
 client = Client()
 client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
@@ -69,19 +71,21 @@ for filename in (src_dir / "presence").glob("*.csv"):
 
     merged = merged.append(df, ignore_index=True, sort=False)
 
-
 df = merged.reindex()
 
 # TODO: remove
-# make sure to add "haba" column while we are waiting for this to be added to the aggregate dataset
+# make sure to add "haba" and "lyse" columns while we are waiting for this to be added to the aggregate dataset
 if not "haba" in df.columns:
     df["haba"] = np.nan
+
+if not "lyse" in df.columns:
+    df["lyse"] = np.nan
 
 
 # TODO: remove
 # df.to_csv(derived_dir / 'merged_original.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
 
-print("Read {} raw records".format(len(df)))
+print(f"Read {len(df):,} raw records")
 
 #### Process source data and clean up ############################################
 print("Cleaning raw data...")
@@ -102,9 +106,7 @@ df = df.dropna(axis=1, how="all")
 # This will drop some species columns, so update that variable
 GROUP_ACTIVITY_COLUMNS = [c for c in GROUP_ACTIVITY_COLUMNS if c in df.columns]
 ACTIVITY_COLUMNS = [c for c in ACTIVITY_COLUMNS if c in df.columns]
-print(
-    "{} records after dropping those with null activity for all fields".format(len(df))
-)
+print(f"{len(df)} records after dropping those with null activity for all fields")
 
 # Convert height units to meters
 index = df.mic_ht_units == "feet"
@@ -187,7 +189,7 @@ core_columns = (
     location_fields + ["mic_ht", "night"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS
 )
 df = df.drop_duplicates(subset=core_columns, keep="first")
-print("{} records after dropping complete duplicates".format(len(df)))
+print(f"{len(df):,} records after dropping complete duplicates")
 
 
 df.reset_index().to_feather(derived_dir / "merged_raw.feather")
@@ -199,8 +201,8 @@ print("Getting dataset names from Data Basin...")
 
 # Read cache of dataset ID:Name
 dataset_names_file = derived_dir / "dataset_names.feather"
-if Path.exists(dataset_names_file):
-    dataset_names = read_dataframe(dataset_names_file).set_index("dataset")
+if dataset_names_file.exists():
+    dataset_names = pd.read_feather(dataset_names_file).set_index("dataset")
 else:
     dataset_names = pd.DataFrame(columns=["dataset", "dataset_name"]).set_index(
         "dataset"
@@ -238,14 +240,15 @@ detectors["detector"] = detectors.index
 sites = detectors.groupby(location_fields).size().reset_index()[location_fields]
 
 # construct geometries so that sites can be joined to boundaries
-sites["geometry"] = sites.apply(lambda row: Point(row.lon, row.lat), axis=1)
-sites = gp.GeoDataFrame(sites, geometry="geometry", crs={"init": "epsg:4326"})
+sites = gp.GeoDataFrame(
+    sites, geometry=pg.points(sites.lon, sites.lat), crs="epsg:4326"
+)
 sites["site"] = sites.index
 
 # Determine the admin unit (state / province) that contains the site
 print("Assigning admin boundary to sites...")
 admin_df = (
-    from_geofeather(boundary_dir / "na_admin1.geofeather")
+    gp.read_feather(boundary_dir / "na_admin1.feather")
     .drop(columns=["admin1"])
     .rename(columns={"id": "admin1"})
 )
@@ -261,11 +264,11 @@ site_admin.country = site_admin.country.fillna("")
 
 # extract species list for site based on species ranges
 print("Assigning species ranges to sites...")
-range_df = from_geofeather(boundary_dir / "species_ranges.geofeather")
+range_df = gp.read_feather(boundary_dir / "species_ranges.feather")
 
 # TODO: extract GRTS ID for a site
 # print("Assigning grid info to sites...")
-# grts_df = from_geofeather(boundary_dir / "na_grts.geofeather")
+# grts_df = gp.read_feather(boundary_dir / "na_grts.feather")
 # site_grts = gp.sjoin(sites, grts_df, how="left")[["grts", "na50k", "na100k"]]
 
 # Join site info together
@@ -318,7 +321,7 @@ temp = (
 )
 dup_index = temp.loc[temp.duplicates > 1].index
 nondup_index = temp.loc[temp.duplicates == 1].index
-print("{} records have duplicate detector / night combinations".format(len(dup_index)))
+print(f"{len(dup_index):,} records have duplicate detector / night combinations")
 
 dups = df.loc[dup_index]
 
@@ -346,9 +349,7 @@ df = (
     .sort_values(by=["detector", "night"])
     .reindex()
 )
-print(
-    "{} records after removing duplicate detector / night combinations".format(len(df))
-)
+print(f"{len(df):,} records after removing duplicate detector / night combinations")
 
 
 # Write out merged data
@@ -472,13 +473,13 @@ detector_datasets = (
 
 
 # NOTE: we are dropping any detectors that did not target species
-print("{} detectors".format(len(detectors)))
+print(f"{len(detectors):,} detectors")
 detectors = detectors.loc[
     detectors.index.isin(
         df.dropna(axis=0, how="all", subset=ACTIVITY_COLUMNS).detector.unique()
     )
 ]
-print("{} detectors have species records".format(len(detectors)))
+print(f"{len(detectors):,} detectors have species records")
 
 # Calculate list of unique species present or targeted per detector
 # We are setting null data to -1 so we can filter it out

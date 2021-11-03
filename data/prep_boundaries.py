@@ -10,24 +10,26 @@ Species: join to species 4-letter code, and merge together species that are effe
 
 import os
 from pathlib import Path
+import warnings
+
 import geopandas as gp
-from shapely.geometry import Polygon
-from geofeather import to_geofeather
+import pygeos as pg
+
+# from shapely.geometry import Polygon
+from pyogrio import read_dataframe, write_dataframe
+
+warnings.filterwarnings("ignore", message=".*initial implementation of Parquet.*")
+
 from constants import SPECIES
 
-HAWAII_BOUNDS = [-166.317558,12.803013,-148.124199,27.129348]
+HAWAII_BOUNDS = [-166.317558, 12.803013, -148.124199, 27.129348]
+
 
 def bounds_to_poly(bounds):
     xmin, ymin, xmax, ymax = bounds
-    return Polygon([[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin]])
-
-
-
-def to_geojson(df, filename):
-    # JSON cannot be overwritten, so delete it first
-    if os.path.exists(filename):
-        os.remove(filename)
-    df.to_file(filename, driver="GeoJSON")
+    return Polygon(
+        [[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin]]
+    )
 
 
 def to_titlecase(text):
@@ -40,20 +42,20 @@ src_dir = boundaries_dir / "src"
 
 ### Process admin boundaries
 print("Extracting admin boundaries...")
-us_df = gp.read_file(src_dir / "us_state_wgs84.shp").rename(
+us_df = read_dataframe(src_dir / "us_state_wgs84.shp").rename(
     columns={"NAME": "admin1_name"}
 )
 us_df["admin1"] = "US-" + us_df.STUSPS
 us_df["country"] = "US"
 
 
-ca_df = gp.read_file(src_dir / "canada_province_wgs84.shp").rename(
+ca_df = read_dataframe(src_dir / "canada_province_wgs84.shp").rename(
     columns={"PRENAME": "admin1_name"}
 )
-ca_df["admin1"] = "CA-" + ca_df.PREABBR.str.replace(".", "")
+ca_df["admin1"] = "CA-" + ca_df.PREABBR.str.replace("\.", "")
 ca_df["country"] = "CA"
 
-mx_df = gp.read_file(
+mx_df = read_dataframe(
     src_dir / "mexico_state.shp"
 )  # already in 4326, but needs to be simplified
 mx_df.geometry = mx_df.geometry.simplify(0.001)
@@ -77,8 +79,10 @@ admin_df = (
 )
 
 admin_df["id"] = admin_df.index.astype("uint8") + 1
-to_geojson(admin_df, boundaries_dir / "na_admin1.json")
-to_geofeather(admin_df, boundaries_dir / "na_admin1.geofeather")
+
+
+write_dataframe(admin_df, boundaries_dir / "na_admin1.json")
+admin_df.to_feather(boundaries_dir / "na_admin1.feather")
 
 
 ### Process species ranges
@@ -86,20 +90,22 @@ print("Processing species ranges...")
 # create lookup of species scientific name to code
 sci_name_lut = {value["SNAME"]: key for key, value in SPECIES.items()}
 
-range_df = gp.read_file("data/boundaries/src/species_ranges.shp")
+range_df = read_dataframe("data/boundaries/src/species_ranges.shp")
 
 # split hoary bat into Hawaiian vs mainland
-laci = range_df.loc[range_df.SCI_NAME=='Lasiurus cinereus']
-Hawaii = bounds_to_poly(HAWAII_BOUNDS)
+laci = range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus"]
+Hawaii = pg.box(*HAWAII_BOUNDS)
 haba = laci.copy()
 # add new geometry for haba
-haba.geometry = laci.intersection(Hawaii)
-haba.SCI_NAME = SPECIES['haba']['SNAME']
-haba.COMMON_NAM = SPECIES['haba']['CNAME']
+haba.geometry = pg.intersection(laci.geometry.values.data, Hawaii)
+haba.SCI_NAME = SPECIES["haba"]["SNAME"]
+haba.COMMON_NAM = SPECIES["haba"]["CNAME"]
 range_df = range_df.append(haba, ignore_index=True, sort=False)
 
 # clip out Hawaii from laci
-range_df.loc[range_df.SCI_NAME=='Lasiurus cinereus', 'geometry'] = laci.difference(Hawaii)
+range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus", "geometry"] = pg.difference(
+    laci.geometry.values.data, Hawaii
+)
 
 # add in alias of Myotis melanorhinus to Myotis ciliolabrum
 sci_name_lut["Myotis melanorhinus"] = "myci"
@@ -109,15 +115,15 @@ range_df["species"] = range_df.SCI_NAME.map(sci_name_lut)
 range_df = range_df.dissolve(by="species").reset_index()
 
 
-to_geofeather(range_df, boundaries_dir / "species_ranges.geofeather")
-to_geojson(range_df, boundaries_dir / "species_ranges.json")
+range_df.to_feather(boundaries_dir / "species_ranges.feather")
+write_dataframe(range_df, boundaries_dir / "species_ranges.json")
 # for verification
-# range_df.to_file("data/boundaries/species_ranges.shp")
+# write_dataframe(range_df, "/tmp/species_ranges.gpkg")
 
 
 ### Process grids
 print("Processing GRTS grid...")
-grts_df = gp.read_file(src_dir / "na_grts_wgs84.shp").rename(columns={"id": "grts"})[
+grts_df = read_dataframe(src_dir / "na_grts_wgs84.shp").rename(columns={"id": "grts"})[
     ["grts", "na50k", "na100k", "geometry"]
 ]
-to_geofeather(grts_df, boundaries_dir / "na_grts.geofeather")
+grts_df.to_feather(boundaries_dir / "na_grts.feather")
