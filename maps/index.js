@@ -28,10 +28,9 @@ const style = {
     basemap: {
       type: 'raster',
       tiles: [
-        // TODO: migrate to newer tilesetID: https://docs.mapbox.com/help/troubleshooting/migrate-legacy-static-tiles-api
-        `https://api.mapbox.com/v4/mapbox.light/{z}/{x}/{y}.png?access_token=${token}`,
+        `https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${token}`,
       ],
-      tileSize: 256,
+      tileSize: 512,
     },
     species: {
       type: 'vector',
@@ -59,12 +58,14 @@ const style = {
   ],
 }
 
-allSpecies.forEach(species => {
+allSpecies.forEach((species) => {
   console.log(`Creating map for ${species}`)
 
   style.layers[1].filter = ['==', 'species', species]
 
-  render(style, width, height, { token, center, zoom, tilePath }).then(data => {
-    fs.writeFileSync(`${outDir}/${species}.png`, data)
-  })
+  render(style, width, height, { token, center, zoom, tilePath }).then(
+    (data) => {
+      fs.writeFileSync(`${outDir}/${species}.png`, data)
+    }
+  )
 })
