@@ -113,7 +113,7 @@ export const SPECIES = {
   leye: {
     sciName: 'Leptonycteris yerbabuenae',
     commonName: 'Lesser Long-nosed Bat',
-    imageCredits: 'J. Scott Altenbach',
+    imageCredits: 'J. Scott Altenbach (BCI)',
   },
   maca: {
     sciName: 'Macrotus californicus',
