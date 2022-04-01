@@ -9,14 +9,14 @@ python-dotenv = "*"
 geopandas = "*"
 pyarrow = "*"
 pygeos = "*"
-pyogrio = "*"
+pyogrio = {editable = true, path = "./../pyogrio"}
 
 [dev-packages]
 pylint = "*"
-black = "==19.3b0"
+black = "*"
 
 [requires]
-python_version = "3"
+python_version = "3.9"
 
 [pipenv]
 allow_prereleases = true

@@ -22,9 +22,6 @@ setup(
     install_requires=[
         "pandas",
         "geopandas",
-        "rtree",
-        "geofeather",
-        "feather-format",
         "python-databasin",
         "python-dotenv",
     ],

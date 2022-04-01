@@ -25,7 +25,7 @@ from data.util import camelcase
 from data.settings import DATABASIN_KEY, DATABASIN_USER
 
 warnings.filterwarnings("ignore", message=".*initial implementation of Parquet.*")
-
+warnings.filterwarnings("ignore", message=".*frame.append method is deprecated.*")
 
 client = Client()
 client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
