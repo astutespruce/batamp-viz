@@ -15,7 +15,7 @@ const IndexPage = ({
   return (
     <Layout>
       <HeaderImage
-        image={img.childImageSharp.fluid}
+        image={img}
         height="60vh"
         minHeight="34rem"
         position="bottom"
@@ -71,9 +71,11 @@ export const pageQuery = graphql`
   query HomePageQuery {
     headerImage: file(relativePath: { eq: "NK1_6322.jpg" }) {
       childImageSharp {
-        fluid(maxWidth: 3200) {
-          ...GatsbyImageSharpFluid_withWebp
-        }
+        gatsbyImageData(
+          layout: FULL_WIDTH
+          formats: [AUTO, WEBP]
+          placeholder: BLURRED
+        )
       }
     }
     summaryJson {

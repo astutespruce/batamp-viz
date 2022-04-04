@@ -31,29 +31,25 @@ const About = () => (
       <Column>
         <p>
           This application was created by{' '}
-          <a href="mailto:bcward@astutespruce.com">Brendan C. Ward</a> at the&nbsp;
+          <a href="mailto:bcward@astutespruce.com">Brendan C. Ward</a> at
+          the&nbsp;
           <OutboundLink
-            from="/"
             to="https://consbio.org"
             target="_blank"
             rel="noopener noreferrer"
           >
             Conservation Biology Institute
           </OutboundLink>
-          &nbsp; (CBI),
-          now with <OutboundLink from="/" to="https://astutespruce.com/" target="_blank">
-Astute Spruce, LLC
+          &nbsp; (CBI), now with{' '}
+          <OutboundLink to="https://astutespruce.com/" target="_blank">
+            Astute Spruce, LLC
           </OutboundLink>
-
           in partnership with{' '}
-          <OutboundLink
-            from="/"
-            to="https://www.fs.fed.us/psw/programs/cb/staff/tweller/"
-          >
+          <OutboundLink to="https://www.fs.fed.us/psw/programs/cb/staff/tweller/">
             Ted Weller
           </OutboundLink>{' '}
           at the&nbsp;
-          <OutboundLink from="/" to="https://www.fs.fed.us/psw/index.shtml">
+          <OutboundLink to="https://www.fs.fed.us/psw/index.shtml">
             U.S. Department of Agriculture Forest Service - Pacific Southwest
             Research Station
           </OutboundLink>

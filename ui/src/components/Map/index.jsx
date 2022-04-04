@@ -3,7 +3,9 @@ import React, { useRef, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { useDebouncedCallback } from 'use-debounce'
 
-import mapboxgl from 'mapbox-gl'
+// exclude Mapbox GL from babel transpilation per https://docs.mapbox.com/mapbox-gl-js/guides/migrate-to-v2/
+/* eslint-disable-next-line */
+import mapboxgl from '!mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 import styled from 'style'
@@ -476,10 +478,18 @@ const Map = ({
     if (upperValue === 0) {
       // no detections
       map.setPaintProperty('detectors-points', 'circle-radius', MINRADIUS)
-      map.setPaintProperty('detectors-points', 'circle-color', NONDETECTIONCOLOR)
+      map.setPaintProperty(
+        'detectors-points',
+        'circle-color',
+        NONDETECTIONCOLOR
+      )
 
       map.setPaintProperty('detectors-clusters', 'circle-radius', MINRADIUS)
-      map.setPaintProperty('detectors-clusters', 'circle-color', NONDETECTIONCOLOR)
+      map.setPaintProperty(
+        'detectors-clusters',
+        'circle-color',
+        NONDETECTIONCOLOR
+      )
 
       if (detectors.length) {
         updateLegend(legends.detectors(upperValue, METRIC_LABELS[valueField]))

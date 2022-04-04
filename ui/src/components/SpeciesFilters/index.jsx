@@ -55,11 +55,9 @@ const ProfileLink = styled(OutboundLink)``
 
 const resolveProfileId = (sciName) => sciName.toLowerCase().replace(' ', '-')
 
-
 const index = ({ species, filters }) => {
-  const { commonName, sciName, noBCIProfile, profileId, ecosId, imageCredits } = SPECIES[
-    species
-  ]
+  const { commonName, sciName, noBCIProfile, profileId, ecosId, imageCredits } =
+    SPECIES[species]
 
   return (
     <Wrapper>
@@ -71,16 +69,10 @@ const index = ({ species, filters }) => {
               credit:
               {imageCredits || (
                 <>
-                  <OutboundLink
-                    from="/species"
-                    to="https://www.merlintuttle.org"
-                  >
+                  <OutboundLink to="https://www.merlintuttle.org">
                     MerlinTuttle.org
                   </OutboundLink>{' '}
-                  |{' '}
-                  <OutboundLink from="/species" to="http://www.batcon.org/">
-                    BCI
-                  </OutboundLink>
+                  | <OutboundLink to="http://www.batcon.org/">BCI</OutboundLink>
                 </>
               )}
             </ImageCredits>
@@ -92,7 +84,9 @@ const index = ({ species, filters }) => {
             {!noBCIProfile ? (
               <ProfileLink
                 from="/species"
-                to={`${PROFILE_ROOT_URL}/${profileId||resolveProfileId(sciName)}`}
+                to={`${PROFILE_ROOT_URL}/${
+                  profileId || resolveProfileId(sciName)
+                }`}
               >
                 Species profile <ProfileLinkIcon />
               </ProfileLink>

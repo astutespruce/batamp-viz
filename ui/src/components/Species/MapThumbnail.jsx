@@ -1,16 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { graphql, useStaticQuery } from 'gatsby'
-import Img from 'gatsby-image'
+import { GatsbyImage as Img, getImage } from 'gatsby-plugin-image'
 
-import { extractNodes } from 'util/graphql'
+import { extractNodes } from 'util/data'
 
 /**
  * Retrieve a fixed-size, blur-up image for each species in `src/images/species`:
  * {species: <img>, ...}
  *
- * For use with gatsby-image "fixed" property:
- * <Img fixed={thumbnails[species]} />
+ * <Img image={getImage(thumbnails[species])} />
  *
  *
  * NOTE: Due to the way graphql queries work at the moment, we have to do this for all
@@ -25,9 +24,14 @@ export const useThumbnails = () => {
             id
             species: name
             childImageSharp {
-              fixed(width: 175, height: 150, quality: 100) {
-                ...GatsbyImageSharpFixed
-              }
+              gatsbyImageData(
+                width: 175
+                height: 150
+                layout: FIXED
+                formats: [PNG]
+                placeholder: BLURRED
+                quality: 100
+              )
             }
           }
         }
@@ -36,16 +40,16 @@ export const useThumbnails = () => {
   `)
 
   return extractNodes(data.allFile).reduce(
-    (prev, { species, childImageSharp: { fixed } }) => {
+    (prev, { species, childImageSharp: { gatsbyImageData } }) => {
       /* eslint-disable no-param-reassign */
-      prev[species] = fixed
+      prev[species] = getImage(gatsbyImageData)
       return prev
     },
     {}
   )
 }
 
-export const useThumbnail = species => {
+export const useThumbnail = (species) => {
   const thumbnails = useThumbnails()
 
   return thumbnails[species] || null
@@ -53,7 +57,13 @@ export const useThumbnail = species => {
 
 const MapThumbnail = ({ species, ...props }) => {
   const thumbnail = useThumbnail(species)
-  return thumbnail ? <Img fixed={thumbnail} {...props} /> : null
+  return thumbnail ? (
+    <Img
+      image={getImage(thumbnail)}
+      alt={`species distribution map for ${species}`}
+      {...props}
+    />
+  ) : null
 }
 
 MapThumbnail.propTypes = {

@@ -1,5 +1,5 @@
-import { extractNodes } from './graphql'
-import { SPECIES_ID, SPECIES } from '../../config/constants'
+import PropTypes from 'prop-types'
+import { SPECIES_ID } from '../../config/constants'
 
 /**
  * Generates an monotonically increasing array from start to stop.
@@ -326,3 +326,14 @@ export const symmetricDifference = (setA, setB) => {
 export const clone = obj => {
   return JSON.parse(JSON.stringify(obj))
 }
+
+export const GraphQLArrayPropType = node =>
+  PropTypes.shape({
+    edges: PropTypes.arrayOf(
+      PropTypes.shape({
+        node,
+      })
+    ),
+  })
+
+export const extractNodes = ({ edges }) => edges.map(({ node }) => node)

@@ -1,6 +1,6 @@
 import React, { useState, useLayoutEffect, memo } from 'react'
 import PropTypes from 'prop-types'
-import isEqual from 'dequal'
+import { dequal } from 'dequal'
 
 import styled from 'style'
 import { Flex } from 'components/Grid'
@@ -27,7 +27,7 @@ const DetectorDetails = ({
     setIndex(0)
   }, [detectors, detectors.length])
 
-  const handleIteratorChange = newIndex => {
+  const handleIteratorChange = (newIndex) => {
     setIndex(newIndex)
     onSetDetector(detectors[newIndex].id)
   }
@@ -70,5 +70,5 @@ DetectorDetails.defaultProps = {
 export default memo(
   DetectorDetails,
   ({ detectors: prevDetectors }, { detectors: nextDetectors }) =>
-    isEqual(prevDetectors, nextDetectors)
+    dequal(prevDetectors, nextDetectors)
 )

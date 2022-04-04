@@ -1,15 +1,13 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 import { css } from 'styled-components'
-import Img from 'gatsby-image'
+import { GatsbyImage as Img, getImage } from 'gatsby-plugin-image'
 
 import { Flex, Box } from 'components/Grid'
 import { OutboundLink, Link } from 'components/Link'
 import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
-import {
-  SPECIES,
-} from '../../../config/constants'
+import { SPECIES } from '../../../config/constants'
 
 const Wrapper = styled.div`
   &:not(:first-child) {
@@ -105,8 +103,7 @@ const ListItem = ({
   thumbnail,
   map,
 }) => {
-
-const {imageCredits } = SPECIES[species]
+  const { imageCredits } = SPECIES[species]
 
   return (
     <Wrapper>
@@ -122,24 +119,24 @@ const {imageCredits } = SPECIES[species]
         <ThumbnailColumn>
           <Link to={`/species/${species}`}>
             <Thumbnail>
-              <Img fluid={thumbnail} />
+              <Img
+                image={thumbnail}
+                alt={`species photo for ${commonName} (${sciName})`}
+              />
             </Thumbnail>
           </Link>
           <ImageCredits>
-          credit:{' '}
-
+            credit:{' '}
             {imageCredits || (
-
-          <>
-            <OutboundLink from="/species" to="https://www.merlintuttle.org">
-              MerlinTuttle.org
-            </OutboundLink>{' '}
-            |{' '}
-            <OutboundLink from="/species" to="http://www.batcon.org/">
-              batcon.org
-            </OutboundLink>
-
-            </>
+              <>
+                <OutboundLink to="https://www.merlintuttle.org">
+                  MerlinTuttle.org
+                </OutboundLink>{' '}
+                |{' '}
+                <OutboundLink to="http://www.batcon.org/">
+                  batcon.org
+                </OutboundLink>
+              </>
             )}
           </ImageCredits>
         </ThumbnailColumn>
@@ -191,17 +188,15 @@ const {imageCredits } = SPECIES[species]
 
         <Map>
           <Link to={`/species/${species}`}>
-            <Img fixed={map} />
+            <Img
+              image={getImage(map)}
+              alt={`distribution map thumnbnail for ${commonName} (${sciName})`}
+            />
           </Link>
           <MapCredits>
             range:{' '}
-            <OutboundLink from="/species" to="http://www.batcon.org/">
-              batcon.org
-            </OutboundLink>{' '}
-            |{' '}
-            <OutboundLink from="/species" to="http://www.iucnredlist.org/">
-              IUCN
-            </OutboundLink>
+            <OutboundLink to="http://www.batcon.org/">batcon.org</OutboundLink>{' '}
+            | <OutboundLink to="http://www.iucnredlist.org/">IUCN</OutboundLink>
             <br />
             basemap: © Mapbox, © OpenStreetMap
           </MapCredits>
