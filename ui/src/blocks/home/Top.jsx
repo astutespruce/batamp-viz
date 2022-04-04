@@ -86,7 +86,7 @@ const Top = ({
       ) {
         childImageSharp {
           gatsbyImageData(
-            height: 550
+            width: 550
             layout: CONSTRAINED
             formats: [AUTO, WEBP]
             placeholder: BLURRED
@@ -255,7 +255,9 @@ const Top = ({
             </List>
           </Column>
           <Column>
-            <Image image={images.occurrenceScreenshot} alt="" />
+            <ImgWrapper>
+              <Image image={getImage(images.occurrenceScreenshot)} alt="" />
+            </ImgWrapper>
           </Column>
         </Columns>
       </Box>
