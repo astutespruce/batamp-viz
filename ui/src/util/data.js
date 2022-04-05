@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types'
-import { SPECIES_ID } from '../../config/constants'
 
 /**
  * Generates an monotonically increasing array from start to stop.
@@ -164,13 +163,12 @@ export const mapValues = (records, func) =>
  * @param {Array } data
  * @param {String} groupField - name of group field to group by
  */
-export const groupBy = (data, groupField) => {
-  return data.reduce((prev, d) => {
+export const groupBy = (data, groupField) =>
+  data.reduce((prev, d) => {
     const key = d[groupField]
     prev[key] = (prev[key] || []).concat([d])
     return prev
   }, {})
-}
 
 /**
  * Joins right to left, if values are available for left.
@@ -233,9 +231,7 @@ export const symmetricDifference = (setA, setB) => {
  * Deep clone the object.  Object must be JSON compatible.
  * @param {Object} obj
  */
-export const clone = (obj) => {
-  return JSON.parse(JSON.stringify(obj))
-}
+export const clone = (obj) => JSON.parse(JSON.stringify(obj))
 
 export const GraphQLArrayPropType = (node) =>
   PropTypes.shape({

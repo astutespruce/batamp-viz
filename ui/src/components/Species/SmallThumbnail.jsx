@@ -58,8 +58,6 @@ export const useSmallThumbnail = (species) => {
 const SmallThumbnail = ({ species, ...props }) => {
   const thumbnail = useSmallThumbnail(species)
 
-  console.log('Small species thumb', species)
-
   return thumbnail ? (
     <Img image={thumbnail} alt={`species photo for ${species}`} {...props} />
   ) : null

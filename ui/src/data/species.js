@@ -1,4 +1,4 @@
-import { csvParse, autoType } from 'd3-dsv'
+import { csvParse } from 'd3-dsv'
 import { useStaticQuery, graphql } from 'gatsby'
 
 export const useSpeciesTS = () => {
@@ -30,17 +30,15 @@ export const useSpeciesTS = () => {
         detectorNights = '',
         detectionNights = '',
         detections = '',
-      }) => {
-        return {
-          species,
-          id: parseInt(detector, 10) || 0,
-          year: years[parseInt(year, 10) || 0],
-          month: parseInt(month, 10) || 0,
-          detectorNights: parseInt(detectorNights, 10) || 0,
-          detectionNights: parseInt(detectionNights, 10) || 0,
-          detections: parseInt(detections) || 0,
-        }
-      }
+      }) => ({
+        species,
+        id: parseInt(detector, 10) || 0,
+        year: years[parseInt(year, 10) || 0],
+        month: parseInt(month, 10) || 0,
+        detectorNights: parseInt(detectorNights, 10) || 0,
+        detectionNights: parseInt(detectionNights, 10) || 0,
+        detections: parseInt(detections, 10) || 0,
+      })
     )
 
     data.push(...parsed)
