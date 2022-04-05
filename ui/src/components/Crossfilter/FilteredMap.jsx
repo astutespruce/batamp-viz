@@ -26,7 +26,7 @@ const FilteredMap = ({
     setBounds(filterByBounds ? boundsRef.current : null)
   }, [filterByBounds])
 
-  const handleBoundsChange = bounds => {
+  const handleBoundsChange = (bounds) => {
     boundsRef.current = bounds
 
     onBoundsChange(bounds)
@@ -37,7 +37,7 @@ const FilteredMap = ({
     setBounds(bounds)
   }
 
-  const {data, valueField, hasVisibleFilters} = state
+  const { data, valueField, hasVisibleFilters } = state
 
   const filteredIds = useIsEqualMemo(() => {
     return new Set(data.map(({ id }) => id))
@@ -46,14 +46,15 @@ const FilteredMap = ({
   // Any detector not included below can be assumed to have a total of 0
   const totalById = useIsEqualMemo(() => {
     // only tally records where species were detected
-    const filteredData = data.filter(d => (d.detectionNights || 0) > 0)
+    const filteredData = data.filter((d) => (d.detectionNights || 0) > 0)
 
     switch (valueField) {
       case 'id': {
         // only return 1 as stand in as count for a given detector so that
         // other tallies work correctly
-        return mapValues(sumBy(filteredData, 'id', 'detectionNights'), total =>
-          total > 0 ? 1 : 0
+        return mapValues(
+          sumBy(filteredData, 'id', 'detectionNights'),
+          (total) => (total > 0 ? 1 : 0)
         )
       }
       case 'species': {
@@ -76,7 +77,7 @@ const FilteredMap = ({
     () =>
       detectors
         .filter(({ id }) => filteredIds.has(id))
-        .map(d => ({
+        .map((d) => ({
           ...d,
           total: totalById[d.id] || 0,
           max: totalById[d.id] || 0,

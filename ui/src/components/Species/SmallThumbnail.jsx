@@ -1,16 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { graphql, useStaticQuery } from 'gatsby'
-import Img from 'gatsby-image'
+import { GatsbyImage as Img, getImage } from 'gatsby-plugin-image'
 
-import { extractNodes } from 'util/graphql'
+import { extractNodes } from 'util/data'
 
 /**
  * Retrieve a fixed-size, blur-up image for each species in `src/images/species`:
  * {species: <img>, ...}
  *
- * For use with gatsby-image "fixed" property:
- * <Img fixed={thumbnails[species]} />
+ * <Img image={getImage(thumbnails[species])} />
  *
  *
  * NOTE: Due to the way graphql queries work at the moment, we have to do this for all
@@ -25,9 +24,14 @@ export const useSmallThumbnails = () => {
             id
             species: name
             childImageSharp {
-              fixed(width: 150, height: 100, quality: 90) {
-                ...GatsbyImageSharpFixed
-              }
+              gatsbyImageData(
+                width: 150
+                height: 100
+                layout: CONSTRAINED
+                formats: [AUTO]
+                placeholder: BLURRED
+                quality: 95
+              )
             }
           }
         }
@@ -36,16 +40,16 @@ export const useSmallThumbnails = () => {
   `)
 
   return extractNodes(data.allFile).reduce(
-    (prev, { species, childImageSharp: { fixed } }) => {
+    (prev, { species, childImageSharp: { gatsbyImageData } }) => {
       /* eslint-disable no-param-reassign */
-      prev[species] = fixed
+      prev[species] = getImage(gatsbyImageData)
       return prev
     },
     {}
   )
 }
 
-export const useSmallThumbnail = species => {
+export const useSmallThumbnail = (species) => {
   const thumbnails = useSmallThumbnails()
 
   return thumbnails[species] || null
@@ -54,7 +58,9 @@ export const useSmallThumbnail = species => {
 const SmallThumbnail = ({ species, ...props }) => {
   const thumbnail = useSmallThumbnail(species)
 
-  return thumbnail ? <Img fixed={thumbnail} {...props} /> : null
+  return thumbnail ? (
+    <Img image={thumbnail} alt={`species photo for ${species}`} {...props} />
+  ) : null
 }
 
 SmallThumbnail.propTypes = {

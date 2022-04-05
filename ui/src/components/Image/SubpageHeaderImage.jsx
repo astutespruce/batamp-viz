@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Img from 'gatsby-image'
+import { GatsbyImage as Img, getImage } from 'gatsby-plugin-image'
 
 import { Text } from 'components/Text'
 import { Container } from 'components/Grid'
@@ -70,7 +70,7 @@ const SubpageHeaderImage = ({
   position,
 }) => (
   <Wrapper height={height} minHeight={minHeight}>
-    <StyledImage fluid={image} position={position} />
+    <StyledImage image={getImage(image)} position={position} alt="" />
 
     {title ? (
       <>

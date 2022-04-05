@@ -28,8 +28,8 @@ export const getCenterAndZoom = (bounds, width, height, padding = 0) => {
 export const toGeoJSONPoint = (record, x = 'lon', y = 'lat') => {
   const properties = {}
   Object.keys(record)
-    .filter(f => f !== x && f !== y)
-    .forEach(f => {
+    .filter((f) => f !== x && f !== y)
+    .forEach((f) => {
       properties[f] = record[f]
     })
 
@@ -50,9 +50,9 @@ export const toGeoJSONPoint = (record, x = 'lon', y = 'lat') => {
   return feature
 }
 
-export const toGeoJSONPoints = records => ({
+export const toGeoJSONPoints = (records) => ({
   type: 'FeatureCollection',
-  features: records.map(r => toGeoJSONPoint(r)),
+  features: records.map((r) => toGeoJSONPoint(r)),
 })
 
 export const boundsOverlap = (
@@ -88,21 +88,18 @@ export const createSteps = (entries, property) => {
  *
  * @param {Array} geometries - Array of point GeoJSON geometries
  */
-export const calculateBounds = geometries => {
-  return geometries
+export const calculateBounds = (geometries) =>
+  geometries
     .map(({ coordinates }) => coordinates)
     .reduce(
-      ([xmin, ymin, xmax, ymax], [lng, lat]) => {
-        return [
-          xmin === null ? lng : Math.min(xmin, lng),
-          ymin === null ? lat : Math.min(ymin, lat),
-          xmax === null ? lng : Math.max(xmax, lng),
-          ymax === null ? lat : Math.max(ymax, lat),
-        ]
-      },
+      ([xmin, ymin, xmax, ymax], [lng, lat]) => [
+        xmin === null ? lng : Math.min(xmin, lng),
+        ymin === null ? lat : Math.min(ymin, lat),
+        xmax === null ? lng : Math.max(xmax, lng),
+        ymax === null ? lat : Math.max(ymax, lat),
+      ],
       [null, null, null, null]
     )
-}
 
 // TODO: memoize!
 /**
@@ -165,7 +162,7 @@ export const interpolateExpr = ({
 export const maxProperty = (features, property, fallback = null) => {
   const values = features
     .map(({ properties: { [property]: v } }) => v)
-    .filter(v => !isNaN(v))
+    .filter((v) => !isNaN(v))
 
   if (values.length) {
     return Math.max(...values)

@@ -57,9 +57,7 @@ const Header = () => (
         <RootLink to="/">Bat Acoustic Monitoring Visualization Tool</RootLink>
         <Subtitle>
           (a companion to{' '}
-          <OutboundLink from="/" to="https://batamp.databasin.org/">
-            BatAMP
-          </OutboundLink>
+          <OutboundLink to="https://batamp.databasin.org/">BatAMP</OutboundLink>
           )
         </Subtitle>
       </Title>

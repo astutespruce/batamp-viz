@@ -25,7 +25,7 @@ const Credits = ({ author, url }) => (
   <Wrapper>
     Photo:&nbsp;
     {url ? (
-      <OutboundLink from="/" to={url} target="_blank" rel="noopener noreferrer">
+      <OutboundLink to={url} target="_blank" rel="noopener noreferrer">
         {author}
       </OutboundLink>
     ) : (

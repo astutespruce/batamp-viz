@@ -98,7 +98,7 @@ const DetectorMetadata = ({
 
   const detectedSpp = new Set(species)
   const monitoredSpp = targetSpecies
-    .map(spp => {
+    .map((spp) => {
       const { commonName, sciName } = SPECIES[spp]
 
       return {
@@ -113,7 +113,7 @@ const DetectorMetadata = ({
   const numMonitored = monitoredSpp.length
   const numDetected = detectedSpp.size
 
-  const datasetInfo = datasets.map(d => {
+  const datasetInfo = datasets.map((d) => {
     const [id, name] = d.split(':')
 
     return {
@@ -203,18 +203,14 @@ const DetectorMetadata = ({
       <Field>
         <FieldHeader>
           Source {quantityLabel('datasets', datasetInfo.length)} on{' '}
-          <OutboundLink
-            from="/"
-            to="https://batamp.databasin.org/"
-            target="_blank"
-          >
+          <OutboundLink to="https://batamp.databasin.org/" target="_blank">
             BatAMP
           </OutboundLink>
           :
         </FieldHeader>
         {datasetInfo.length === 1 ? (
           <FieldValue>
-            <OutboundLink from="/" to={datasetInfo[0].url}>
+            <OutboundLink to={datasetInfo[0].url}>
               {datasetInfo[0].name}
             </OutboundLink>
           </FieldValue>
@@ -222,9 +218,7 @@ const DetectorMetadata = ({
           <FieldValueList>
             {datasetInfo.map(({ id, url, name }) => (
               <li key={id}>
-                <OutboundLink from="/" to={url}>
-                  {name}
-                </OutboundLink>
+                <OutboundLink to={url}>{name}</OutboundLink>
               </li>
             ))}
           </FieldValueList>

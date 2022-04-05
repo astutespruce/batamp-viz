@@ -1,16 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { graphql, useStaticQuery } from 'gatsby'
-import Img from 'gatsby-image'
+import { GatsbyImage as Img, getImage } from 'gatsby-plugin-image'
 
-import { extractNodes } from 'util/graphql'
+import { extractNodes } from 'util/data'
 
 /**
  * Retrieve a fixed-size, blur-up image for each species in `src/images/species`:
  * {species: <img>, ...}
  *
- * For use with gatsby-image "fixed" property:
- * <Img fixed={thumbnails[species]} />
+ * <Img fixed={getImage(thumbnails[species])} />
  *
  *
  * NOTE: Due to the way graphql queries work at the moment, we have to do this for all
@@ -26,9 +25,12 @@ export const useThumbnails = () => {
             id
             species: name
             childImageSharp {
-              fluid(quality: 90) {
-                ...GatsbyImageSharpFluid
-              }
+              gatsbyImageData(
+                layout: FULL_WIDTH
+                formats: [AUTO]
+                placeholder: BLURRED
+                quality: 95
+              )
             }
           }
         }
@@ -37,16 +39,16 @@ export const useThumbnails = () => {
   `)
 
   return extractNodes(data.allFile).reduce(
-    (prev, { species, childImageSharp: { fluid } }) => {
+    (prev, { species, childImageSharp: { gatsbyImageData } }) => {
       /* eslint-disable no-param-reassign */
-      prev[species] = fluid
+      prev[species] = getImage(gatsbyImageData)
       return prev
     },
     {}
   )
 }
 
-export const useThumbnail = species => {
+export const useThumbnail = (species) => {
   const thumbnails = useThumbnails()
 
   return thumbnails[species] || null
@@ -55,7 +57,9 @@ export const useThumbnail = species => {
 const Thumbnail = ({ species, ...props }) => {
   const thumbnail = useThumbnail(species)
 
-  return thumbnail ? <Img fluid={thumbnail} {...props} /> : null
+  return thumbnail ? (
+    <Img image={thumbnail} alt={`species photo for ${species}`} {...props} />
+  ) : null
 }
 
 Thumbnail.propTypes = {

@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require('path-browserify')
 
 const SPECIES2ID = {
   anpa: 0,
@@ -49,19 +49,30 @@ const SPECIES2ID = {
   tabr: 45,
 }
 
-/**
- * Enable absolute imports with `/src` as root.
- *
- * See: https://github.com/alampros/gatsby-plugin-resolve-src/issues/4
- */
-exports.onCreateWebpackConfig = ({ actions, stage, loaders }) => {
+exports.onCreateWebpackConfig = ({ actions, stage, loaders, plugins }) => {
   const config = {
     resolve: {
+      alias: {
+        path: require.resolve('path-browserify'),
+      },
+      fallback: {
+        assert: require.resolve('assert'),
+        constants: require.resolve('constants-browserify'),
+        crypto: require.resolve('crypto-browserify'),
+        fs: false,
+        os: require.resolve('os-browserify/browser'),
+        stream: require.resolve('stream-browserify'),
+        util: require.resolve('util/'),
+        zlib: require.resolve('browserify-zlib'),
+      },
+
+      // Enable absolute imports with `/src` as root.
       modules: [path.resolve(__dirname, 'src'), 'node_modules'],
     },
+    plugins: [plugins.provide({ process: 'process/browser' })],
   }
 
-  // when building HTML, window is not defined, so Leaflet causes the build to blow up
+  // when building HTML, window is not defined, so mapbox-gl causes the build to blow up
   if (stage === 'build-html') {
     config.module = {
       rules: [

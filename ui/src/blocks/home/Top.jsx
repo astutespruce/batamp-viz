@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Img from 'gatsby-image'
+import { GatsbyImage as Img, getImage } from 'gatsby-plugin-image'
 import { graphql, useStaticQuery } from 'gatsby'
 import { FaExclamationTriangle } from 'react-icons/fa'
 
@@ -60,29 +60,37 @@ const Top = ({
   years,
   admin1,
 }) => {
-  const data = useStaticQuery(graphql`
+  const images = useStaticQuery(graphql`
     query TopSectionQuery {
-      image: file(relativePath: { eq: "28724644287_6710a192ed_o.jpg" }) {
+      speciesPhoto: file(relativePath: { eq: "28724644287_6710a192ed_o.jpg" }) {
         childImageSharp {
-          fluid(maxWidth: 3200) {
-            ...GatsbyImageSharpFluid_withWebp
-          }
+          gatsbyImageData(
+            layout: FULL_WIDTH
+            formats: [AUTO]
+            placeholder: BLURRED
+          )
         }
       }
       speciesScreenshot: file(relativePath: { eq: "explore_species.jpg" }) {
         childImageSharp {
-          fixed(width: 550) {
-            ...GatsbyImageSharpFixed_withWebp
-          }
+          gatsbyImageData(
+            width: 550
+            layout: CONSTRAINED
+            formats: [AUTO]
+            placeholder: BLURRED
+          )
         }
       }
-      presenceScreenshot: file(
+      occurrenceScreenshot: file(
         relativePath: { eq: "explore_occurrences.jpg" }
       ) {
         childImageSharp {
-          fixed(width: 550) {
-            ...GatsbyImageSharpFixed_withWebp
-          }
+          gatsbyImageData(
+            width: 550
+            layout: CONSTRAINED
+            formats: [AUTO]
+            placeholder: BLURRED
+          )
         }
       }
     }
@@ -142,11 +150,7 @@ const Top = ({
       <Subtitle mt="2rem">Bat Acoustic Monitoring Portal</Subtitle>
       <p>
         This application is a companion to the{' '}
-        <OutboundLink
-          from="/"
-          to="https://batamp.databasin.org/"
-          target="_blank"
-        >
+        <OutboundLink to="https://batamp.databasin.org/" target="_blank">
           Bat Acoustic Monitoring Portal
         </OutboundLink>{' '}
         (BatAMP).
@@ -155,7 +159,7 @@ const Top = ({
       <Columns>
         <NarrowColumn>
           <ImgWrapper>
-            <Img fluid={data.image.childImageSharp.fluid} alt="" />
+            <Img image={getImage(images.speciesPhoto)} alt="" />
           </ImgWrapper>
         </NarrowColumn>
         <WideColumn>
@@ -167,7 +171,7 @@ const Top = ({
             this tool.
             <br />
             <br />
-            <OutboundLink from="/" to="https://batamp.databasin.org">
+            <OutboundLink to="https://batamp.databasin.org">
               Learn more about how to contribute data to BatAMP
             </OutboundLink>
             .
@@ -223,10 +227,7 @@ const Top = ({
 
           <Column>
             <ImgWrapper>
-              <Image
-                fixed={data.speciesScreenshot.childImageSharp.fixed}
-                alt=""
-              />
+              <Image image={getImage(images.speciesScreenshot)} alt="" />
             </ImgWrapper>
           </Column>
         </Columns>
@@ -254,10 +255,9 @@ const Top = ({
             </List>
           </Column>
           <Column>
-            <Image
-              fixed={data.presenceScreenshot.childImageSharp.fixed}
-              alt=""
-            />
+            <ImgWrapper>
+              <Image image={getImage(images.occurrenceScreenshot)} alt="" />
+            </ImgWrapper>
           </Column>
         </Columns>
       </Box>

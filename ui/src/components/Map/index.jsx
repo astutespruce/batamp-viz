@@ -3,7 +3,9 @@ import React, { useRef, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { useDebouncedCallback } from 'use-debounce'
 
-import mapboxgl from 'mapbox-gl'
+// exclude Mapbox GL from babel transpilation per https://docs.mapbox.com/mapbox-gl-js/guides/migrate-to-v2/
+/* eslint-disable-next-line */
+import mapboxgl from '!mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 import styled from 'style'
@@ -75,8 +77,8 @@ const Map = ({
   )
 
   // Debounce calls to set style & legend, since these may be called frequently during panning or changing data
-  const [styleDetectors] = useDebouncedCallback(
-    calculateMax => styleDetectorsImpl(calculateMax),
+  const styleDetectors = useDebouncedCallback(
+    (calculateMax) => styleDetectorsImpl(calculateMax),
     100
   )
 
@@ -137,7 +139,7 @@ const Map = ({
       // add species range underneath everything else
       if (species) {
         map.addSource('species', speciesSource)
-        speciesLayers.forEach(speciesLayer => {
+        speciesLayers.forEach((speciesLayer) => {
           map.addLayer({ ...speciesLayer, filter: ['==', 'species', species] })
         })
       }
@@ -148,7 +150,7 @@ const Map = ({
       })
 
       // add layers
-      layers.forEach(layer => {
+      layers.forEach((layer) => {
         map.addLayer(layer)
       })
 
@@ -168,7 +170,7 @@ const Map = ({
       onBoundsChange(lowerLeft.concat(upperRight))
     })
 
-    map.on('click', e => {
+    map.on('click', (e) => {
       const features = map.queryRenderedFeatures(e.point, {
         layers: ['detectors-points'],
       })
@@ -183,7 +185,7 @@ const Map = ({
       }
     })
 
-    map.on('mousemove', 'detectors-points', e => {
+    map.on('mousemove', 'detectors-points', (e) => {
       const { current: metric } = valueFieldRef
       map.getCanvas().style.cursor = 'pointer'
 
@@ -200,12 +202,12 @@ const Map = ({
       // unhighlight all previous that are not currently visible
       const unhighlightIds = difference(highlightFeatureRef.current, ids)
       if (unhighlightIds.size) {
-        unhighlightIds.forEach(id =>
+        unhighlightIds.forEach((id) =>
           map.setFeatureState({ source: 'detectors', id }, { highlight: false })
         )
       }
 
-      ids.forEach(id => {
+      ids.forEach((id) => {
         map.setFeatureState({ source: 'detectors', id }, { highlight: true })
       })
       highlightFeatureRef.current = ids
@@ -266,7 +268,7 @@ const Map = ({
 
       const ids = highlightFeatureRef.current
       if (ids.size) {
-        ids.forEach(id =>
+        ids.forEach((id) =>
           map.setFeatureState({ source: 'detectors', id }, { highlight: false })
         )
       }
@@ -276,7 +278,7 @@ const Map = ({
     })
 
     // clicking on clusters zooms in
-    map.on('click', 'detectors-clusters', e => {
+    map.on('click', 'detectors-clusters', (e) => {
       const [
         {
           properties: { cluster_id: clusterId },
@@ -300,7 +302,7 @@ const Map = ({
     })
 
     // hover highlights cluster and shows tooltip
-    map.on('mousemove', 'detectors-clusters', e => {
+    map.on('mousemove', 'detectors-clusters', (e) => {
       const { current: metric } = valueFieldRef
       map.getCanvas().style.cursor = 'pointer'
 
@@ -313,7 +315,7 @@ const Map = ({
       // unhighlight all previous
       const prevIds = highlightFeatureRef.current
       if (prevIds.size) {
-        prevIds.forEach(id =>
+        prevIds.forEach((id) =>
           map.setFeatureState(
             { source: 'detectors', id },
             { highlight: false, 'highlight-cluster': false }
@@ -358,7 +360,7 @@ const Map = ({
 
       const ids = highlightFeatureRef.current
       if (ids.size) {
-        ids.forEach(id =>
+        ids.forEach((id) =>
           map.setFeatureState(
             { source: 'detectors', id },
             { highlight: false, 'highlight-cluster': false }
@@ -476,10 +478,18 @@ const Map = ({
     if (upperValue === 0) {
       // no detections
       map.setPaintProperty('detectors-points', 'circle-radius', MINRADIUS)
-      map.setPaintProperty('detectors-points', 'circle-color', NONDETECTIONCOLOR)
+      map.setPaintProperty(
+        'detectors-points',
+        'circle-color',
+        NONDETECTIONCOLOR
+      )
 
       map.setPaintProperty('detectors-clusters', 'circle-radius', MINRADIUS)
-      map.setPaintProperty('detectors-clusters', 'circle-color', NONDETECTIONCOLOR)
+      map.setPaintProperty(
+        'detectors-clusters',
+        'circle-color',
+        NONDETECTIONCOLOR
+      )
 
       if (detectors.length) {
         updateLegend(legends.detectors(upperValue, METRIC_LABELS[valueField]))
@@ -525,7 +535,7 @@ const Map = ({
     setLegendEntries(entries)
   }
 
-  const handleBasemapChange = styleID => {
+  const handleBasemapChange = (styleID) => {
     const { current: map } = mapRef
     const { current: baseStyle } = baseStyleRef
 
@@ -553,7 +563,7 @@ const Map = ({
         map.addSource(id, source)
       })
 
-      userLayers.forEach(layer => {
+      userLayers.forEach((layer) => {
         map.addLayer(layer)
       })
     })

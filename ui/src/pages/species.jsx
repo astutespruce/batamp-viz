@@ -7,7 +7,7 @@ import Layout from 'components/Layout'
 import { SubpageHeaderImage as HeaderImage } from 'components/Image'
 import { Container } from 'components/Grid'
 import { SpeciesList } from 'components/Species'
-import { extractNodes } from 'util/graphql'
+import { extractNodes } from 'util/data'
 import styled from 'style'
 import { SPECIES } from '../../config/constants'
 
@@ -20,7 +20,7 @@ const Title = styled(Text).attrs({
 `
 
 const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
-  const species = extractNodes(allSpeciesJson).map(d => ({
+  const species = extractNodes(allSpeciesJson).map((d) => ({
     ...d,
     ...SPECIES[d.species],
   }))
@@ -28,7 +28,7 @@ const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
   return (
     <Layout title="Explore Bat Species">
       <HeaderImage
-        image={headerImage.childImageSharp.fluid}
+        image={headerImage}
         height="40vh"
         minHeight="20rem"
         position="bottom"
@@ -72,9 +72,11 @@ export const pageQuery = graphql`
   query {
     headerImage: file(relativePath: { eq: "NK1_6328.jpg" }) {
       childImageSharp {
-        fluid(maxWidth: 3200) {
-          ...GatsbyImageSharpFluid_withWebp
-        }
+        gatsbyImageData(
+          layout: FULL_WIDTH
+          formats: [AUTO]
+          placeholder: BLURRED
+        )
       }
     }
 

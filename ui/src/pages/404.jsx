@@ -8,7 +8,7 @@ import { HeaderImage } from 'components/Image'
 const NotFoundPage = ({ data: { headerImage } }) => (
   <Layout title="404: Not found">
     <HeaderImage
-      image={headerImage.childImageSharp.fluid}
+      image={headerImage}
       height="100vh"
       position="bottom"
       credits={{
@@ -31,9 +31,11 @@ export const pageQuery = graphql`
   query NotFoundPageQuery {
     headerImage: file(relativePath: { eq: "7664772034_68e27d16ff_o.jpg" }) {
       childImageSharp {
-        fluid(maxWidth: 3200) {
-          ...GatsbyImageSharpFluid_withWebp
-        }
+        gatsbyImageData(
+          layout: FULL_WIDTH
+          formats: [AUTO]
+          placeholder: BLURRED
+        )
       }
     }
   }
