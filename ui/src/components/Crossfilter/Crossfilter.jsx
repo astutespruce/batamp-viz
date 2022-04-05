@@ -6,7 +6,7 @@ import { aggregateByDimension, getRawTotal, getFilteredTotal } from './util'
 
 // returns true if passed in values contains the value
 // values must be a Set
-export const hasValue = filterValues => value => filterValues.has(value)
+export const hasValue = (filterValues) => (value) => filterValues.has(value)
 
 /**
  * Initialize crossfilter from the data and filters
@@ -17,10 +17,10 @@ const initCrossfilter = (data, filters) => {
   const crossfilter = Crossfilter2(data)
 
   const dimensions = {}
-  filters.forEach(filter => {
+  filters.forEach((filter) => {
     const { field, isArray, getValue } = filter
     // default `getValue` function is identify function for field
-    const dimensionFunction = getValue || (record => record[field])
+    const dimensionFunction = getValue || ((record) => record[field])
 
     const dimension = crossfilter.dimension(dimensionFunction, !!isArray)
     dimension.config = filter
@@ -74,7 +74,7 @@ export const Crossfilter = (data, filters, options = {}) => {
       )
     }
 
-    setState(prevState => {
+    setState((prevState) => {
       if (isDebug) {
         console.log('setFilter', field, filterValue)
         console.log('Prev state', prevState)
@@ -122,14 +122,14 @@ export const Crossfilter = (data, filters, options = {}) => {
     })
   }
 
-  const setBounds = bounds => {
+  const setBounds = (bounds) => {
     if (!(dimensions.lat && dimensions.lon)) {
       console.warn(
         'Filter requested on spatial dimensions that do not exist.  Must be configured as lat, lon when Crossfilter is constructed.'
       )
     }
 
-    setState(prevState => {
+    setState((prevState) => {
       if (isDebug) {
         console.log('setBounds', bounds)
         console.log('Prev state', prevState)
@@ -163,23 +163,22 @@ export const Crossfilter = (data, filters, options = {}) => {
     })
   }
 
-  const resetFilters = fields => {
-    setState(prevState => {
+  const resetFilters = (fields) => {
+    setState((prevState) => {
       if (isDebug) {
         console.log('resetFilters', fields)
         console.log('Prev state', prevState)
       }
 
       // reset the filters on the dimenions
-      fields.forEach(field => {
-        console.log('filtering all for field', field)
+      fields.forEach((field) => {
         dimensions[field].filterAll()
       })
 
       const { valueField, filters: prevFilters } = prevState
 
       // only retain the OTHER filters than fields
-      const newFilters = filterObjectByKey(prevFilters, f => !fields.has(f))
+      const newFilters = filterObjectByKey(prevFilters, (f) => !fields.has(f))
       console.log('prev filters', prevFilters, 'new filters', newFilters)
 
       const hasVisibleFilters =
@@ -205,8 +204,8 @@ export const Crossfilter = (data, filters, options = {}) => {
     })
   }
 
-  const setValueField = valueField => {
-    setState(prevState => {
+  const setValueField = (valueField) => {
+    setState((prevState) => {
       if (isDebug) {
         console.log('setValueField', valueField)
         console.log('Prev state', prevState)

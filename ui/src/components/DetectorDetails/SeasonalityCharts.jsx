@@ -21,11 +21,14 @@ const SeasonalityCharts = ({ data, selectedSpecies }) => {
   const maxBySpp = data.map(({ values }) => Math.max(...values))
   const max = Math.max(...maxBySpp)
 
-  const chartScale = scaleLinear()
-    .domain([1, max])
-    .range([6, 100])
+  const chartScale = scaleLinear().domain([1, max]).range([6, 100])
 
-  const sppData = data.filter(({ species }) => species !== selectedSpecies)
+  const sppData = data
+    .filter(({ species }) => species !== selectedSpecies)
+    .sort((left, right) => {
+      // sort alphabetically on name
+      return left.commonName < right.commonName ? -1 : 1
+    })
 
   let detectedSelected = false
   let selectedSppChart = null

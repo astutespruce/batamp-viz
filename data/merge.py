@@ -1,3 +1,4 @@
+import csv
 import os
 import json
 from pathlib import Path
@@ -7,7 +8,6 @@ import pandas as pd
 import geopandas as gp
 import pygeos as pg
 import numpy as np
-from pyogrio import read_dataframe, write_dataframe
 
 from databasin.client import Client
 
@@ -42,7 +42,8 @@ def get_dataset_title(id):
 src_dir = Path("data/src")
 derived_dir = Path("data/derived")
 boundary_dir = Path("data/boundaries")
-json_dir = Path("ui/data")
+json_dir = Path("ui/src/data")
+# out_dir = Path("ui/src/data")
 
 if not os.path.exists(derived_dir):
     os.makedirs(derived_dir)
@@ -81,9 +82,6 @@ if not "haba" in df.columns:
 if not "leye" in df.columns:
     df["leye"] = np.nan
 
-
-# TODO: remove
-# df.to_csv(derived_dir / 'merged_original.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
 
 print(f"Read {len(df):,} raw records")
 
@@ -193,7 +191,6 @@ print(f"{len(df):,} records after dropping complete duplicates")
 
 
 df.reset_index().to_feather(derived_dir / "merged_raw.feather")
-# df.to_csv(derived_dir / "merged_cleaned.csv", index=False, quoting=csv.QUOTE_NONNUMERIC)
 
 
 #### Get dataset names from Data Basin ##############################
@@ -235,7 +232,6 @@ detectors = (
 )
 detectors["detector"] = detectors.index
 
-
 # extract out unique locations
 sites = detectors.groupby(location_fields).size().reset_index()[location_fields]
 
@@ -254,13 +250,10 @@ admin_df = (
 )
 admin_df.admin1 = admin_df.admin1.astype("uint8")
 
-site_admin = gp.sjoin(sites, admin_df, how="left")[
-    ["admin1_name", "country"]
-]  # "admin1",
+site_admin = gp.sjoin(sites, admin_df, how="left")[["admin1_name", "country"]]
 # Fill missing admin areas - these are most likely offshore
 site_admin.admin1_name = site_admin.admin1_name.fillna("Offshore")
 site_admin.country = site_admin.country.fillna("")
-
 
 # extract species list for site based on species ranges
 print("Assigning species ranges to sites...")
@@ -273,10 +266,7 @@ range_df = gp.read_feather(boundary_dir / "species_ranges.feather")
 
 # Join site info together
 # not species ranges, they are handled differently
-sites = (
-    sites.drop(columns=["geometry"]).join(site_admin)
-    # .join(site_grts)  # .join(site_spps)
-)
+sites = sites.drop(columns=["geometry"]).join(site_admin)
 sites.to_feather(derived_dir / "sites.feather")
 
 # join sites back to detectors
@@ -354,8 +344,6 @@ print(f"{len(df):,} records after removing duplicate detector / night combinatio
 
 # Write out merged data
 df.reset_index().to_feather(derived_dir / "merged.feather")
-# For debugging
-# df.to_csv(derived_dir / "merged_final.csv", index=False, quoting=csv.QUOTE_NONNUMERIC)
 
 
 print("Calculating statistics...")
@@ -588,33 +576,68 @@ detectors.mic_ht = (detectors.mic_ht * 10).astype("uint16")
 detectors.presence_only = detectors.presence_only.astype("uint8")
 detectors[location_fields] = detectors[location_fields].round(5)
 
-# rename to shorter keys
-detectors = detectors.rename(
-    columns={
-        "detector": "i",
-        "mic_ht": "mh",
-        "mic_type": "mt",
-        "det_mfg": "mf",
-        "det_model": "mo",
-        "refl_type": "rt",
-        "call_id": "ci",
-        "datasets": "ds",
-        "contributors": "co",
-        # "admin1": "ad1",
-        "admin1_name": "ad1n",
-        "country": "ad0",
-        "detections": "dt",
-        "detection_nights": "dtn",
-        "detector_nights": "dn",
-        "date_range": "dr",
-        "species": "sp",
-        "target_species": "st",
-        "presence_only": "po",
-        "years": "y",
-    }
+# convert list fields to pipe delimited
+# Note: save index of target_species so we can use it for filtering later
+det_target_spp = detectors.target_species.copy()
+
+for col in ["species", "target_species", "datasets"]:
+    detectors[col] = (
+        detectors[col]
+        .fillna("")
+        .apply(lambda x: "|".join(str(v) for v in x) if x else "")
+    )
+
+### Consolidate detector metadata into separate ordered arrays of unique values for smaller JSON files
+
+# Make a unique set of admins and put into separate JSON file as an indexed list
+detectors["admin"] = detectors.country + ":" + detectors.admin1_name
+admins = (
+    detectors.groupby("admin")
+    .size()
+    .reset_index()
+    .reset_index()
+    .rename(columns={"index": "admin_id"})[["admin_id", "admin"]]
 )
+detectors = (
+    detectors.join(admins.set_index("admin"), on="admin")
+    .drop(columns=["admin", "admin1_name", "country"])
+    .rename(columns={"admin_id": "admin"})
+)
+det_meta = {"admin": admins.admin.to_list()}
+
+# encode detector metadata into single JSON files for faster build
+repl_cols = [
+    "det_mfg",
+    "det_model",
+    "mic_type",
+    "refl_type",
+    "call_id",
+    "contributors",
+    "datasets",
+]
+for col in repl_cols:
+    id_col = f"{col}_id"
+    vals = (
+        detectors.groupby(col)
+        .size()
+        .reset_index()
+        .reset_index()
+        .rename(columns={"index": id_col})[[id_col, col]]
+    )
+    detectors = detectors.join(vals.set_index(col)[id_col], on=col)
+    det_meta[camelcase([col])[0]] = vals[col].to_list()
+
+detectors = detectors.drop(columns=repl_cols)
 detectors.columns = camelcase(detectors.columns)
-detectors.to_json(json_dir / "detectors.json", orient="records")
+
+# TODO: drop 0's
+detectors_csv = detectors.to_csv(index=False)
+det_meta["detectors"] = detectors_csv
+
+# Create JSON file with embedded CSV data for detectors plus metadata
+with open(json_dir / "detectors.json", "w") as out:
+    out.write(json.dumps(det_meta))
+
 
 #### Calculate species statistics
 # Total activity by species - only where activity was being recorded
@@ -667,7 +690,6 @@ spp_po_detectors = (
     .rename("po_detectors")
 )
 
-
 spp_stats = (
     pd.DataFrame(spp_detections)
     .join(spp_po_detections)
@@ -683,26 +705,14 @@ spp_stats = (
 
 spp_stats["po_detectors"] = spp_stats.po_detectors.fillna(0).astype("uint")
 
-
 spp_stats["commonName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["CNAME"])
 spp_stats["sciName"] = spp_stats.species.apply(lambda spp: SPECIES[spp]["SNAME"])
-
-# use shorter json keys - not used yet
-# spp_stats = spp_stats.rename(columns={
-#         "detections": "dt",
-#         "detection_nights": "dtn",
-#         "detector_nights": "dn",
-# })
 
 spp_stats.columns = camelcase(spp_stats.columns)
 spp_stats.to_json(json_dir / "species.json", orient="records")
 
 
 ### Calculate detector - species stats per year, month
-# This is used for species detail pages
-# Note: this is currently written out for each species into a separate file to
-# get around processing timeouts in GatsbyJS
-
 
 # transpose species columns to rows
 # NOTE: we are filling nodata as -1 so we can filter these out from true 0's below
@@ -732,50 +742,40 @@ det_ts.detector_nights = det_ts.detector_nights.astype("uint")
 det_ts.detections = det_ts.detections.fillna(0).astype("uint")
 det_ts.detection_nights = det_ts.detection_nights.fillna(0).astype("uint")
 
-# Create a file for each species
-det_ts["s"] = det_ts.species.map(SPECIES_ID).astype("uint")
-det_ts = det_ts[
-    [
-        "species",
-        "detector",
-        "s",
-        "year",
-        "month",
-        "detector_nights",
-        "detection_nights",
-        "detections",
-    ]
+# Convert year to index for smaller CSV
+years = (
+    det_ts.groupby("year").size().reset_index().reset_index().set_index("year")["index"]
+)
+det_ts["year"] = det_ts.year.map(years.to_dict())
+
+det_ts.columns = camelcase(det_ts.columns)
+
+cols = [
+    "detector",
+    "year",
+    "month",
+    "detectorNights",
+    "detectionNights",
+    "detections",
 ]
-det_ts.columns = ["species", "i", "s", "y", "m", "dn", "dtn", "dt"]
-for spp in det_ts.species.unique():
-    det_ts.loc[det_ts.species == spp, ["i", "s", "y", "m", "dn", "dtn", "dt"]].to_json(
-        json_dir / "speciesTS" / "{}.json".format(spp), orient="records"
+
+encoded = []
+for species in sorted(det_ts.species.unique()):
+    data = (
+        det_ts.loc[det_ts.species == species, cols]
+        .to_csv(index=False, header=False)
+        .replace("\n", "|")
+        .replace(",0", ",")
     )
+    encoded.append({"species": species, "ts": data})
 
-
-### Calculate detector - species stats per month
-# NOT USED
-
-# print('creating detector time series file...')
-# stacked = (
-#     df[["detector"] + ACTIVITY_COLUMNS + ['month']]
-#     .fillna(-1)
-#     .set_index(["detector", "month"])
-#     .stack()
-# )
-
-# # Only keep records where species was detected
-# det = stacked[stacked > 0].reset_index()
-# det.columns = ["detector", "month", "species", "detections"]
-# det_ts = det.groupby(["detector", "species", 'month']).agg(["count", "sum"])
-# det_ts.columns = ["detection_nights", "detections"]
-
-# det_ts = det_ts.reset_index()
-# det_ts.detections = det_ts.detections.fillna(0).astype("uint")
-# det_ts.detection_nights = det_ts.detection_nights.fillna(0).astype("uint")
-
-# det_ts['species'] = det_ts.species.map(SPECIES_ID).astype("uint")
-# det_ts = det_ts[['detector', 'species', 'month', 'detection_nights', 'detections']]
-# det_ts.columns = ["i", "s", 'm', 'dtn', 'dt']
-
-# det_ts.to_json(json_dir / "detectorTS.json", orient="records")
+with open(json_dir / "speciesTS.json", "w") as out:
+    out.write(
+        json.dumps(
+            {
+                "years": years.index.values.tolist(),
+                "columns": ",".join(cols),
+                "tsData": encoded,
+            }
+        )
+    )

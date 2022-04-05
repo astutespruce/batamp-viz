@@ -1,6 +1,4 @@
-import React, { useState } from 'react'
-import PropTypes from 'prop-types'
-import { graphql } from 'gatsby'
+import React, { useMemo, useState } from 'react'
 
 import FiltersList from 'components/FiltersList'
 import Layout from 'components/Layout'
@@ -9,18 +7,14 @@ import {
   Provider as CrossfilterProvider,
   FilteredMap as Map,
 } from 'components/Crossfilter'
+import ClientOnly from 'components/Layout/ClientOnly'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
 import { Flex, Box } from 'components/Grid'
+import { useDetectors, useSpeciesTS } from 'data'
 import styled from 'style'
-import { join, extractDetectors } from 'util/data'
-import { GraphQLArrayPropType, extractNodes } from 'util/graphql'
-import {
-  MONTHS,
-  MONTH_LABELS,
-  SPECIES,
-  SPECIES_ID,
-} from '../../config/constants'
+import { join } from 'util/data'
+import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
@@ -34,113 +28,107 @@ const MapContainer = styled.div`
 
 const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
-const PresencePage = ({ data: { allDetectorsJson, allSpeciesTsJson } }) => {
+const PresencePage = () => {
   const [selected, setSelected] = useState({ features: [], feature: null })
+
+  const detectors = useDetectors()
+  const allSpeciesTS = useSpeciesTS()
 
   // use state initialization to ensure that we only process data when page mounts
   // and not subsequent rerenders when a detector is selected
-  const [
-    { data, detectors, detectorLocations, detectorTS, filters, visibleFilters },
-  ] = useState(() => {
-    const ts = extractNodes(allSpeciesTsJson).map(
-      ({
+  const { data, detectorLocations, detectorTS, filters, visibleFilters } =
+    useMemo(() => {
+      // drop unneeded fields
+      const ts = allSpeciesTS.map(
+        ({ id, species, year, month, detectionNights, detections }) => ({
+          id,
+          species,
+          year,
+          month,
+          detectionNights,
+          detections,
+        })
+      )
+
+      const locations = detectors.map(({ id, lat, lon, admin1Name }) => ({
         id,
-        s: speciesId,
-        y: year,
-        m: month,
-        dtn: detectionNights,
-        dt: detections,
-      }) => ({
-        id,
-        species: SPECIES_ID[speciesId],
-        year,
-        month,
-        detectionNights,
-        detections,
-      })
-    )
+        lat,
+        lon,
+        admin1Name,
+      }))
 
-    const initDetectors = extractDetectors(allDetectorsJson)
-    const locations = initDetectors.map(({ id, lat, lon, admin1Name }) => ({
-      id,
-      lat,
-      lon,
-      admin1Name,
-    }))
+      const initData = join(ts, locations, 'id')
 
-    const initData = join(ts, locations, 'id')
+      // data for filter values
+      const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
+        species,
+        ...v,
+      }))
 
-    // data for filter values
-    const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
-      species,
-      ...v,
-    }))
+      const years = Array.from(new Set(initData.map(({ year }) => year))).sort()
 
-    const years = Array.from(new Set(initData.map(({ year }) => year))).sort()
+      const initFilters = [
+        {
+          field: 'lat',
+          internal: true,
+        },
+        {
+          field: 'lon',
+          internal: true,
+        },
+        {
+          field: 'species',
+          title: 'Species Detected',
+          isOpen: false,
+          hideEmpty: true,
+          sort: true,
+          values: allSpecies.map(({ species: spp }) => spp),
+          labels: allSpecies.map(
+            ({ commonName, sciName }) => `${commonName} (${sciName})`
+          ),
+        },
+        {
+          field: 'month',
+          title: 'Seasonality',
+          isOpen: false,
+          vertical: true,
+          values: MONTHS,
+          labels: MONTH_LABELS.map((m) => m.slice(0, 3)),
+        },
+        {
+          field: 'year',
+          title: 'Year',
+          isOpen: false,
+          vertical: true,
+          values: years,
+          labels:
+            years.length > 6
+              ? years.map((y) => `'${y.toString().slice(2)}`)
+              : years,
+        },
+        {
+          field: 'admin1Name',
+          title: 'State / Province',
+          isOpen: false,
+          sort: true,
+          hideEmpty: true,
+          values: Array.from(new Set(initData.map((d) => d.admin1Name))).sort(),
+        },
+      ]
 
-    const initFilters = [
-      {
-        field: 'lat',
-        internal: true,
-      },
-      {
-        field: 'lon',
-        internal: true,
-      },
-      {
-        field: 'species',
-        title: 'Species Detected',
-        isOpen: false,
-        hideEmpty: true,
-        sort: true,
-        values: allSpecies.map(({ species: spp }) => spp),
-        labels: allSpecies.map(
-          ({ commonName, sciName }) => `${commonName} (${sciName})`
-        ),
-      },
-      {
-        field: 'month',
-        title: 'Seasonality',
-        isOpen: false,
-        vertical: true,
-        values: MONTHS,
-        labels: MONTH_LABELS.map(m => m.slice(0, 3)),
-      },
-      {
-        field: 'year',
-        title: 'Year',
-        isOpen: false,
-        vertical: true,
-        values: years,
-        labels:
-          years.length > 6
-            ? years.map(y => `'${y.toString().slice(2)}`)
-            : years,
-      },
-      {
-        field: 'admin1Name',
-        title: 'State / Province',
-        isOpen: false,
-        sort: true,
-        hideEmpty: true,
-        values: Array.from(new Set(initData.map(d => d.admin1Name))).sort(),
-      },
-    ]
+      return {
+        data: initData,
+        detectorLocations: locations,
+        detectorTS: ts,
+        filters: initFilters,
+        visibleFilters: initFilters.filter(({ internal }) => !internal),
+      }
+    }, [])
 
-    return {
-      data: initData,
-      detectors: initDetectors,
-      detectorLocations: locations,
-      detectorTS: ts,
-      filters: initFilters,
-      visibleFilters: initFilters.filter(({ internal }) => !internal),
-    }
-  })
-
-  const handleSelectFeatures = ids => {
+  const handleSelectFeatures = (ids) => {
     const features = detectors
       .filter(({ id }) => ids.has(id))
-      .map(d => ({
+      .map((d) => ({
         ...d,
         ts: detectorTS.filter(({ id }) => id === d.id),
       }))
@@ -153,7 +141,7 @@ const PresencePage = ({ data: { allDetectorsJson, allSpeciesTsJson } }) => {
     })
   }
 
-  const handleSetFeature = feature => {
+  const handleSetFeature = (feature) => {
     setSelected({
       features: selected.features,
       feature,
@@ -208,100 +196,19 @@ const PresencePage = ({ data: { allDetectorsJson, allSpeciesTsJson } }) => {
               </>
             )}
           </Sidebar>
-          <MapContainer>
-            <Map
-              detectors={detectorLocations}
-              selectedFeature={selected.feature}
-              onSelectFeatures={handleSelectFeatures}
-            />
-          </MapContainer>
+          <ClientOnly>
+            <MapContainer>
+              <Map
+                detectors={detectorLocations}
+                selectedFeature={selected.feature}
+                onSelectFeatures={handleSelectFeatures}
+              />
+            </MapContainer>
+          </ClientOnly>
         </CrossfilterProvider>
       </Wrapper>
     </Layout>
   )
 }
-
-PresencePage.propTypes = {
-  data: PropTypes.shape({
-    allDetectorsJson: GraphQLArrayPropType(
-      PropTypes.shape({
-        id: PropTypes.number.isRequired,
-        lat: PropTypes.number.isRequired,
-        lon: PropTypes.number.isRequired,
-        ad1n: PropTypes.string,
-        mh: PropTypes.number.isRequired,
-        mt: PropTypes.string,
-        rt: PropTypes.string,
-        mf: PropTypes.string,
-        mo: PropTypes.string,
-        ci: PropTypes.string,
-        po: PropTypes.number,
-        ds: PropTypes.arrayOf(PropTypes.string).isRequired,
-        co: PropTypes.string.isRequired,
-        sp: PropTypes.arrayOf(PropTypes.number),
-        st: PropTypes.arrayOf(PropTypes.number),
-        dt: PropTypes.number.isRequired,
-        dn: PropTypes.number.isRequired,
-        dtn: PropTypes.number.isRequired,
-        dr: PropTypes.string.isRequired,
-        y: PropTypes.number.isRequired,
-      })
-    ).isRequired,
-    allSpeciesTsJson: GraphQLArrayPropType(
-      PropTypes.shape({
-        id: PropTypes.number.isRequired,
-        s: PropTypes.number.isRequired,
-        m: PropTypes.number.isRequired,
-        dtn: PropTypes.number.isRequired,
-        dt: PropTypes.number.isRequired,
-      })
-    ).isRequired,
-  }).isRequired,
-}
-
-export const pageQuery = graphql`
-  query PresencePageQuery {
-    allDetectorsJson {
-      edges {
-        node {
-          id: i
-          name
-          lat
-          lon
-          mh
-          mt
-          rt
-          mf
-          mo
-          ci
-          ds
-          co
-          ad1n
-          ad0
-          dt
-          dtn
-          dn
-          dr
-          sp
-          st
-          po
-          y
-        }
-      }
-    }
-    allSpeciesTsJson {
-      edges {
-        node {
-          id: i
-          s
-          y
-          m
-          dtn
-          dt
-        }
-      }
-    }
-  }
-`
 
 export default PresencePage

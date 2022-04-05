@@ -14,7 +14,7 @@ export const range = (start, stop) =>
  * Sum values in array.
  * @param {Array} values
  */
-export const sum = values => values.reduce((prev, value) => prev + value, 0)
+export const sum = (values) => values.reduce((prev, value) => prev + value, 0)
 
 /**
  * Creates a reducer function to pass on to a .reduce() operation.
@@ -56,8 +56,8 @@ export const objectsToObject = (values, keyField, valueGetter) =>
  */
 export const filterObject = (obj, predicate) => {
   const selected = Object.keys(obj)
-    .filter(key => predicate(obj[key]))
-    .map(key => ({ [key]: obj[key] }))
+    .filter((key) => predicate(obj[key]))
+    .map((key) => ({ [key]: obj[key] }))
 
   return selected.length > 0 ? Object.assign(...selected) : {}
 }
@@ -70,8 +70,8 @@ export const filterObject = (obj, predicate) => {
  */
 export const filterObjectByKey = (obj, predicate) => {
   const selected = Object.keys(obj)
-    .filter(key => predicate(key))
-    .map(key => ({ [key]: obj[key] }))
+    .filter((key) => predicate(key))
+    .map((key) => ({ [key]: obj[key] }))
 
   return selected.length > 0 ? Object.assign(...selected) : {}
 }
@@ -80,7 +80,7 @@ export const filterObjectByKey = (obj, predicate) => {
  * Round number to the nearest power of 10
  * @param {Number} number
  */
-export const niceNumber = number => {
+export const niceNumber = (number) => {
   if (number >= 1 && number < 10) {
     return number
   }
@@ -173,96 +173,6 @@ export const groupBy = (data, groupField) => {
 }
 
 /**
- * Extract graphql detectorJson data to Array of objects.
- * Update height to correct value.
- * Map short field names to longer ones
- *
- * @param {Array} detectorsJson - array of graphql edges
- */
-export const extractDetectors = detectorsJson =>
-  extractNodes(detectorsJson).map(
-    ({
-      mh,
-      mt,
-      mo,
-      mf,
-      rt,
-      ci,
-      ds,
-      co,
-      ad1n,
-      ad0,
-      dt,
-      dtn,
-      dn,
-      dr,
-      sp,
-      st,
-
-      po,
-      y,
-
-      ...rest
-    }) => ({
-      // note: detector height is multiplied by 10 to make into integer,
-      // reverse that here
-      ...rest,
-      model: mo,
-      micType: mt,
-      mfg: mf,
-      micHt: mh / 10,
-      reflType: rt,
-      callId: ci,
-      datasets: ds,
-      contributors: co,
-      admin1Name: ad1n,
-      country: ad0,
-      detections: dt,
-      detectionNights: dtn,
-      detectorNights: dn,
-      dateRange: dr,
-      species: sp ? sp.map(speciesId => SPECIES_ID[speciesId]) : [],
-      targetSpecies: st ? st.map(speciesId => SPECIES_ID[speciesId]) : [],
-
-      presenceOnly: po,
-      years: y,
-    })
-  )
-
-/** Unpack the packed detector time series data
- *
- * @param {Array} - array of data from extractNodes of graphql data for detector time series
- */
-export const unpackTSData = data =>
-  data.map(({ id, speciesId, timestamp, value }) => {
-    // timstamp is MYY, divide by 100 and extract whole number to get month
-    const month = Math.trunc(timestamp / 100)
-
-    // value is detectorNights|detectionNights|detections if detectionNights or detections are > 0, else
-    // it is just detectorNights
-    let detectionNights = 0
-    let detections = 0
-    let detectorNights = 0
-    if (value.includes('|')) {
-      ;[detectorNights, detectionNights, detections] = value
-        .split('|')
-        .map(d => parseInt(d, 10))
-    } else {
-      detectorNights = parseInt(value, 10)
-    }
-
-    return {
-      id,
-      species: SPECIES_ID[speciesId],
-      month,
-      year: timestamp - 100 * month + 2000,
-      detectorNights,
-      detectionNights,
-      detections,
-    }
-  })
-
-/**
  * Joins right to left, if values are available for left.
  * Join is a left join, values are only copied from right a match is found.
  * Will join all fields from left and from right
@@ -276,7 +186,7 @@ export const join = (left, right, on) => {
     throw new Error('`on` must be provided for join')
   }
   const rightIndex = groupBy(right, on)
-  return left.map(record => {
+  return left.map((record) => {
     const joined = rightIndex[record[on]]
 
     if (!(joined && joined.length)) {
@@ -297,7 +207,7 @@ export const join = (left, right, on) => {
  */
 export const difference = (setA, setB) => {
   const result = new Set(setA)
-  setB.forEach(d => result.delete(d))
+  setB.forEach((d) => result.delete(d))
   return result
 }
 
@@ -308,7 +218,7 @@ export const difference = (setA, setB) => {
  */
 export const symmetricDifference = (setA, setB) => {
   const result = new Set(setA)
-  setB.forEach(d => {
+  setB.forEach((d) => {
     if (result.has(d)) {
       result.delete(d)
     } else {
@@ -323,11 +233,11 @@ export const symmetricDifference = (setA, setB) => {
  * Deep clone the object.  Object must be JSON compatible.
  * @param {Object} obj
  */
-export const clone = obj => {
+export const clone = (obj) => {
   return JSON.parse(JSON.stringify(obj))
 }
 
-export const GraphQLArrayPropType = node =>
+export const GraphQLArrayPropType = (node) =>
   PropTypes.shape({
     edges: PropTypes.arrayOf(
       PropTypes.shape({
