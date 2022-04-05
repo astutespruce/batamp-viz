@@ -66,7 +66,7 @@ const Top = ({
         childImageSharp {
           gatsbyImageData(
             layout: FULL_WIDTH
-            formats: [AUTO, WEBP]
+            formats: [AUTO]
             placeholder: BLURRED
           )
         }
@@ -76,7 +76,7 @@ const Top = ({
           gatsbyImageData(
             width: 550
             layout: CONSTRAINED
-            formats: [AUTO, WEBP]
+            formats: [AUTO]
             placeholder: BLURRED
           )
         }
@@ -88,7 +88,7 @@ const Top = ({
           gatsbyImageData(
             width: 550
             layout: CONSTRAINED
-            formats: [AUTO, WEBP]
+            formats: [AUTO]
             placeholder: BLURRED
           )
         }

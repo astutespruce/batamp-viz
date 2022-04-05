@@ -27,7 +27,7 @@ export const useThumbnails = () => {
             childImageSharp {
               gatsbyImageData(
                 layout: FULL_WIDTH
-                formats: [AUTO, WEBP]
+                formats: [AUTO]
                 placeholder: BLURRED
                 quality: 95
               )

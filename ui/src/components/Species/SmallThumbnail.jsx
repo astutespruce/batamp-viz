@@ -28,7 +28,7 @@ export const useSmallThumbnails = () => {
                 width: 150
                 height: 100
                 layout: CONSTRAINED
-                formats: [AUTO, WEBP]
+                formats: [AUTO]
                 placeholder: BLURRED
                 quality: 95
               )
