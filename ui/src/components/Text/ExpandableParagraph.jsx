@@ -22,14 +22,14 @@ const PseudoLink = styled.span`
   }
 `
 
-const ExpandableParagraph = ({ snippet, children, ...props }) => {
+const ExpandableParagraph = ({ snippet, children }) => {
   const [isOpen, setIsOpen] = useState(false)
 
   const toggle = () => {
-    setIsOpen(prevIsOpen => !prevIsOpen)
+    setIsOpen((prevIsOpen) => !prevIsOpen)
   }
   return (
-    <Wrapper onClick={toggle} {...props}>
+    <Wrapper onClick={toggle}>
       {isOpen ? (
         <p>
           {children}

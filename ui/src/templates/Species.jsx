@@ -188,29 +188,29 @@ const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
 
   return (
     <Layout title={`${commonName} (${sciName})`}>
-      <Wrapper>
-        <CrossfilterProvider
-          data={data}
-          filters={filters}
-          options={{ valueField: 'detections' }}
-        >
-          <Sidebar allowScroll={false}>
-            {selected.features.length > 0 ? (
-              <DetectorDetails
-                selectedSpecies={selectedSpecies}
-                detectors={selected.features}
-                onSetDetector={handleSetFeature}
-                onClose={handleDetailsClose}
-              />
-            ) : (
-              <SpeciesFilters
-                species={selectedSpecies}
-                filters={visibleFilters}
-              />
-            )}
-          </Sidebar>
+      <ClientOnly>
+        <Wrapper>
+          <CrossfilterProvider
+            data={data}
+            filters={filters}
+            options={{ valueField: 'detections' }}
+          >
+            <Sidebar allowScroll={false}>
+              {selected.features.length > 0 ? (
+                <DetectorDetails
+                  selectedSpecies={selectedSpecies}
+                  detectors={selected.features}
+                  onSetDetector={handleSetFeature}
+                  onClose={handleDetailsClose}
+                />
+              ) : (
+                <SpeciesFilters
+                  species={selectedSpecies}
+                  filters={visibleFilters}
+                />
+              )}
+            </Sidebar>
 
-          <ClientOnly>
             <MapContainer>
               <TopBar>
                 <ValueFieldSelector
@@ -225,9 +225,9 @@ const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
                 onSelectFeatures={handleSelectFeatures}
               />
             </MapContainer>
-          </ClientOnly>
-        </CrossfilterProvider>
-      </Wrapper>
+          </CrossfilterProvider>
+        </Wrapper>
+      </ClientOnly>
     </Layout>
   )
 }
