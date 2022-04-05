@@ -4,9 +4,9 @@
   "description": "Data visualization of Bat Acoustic Monitoring Data",
   "main": "index.js",
   "dependencies": {
-    "dotenv": "^8.0.0",
+    "dotenv": "^16.0.0",
     "esm": "^3.2.25",
-    "mbgl-renderer": "^0.4.0"
+    "mbgl-renderer": "^0.8.0"
   },
   "devDependencies": {},
   "scripts": {
