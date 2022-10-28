@@ -20,7 +20,7 @@
     "d3-scale": "^4.0.2",
     "dequal": "^2.0.2",
     "elasticlunr": "^0.9.5",
-    "gatsby": "^4.11.1",
+    "gatsby": "^4.24.5",
     "gatsby-cli": "^4.11.1",
     "gatsby-plugin-catch-links": "^4.11.0",
     "gatsby-plugin-google-gtag": "^4.11.0",
