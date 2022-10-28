@@ -1,6 +1,13 @@
+import React from 'react'
 import * as Sentry from '@sentry/react'
 
+import { ThemeProvider, theme } from 'style'
+
 import { siteMetadata } from './gatsby-config'
+
+export const wrapRootElement = ({ element }) => (
+  <ThemeProvider theme={theme}>{element}</ThemeProvider>
+)
 
 const { sentryDSN } = siteMetadata
 export const onClientEntry = () => {

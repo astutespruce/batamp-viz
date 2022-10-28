@@ -2,11 +2,12 @@ import React from 'react'
 import PropTypes from 'prop-types'
 
 import { Flex } from 'components/Grid'
-import styled, { ThemeProvider, theme } from 'style'
+import styled from 'style'
 import { isUnsupported } from 'util/dom'
 import UnsupportedBrowser from './UnsupportedBrowser'
 import Header from './Header'
 import SEO from './SEO'
+import ClientOnly from './ClientOnly'
 
 export { default as CallToActionBox } from './CallToActionBox'
 
@@ -22,7 +23,7 @@ const Content = styled.div`
 
 const Layout = ({ children, title }) => {
   return (
-    <ThemeProvider theme={theme}>
+    <ClientOnly>
       {isUnsupported ? (
         <UnsupportedBrowser />
       ) : (
@@ -32,7 +33,7 @@ const Layout = ({ children, title }) => {
           <Content>{children}</Content>
         </Wrapper>
       )}
-    </ThemeProvider>
+    </ClientOnly>
   )
 }
 

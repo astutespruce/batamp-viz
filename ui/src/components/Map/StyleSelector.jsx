@@ -49,9 +49,7 @@ const StyleSelector = ({ token, styles, size, onChange }) => {
   const [basemap, setBasemap] = useState(styles[0])
   const [isOpen, setIsOpen] = useState(false)
 
-  console.log('basemap switcher rerender')
-
-  const handleBasemapClick = newBasemap => {
+  const handleBasemapClick = (newBasemap) => {
     setIsOpen(false)
 
     if (newBasemap === basemap) return
@@ -83,7 +81,7 @@ const StyleSelector = ({ token, styles, size, onChange }) => {
     )
   }
 
-  const nextBasemap = styles.filter(style => style !== basemap)[0]
+  const nextBasemap = styles.filter((style) => style !== basemap)[0]
 
   return (
     <Wrapper onMouseEnter={toggleOpen} onMouseLeave={toggleClosed}>
@@ -95,8 +93,8 @@ const StyleSelector = ({ token, styles, size, onChange }) => {
             onClick={() => handleBasemapClick(nextBasemap)}
           />
           {styles
-            .filter(style => style !== nextBasemap)
-            .map(styleID => (
+            .filter((style) => style !== nextBasemap)
+            .map((styleID) => (
               <Basemap
                 key={styleID}
                 isActive={styleID === basemap}

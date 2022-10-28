@@ -9,7 +9,6 @@ import {
 
 import Sidebar from 'components/Sidebar'
 import { Flex } from 'components/Grid'
-import ClientOnly from 'components/Layout/ClientOnly'
 import DetectorDetails from 'components/DetectorDetails'
 import styled from 'style'
 import TopBar from 'components/Map/TopBar'
@@ -188,46 +187,44 @@ const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
 
   return (
     <Layout title={`${commonName} (${sciName})`}>
-      <ClientOnly>
-        <Wrapper>
-          <CrossfilterProvider
-            data={data}
-            filters={filters}
-            options={{ valueField: 'detections' }}
-          >
-            <Sidebar allowScroll={false}>
-              {selected.features.length > 0 ? (
-                <DetectorDetails
-                  selectedSpecies={selectedSpecies}
-                  detectors={selected.features}
-                  onSetDetector={handleSetFeature}
-                  onClose={handleDetailsClose}
-                />
-              ) : (
-                <SpeciesFilters
-                  species={selectedSpecies}
-                  filters={visibleFilters}
-                />
-              )}
-            </Sidebar>
-
-            <MapContainer>
-              <TopBar>
-                <ValueFieldSelector
-                  fields={['detections', 'detectionNights', 'id']}
-                />
-              </TopBar>
-
-              <Map
-                detectors={detectorLocations}
-                species={selectedSpecies}
-                selectedFeature={selected.feature}
-                onSelectFeatures={handleSelectFeatures}
+      <Wrapper>
+        <CrossfilterProvider
+          data={data}
+          filters={filters}
+          options={{ valueField: 'detections' }}
+        >
+          <Sidebar allowScroll={false}>
+            {selected.features.length > 0 ? (
+              <DetectorDetails
+                selectedSpecies={selectedSpecies}
+                detectors={selected.features}
+                onSetDetector={handleSetFeature}
+                onClose={handleDetailsClose}
               />
-            </MapContainer>
-          </CrossfilterProvider>
-        </Wrapper>
-      </ClientOnly>
+            ) : (
+              <SpeciesFilters
+                species={selectedSpecies}
+                filters={visibleFilters}
+              />
+            )}
+          </Sidebar>
+
+          <MapContainer>
+            <TopBar>
+              <ValueFieldSelector
+                fields={['detections', 'detectionNights', 'id']}
+              />
+            </TopBar>
+
+            <Map
+              detectors={detectorLocations}
+              species={selectedSpecies}
+              selectedFeature={selected.feature}
+              onSelectFeatures={handleSelectFeatures}
+            />
+          </MapContainer>
+        </CrossfilterProvider>
+      </Wrapper>
     </Layout>
   )
 }

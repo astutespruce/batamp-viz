@@ -7,7 +7,6 @@ import {
   Provider as CrossfilterProvider,
   FilteredMap as Map,
 } from 'components/Crossfilter'
-import ClientOnly from 'components/Layout/ClientOnly'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
 import { Flex, Box } from 'components/Grid'
@@ -18,6 +17,7 @@ import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
 const Wrapper = styled(Flex)`
   height: 100%;
+  width: 100%;
 `
 
 const MapContainer = styled.div`
@@ -154,63 +154,58 @@ const PresencePage = () => {
 
   return (
     <Layout title="Explore Species Occurrences">
-      <ClientOnly>
-        <Wrapper>
-          <CrossfilterProvider
-            data={data}
-            filters={filters}
-            options={{ valueField: 'species' }}
-          >
-            <Sidebar allowScroll={false}>
-              {selected.features.length > 0 ? (
-                <DetectorDetails
-                  detectors={selected.features}
-                  onSetDetector={handleSetFeature}
-                  onClose={handleDetailsClose}
-                />
-              ) : (
-                <>
-                  <Box flex="0 0 auto">
-                    <SidebarHeader
-                      title="Species Occurrences"
-                      icon="slidersH"
-                    />
-                    <HelpText>
-                      <ExpandableParagraph
-                        snippet="An occurrence is anytime a species was detected by an acoustic
+      <Wrapper>
+        <CrossfilterProvider
+          data={data}
+          filters={filters}
+          options={{ valueField: 'species' }}
+        >
+          <Sidebar allowScroll={false}>
+            {selected.features.length > 0 ? (
+              <DetectorDetails
+                detectors={selected.features}
+                onSetDetector={handleSetFeature}
+                onClose={handleDetailsClose}
+              />
+            ) : (
+              <>
+                <Box flex="0 0 auto">
+                  <SidebarHeader title="Species Occurrences" icon="slidersH" />
+                  <HelpText>
+                    <ExpandableParagraph
+                      snippet="An occurrence is anytime a species was detected by an acoustic
                 detector at a given location during a given night. Use the
                 following filters to ..."
-                      >
-                        An occurrence is anytime a species was detected by an
-                        acoustic detector at a given location for a given month
-                        and year. Use the following filters to select specific
-                        species or time periods that you are interested in.
-                        Detectors are also filtered based on the extent of the
-                        map.
-                        <br />
-                        <br />
-                        You can combine filters and use multiple values for each
-                        filter. For example, you can select Fringed Bat in March
-                        and April.
-                      </ExpandableParagraph>
-                    </HelpText>
-                  </Box>
+                    >
+                      An occurrence is anytime a species was detected by an
+                      acoustic detector at a given location for a given month
+                      and year. Use the following filters to select specific
+                      species or time periods that you are interested in.
+                      Detectors are also filtered based on the extent of the
+                      map.
+                      <br />
+                      <br />
+                      You can combine filters and use multiple values for each
+                      filter. For example, you can select Fringed Bat in March
+                      and April.
+                    </ExpandableParagraph>
+                  </HelpText>
+                </Box>
 
-                  <FiltersList filters={visibleFilters} />
-                </>
-              )}
-            </Sidebar>
+                <FiltersList filters={visibleFilters} />
+              </>
+            )}
+          </Sidebar>
 
-            <MapContainer>
-              <Map
-                detectors={detectorLocations}
-                selectedFeature={selected.feature}
-                onSelectFeatures={handleSelectFeatures}
-              />
-            </MapContainer>
-          </CrossfilterProvider>
-        </Wrapper>
-      </ClientOnly>
+          <MapContainer>
+            <Map
+              detectors={detectorLocations}
+              selectedFeature={selected.feature}
+              onSelectFeatures={handleSelectFeatures}
+            />
+          </MapContainer>
+        </CrossfilterProvider>
+      </Wrapper>
     </Layout>
   )
 }
