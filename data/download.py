@@ -89,5 +89,6 @@ presence_dataset_ids = [
     "6b210f6fac834705a0bbf998f1de3848",  # 2019
     "9831a2f43f524f5da3a2353109a17a50",  # 2020
     "d2419c2e320e4d01b7bef5cc651bbedf",  # 2021
+    "1d4b90e3aeda4508b90fe4da682e2b15", # 2022
 ]
 download_datasets(client, presence_dataset_ids, presence_dir)

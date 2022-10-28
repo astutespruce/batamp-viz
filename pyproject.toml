@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "batamp-viz"
+version = "0.2.0"
+description = "Bat Acoustic Monitoring Visualization Tool"
+authors = ["Brendan Ward <bcward@astutespruce.com>"]
+license = "MIT"
+packages = [{ include = "data" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+geopandas = "^0.12.0"
+pyogrio = "^0.4.2"
+python-dotenv = "^0.21.0"
+pyarrow = "^10.0.0"
+pygeos = "^0.13"
+python-databasin = { git = "https://github.com/consbio/python-databasin.git", rev = "main" }
+
+[tool.poetry.dev-dependencies]
+black = "^22.10.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

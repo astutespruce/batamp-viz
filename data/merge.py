@@ -42,8 +42,7 @@ def get_dataset_title(id):
 src_dir = Path("data/src")
 derived_dir = Path("data/derived")
 boundary_dir = Path("data/boundaries")
-json_dir = Path("ui/src/data")
-# out_dir = Path("ui/src/data")
+json_dir = Path("ui/data")
 
 if not os.path.exists(derived_dir):
     os.makedirs(derived_dir)
