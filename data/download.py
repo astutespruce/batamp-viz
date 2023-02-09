@@ -64,6 +64,7 @@ activity_dataset_ids = [
     "56acf94b0e244d668c959ccba340347a",  # 2020
     "3594409e092e4ed98f27ab4ce886b1b3",  # 2021
     "3ea9c142b25f4b2b811daa2d7e69275e",  # 2022
+    "4a9472ff64d34fa68d8c4f8454b74716",  # 2023
 ]
 
 download_datasets(client, activity_dataset_ids, activity_dir)
@@ -89,6 +90,7 @@ presence_dataset_ids = [
     "6b210f6fac834705a0bbf998f1de3848",  # 2019
     "9831a2f43f524f5da3a2353109a17a50",  # 2020
     "d2419c2e320e4d01b7bef5cc651bbedf",  # 2021
-    "1d4b90e3aeda4508b90fe4da682e2b15", # 2022
+    "1d4b90e3aeda4508b90fe4da682e2b15",  # 2022
+    "27ab6b4277604010bf5e4b193ca03099",  # 2023
 ]
 download_datasets(client, presence_dataset_ids, presence_dir)
