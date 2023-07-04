@@ -154,7 +154,6 @@ export const SPECIES = {
   myle: {
     sciName: 'Myotis leibii',
     commonName: 'Eastern Small-footed Myotis',
-    noBCIProfile: true, // cannot find profile anymore
   },
   mylu: {
     sciName: 'Myotis lucifugus',
@@ -207,7 +206,6 @@ export const SPECIES = {
   pesu: {
     sciName: 'Perimyotis subflavus',
     commonName: 'Tricolored Bat',
-    noBCIProfile: true, // cannot find profile anymore
   },
   tabr: {
     sciName: 'Tadarida brasiliensis',
@@ -217,8 +215,7 @@ export const SPECIES = {
   haba: {
     sciName: 'Lasiurus cinereus semotus',
     commonName: 'Hawaiian Hoary Bat',
-    noBCIProfile: true,
-    ecosId: 770, // NOTE: this is ECOS ID, not BCI
+    profileId: 'hawaiian-hoary-bat',
     imageCredits: 'Jack Jeffery',
   },
 }

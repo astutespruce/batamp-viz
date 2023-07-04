@@ -8,17 +8,10 @@ Admin units were glommed together from country-level sources.
 Species: join to species 4-letter code, and merge together species that are effectively the same.
 """
 
-import os
 from pathlib import Path
-import warnings
-
-import geopandas as gp
-import pygeos as pg
-
-# from shapely.geometry import Polygon
+import shapely
+from shapely.geometry import Polygon
 from pyogrio import read_dataframe, write_dataframe
-
-warnings.filterwarnings("ignore", message=".*initial implementation of Parquet.*")
 
 from constants import SPECIES
 
@@ -94,16 +87,16 @@ range_df = read_dataframe("data/boundaries/src/species_ranges.shp")
 
 # split hoary bat into Hawaiian vs mainland
 laci = range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus"]
-Hawaii = pg.box(*HAWAII_BOUNDS)
+Hawaii = shapely.box(*HAWAII_BOUNDS)
 haba = laci.copy()
 # add new geometry for haba
-haba.geometry = pg.intersection(laci.geometry.values.data, Hawaii)
+haba.geometry = shapely.intersection(laci.geometry.values.data, Hawaii)
 haba.SCI_NAME = SPECIES["haba"]["SNAME"]
 haba.COMMON_NAM = SPECIES["haba"]["CNAME"]
 range_df = range_df.append(haba, ignore_index=True, sort=False)
 
 # clip out Hawaii from laci
-range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus", "geometry"] = pg.difference(
+range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus", "geometry"] = shapely.difference(
     laci.geometry.values.data, Hawaii
 )
 

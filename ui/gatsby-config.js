@@ -10,7 +10,6 @@ module.exports = {
     title: `Bat Acoustic Monitoring Visualization Tool`,
     description: `Data exploration tool for bat acoustic monitoring data across North America.`,
     author: `Brendan C. Ward, Conservation Biology Institute`,
-    googleAnalyticsId: process.env.GATSBY_GOOGLE_ANALYTICS_ID,
     sentryDSN: process.env.GATSBY_SENTRY_DSN,
     mapboxToken: process.env.GATSBY_MAPBOX_API_TOKEN,
   },

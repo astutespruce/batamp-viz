@@ -8,12 +8,13 @@ packages = [{ include = "data" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-geopandas = "^0.12.0"
-pyogrio = "^0.4.2"
+geopandas = "^0.13.2"
+pyogrio = "^0.6.0"
 python-dotenv = "^0.21.0"
-pyarrow = "^10.0.0"
-pygeos = "^0.13"
+pyarrow = "^12.0.1"
 python-databasin = { git = "https://github.com/consbio/python-databasin.git", rev = "main" }
+pymgl = "^0.4.0"
+shapely = "^2.0.1"
 
 [tool.poetry.dev-dependencies]
 black = "^22.10.0"

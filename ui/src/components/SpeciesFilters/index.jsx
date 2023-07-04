@@ -56,8 +56,7 @@ const ProfileLink = styled(OutboundLink)``
 const resolveProfileId = (sciName) => sciName.toLowerCase().replace(' ', '-')
 
 const index = ({ species, filters }) => {
-  const { commonName, sciName, noBCIProfile, profileId, ecosId, imageCredits } =
-    SPECIES[species]
+  const { commonName, sciName, profileId, imageCredits } = SPECIES[species]
 
   return (
     <Wrapper>
@@ -81,22 +80,14 @@ const index = ({ species, filters }) => {
             <CommonName>{commonName}</CommonName>
             <ScientificName>{sciName}</ScientificName>
             <br />
-            {!noBCIProfile ? (
-              <ProfileLink
-                from="/species"
-                to={`${PROFILE_ROOT_URL}/${
-                  profileId || resolveProfileId(sciName)
-                }`}
-              >
-                Species profile <ProfileLinkIcon />
-              </ProfileLink>
-            ) : null}
-
-            {ecosId ? (
-              <ProfileLink from="/species" to={`${ECOS_ROOT_URL}${ecosId}`}>
-                Species profile <ProfileLinkIcon />
-              </ProfileLink>
-            ) : null}
+            <ProfileLink
+              from="/species"
+              to={`${PROFILE_ROOT_URL}/${
+                profileId || resolveProfileId(sciName)
+              }`}
+            >
+              Species profile <ProfileLinkIcon />
+            </ProfileLink>
           </div>
         </Flex>
       </Header>

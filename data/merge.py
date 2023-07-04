@@ -1,4 +1,3 @@
-import csv
 import os
 import json
 from pathlib import Path
@@ -6,8 +5,8 @@ import warnings
 
 import pandas as pd
 import geopandas as gp
-import pygeos as pg
 import numpy as np
+import shapely
 
 from databasin.client import Client
 
@@ -236,7 +235,7 @@ sites = detectors.groupby(location_fields).size().reset_index()[location_fields]
 
 # construct geometries so that sites can be joined to boundaries
 sites = gp.GeoDataFrame(
-    sites, geometry=pg.points(sites.lon, sites.lat), crs="epsg:4326"
+    sites, geometry=shapely.points(sites.lon, sites.lat), crs="epsg:4326"
 )
 sites["site"] = sites.index
 
