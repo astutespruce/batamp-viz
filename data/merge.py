@@ -1,7 +1,6 @@
 import os
 import json
 from pathlib import Path
-import warnings
 
 import pandas as pd
 import geopandas as gp
@@ -23,9 +22,6 @@ from data.util import camelcase
 # generated using https://databasin.org/auth/api-keys/
 from data.settings import DATABASIN_KEY, DATABASIN_USER
 
-warnings.filterwarnings("ignore", message=".*initial implementation of Parquet.*")
-warnings.filterwarnings("ignore", message=".*frame.append method is deprecated.*")
-
 client = Client()
 client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
 
@@ -33,7 +29,7 @@ client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
 def get_dataset_title(id):
     try:
         return client.get_dataset(id).title
-    except:
+    except Exception:
         # will be handled in UI tier
         return ""
 
@@ -56,28 +52,28 @@ time_fields = ["year", "month"]
 print("Reading CSV data...")
 merged = None
 for filename in (src_dir / "activity").glob("*.csv"):
-    df = pd.read_csv(filename)
+    df = pd.read_csv(filename, low_memory=False)
     df["presence_only"] = False
 
     if merged is None:
         merged = df
     else:
-        merged = merged.append(df, ignore_index=True, sort=False)
+        merged = pd.concat([merged, df], ignore_index=True, sort=False)
 
 for filename in (src_dir / "presence").glob("*.csv"):
     df = pd.read_csv(filename)
     df["presence_only"] = True
 
-    merged = merged.append(df, ignore_index=True, sort=False)
+    merged = pd.concat([merged, df], ignore_index=True, sort=False)
 
 df = merged.reindex()
 
 # TODO: remove
 # make sure to add "haba" and "lyse" columns while we are waiting for this to be added to the aggregate dataset
-if not "haba" in df.columns:
+if "haba" not in df.columns:
     df["haba"] = np.nan
 
-if not "leye" in df.columns:
+if "leye" not in df.columns:
     df["leye"] = np.nan
 
 
@@ -160,8 +156,9 @@ df.loc[df.contributor == "T M", "contributor"] = "Tom Malloy"
 df.loc[df.contributor == "Bryce Maxell", "contributor"] = "Montana NHP"
 
 
-# Convert night into a datetime obj
-df["night"] = pd.to_datetime(df.night)
+# Convert night into a datetime obj (split off time component if present, else
+# causes errors)
+df["night"] = pd.to_datetime(df.night.apply(lambda d: d.split(' ')[0]))
 df["year"] = df.night.dt.year.astype("uint16")
 df["month"] = df.night.dt.month.astype("uint8")
 
@@ -171,7 +168,7 @@ df["tempdate"] = df.night.apply(
     if dt.month == 2 and dt.day == 29
     else dt.replace(year=1900)
 )
-df["week"] = df.tempdate.dt.week.astype("uint8")
+df["week"] = df.tempdate.apply(lambda d: d.week).astype("uint8")
 df["dayofyear"] = df.tempdate.dt.dayofyear.astype("uint16")
 
 # drop unneeded columns
@@ -209,8 +206,7 @@ missing_names = missing_names.loc[missing_names.dataset_name.isnull()]
 missing_names.dataset_name = missing_names.apply(
     lambda row: get_dataset_title(row.name), axis=1
 )
-dataset_names = dataset_names.append(
-    missing_names, sort=False, ignore_index=False
+dataset_names = pd.concat([dataset_names, missing_names], sort=False, ignore_index=False
 ).reindex()
 dataset_names.reset_index().to_feather(dataset_names_file)
 
@@ -330,13 +326,17 @@ dedup = meta.join(activity).reset_index()
 
 # append these, sort, and reindex
 # NOTE: the new index DOES NOT match the index used for the merged_raw export above!
+
 df = (
-    df.loc[nondup_index]
-    .drop(columns=["prev_index"])
-    .append(dedup, ignore_index=True, sort=False)
+    pd.concat(
+        [df.loc[nondup_index].drop(columns=["prev_index"]), dedup],
+        ignore_index=True,
+        sort=False,
+    )
     .sort_values(by=["detector", "night"])
     .reindex()
 )
+
 print(f"{len(df):,} records after removing duplicate detector / night combinations")
 
 
