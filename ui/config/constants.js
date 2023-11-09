@@ -270,6 +270,7 @@ export const SPECIES_ID = {
   45: 'tabr',
 }
 
+// TODO: handle plural vs singular
 export const METRIC_LABELS = {
   detections: 'detections',
   sppDetections: 'species detections',

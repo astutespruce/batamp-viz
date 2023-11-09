@@ -456,7 +456,11 @@ const Map = ({
         const hadDetections = visibleDetectors.filter(
           ({ properties: { total } }) => total > 0
         )
-        upperValue = niceNumber(maxProperty(hadDetections, 'point_count', 0))
+        // single points do not have point_count
+        upperValue = niceNumber(
+          Math.max(1, maxProperty(hadDetections, 'point_count')),
+          0
+        )
       } else if (metric === 'species') {
         upperValue = maxProperty(visibleDetectors, 'max', 0)
       } else {
