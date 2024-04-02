@@ -70,11 +70,9 @@ df = merged.reindex()
 
 # TODO: remove
 # make sure to add "haba" and "lyse" columns while we are waiting for this to be added to the aggregate dataset
-if "haba" not in df.columns:
-    df["haba"] = np.nan
-
-if "leye" not in df.columns:
-    df["leye"] = np.nan
+for spp in ["haba", "leye"]:
+    if spp not in df.columns:
+        df[spp] = np.nan
 
 
 print(f"Read {len(df):,} raw records")
@@ -98,7 +96,7 @@ df = df.dropna(axis=1, how="all")
 # This will drop some species columns, so update that variable
 GROUP_ACTIVITY_COLUMNS = [c for c in GROUP_ACTIVITY_COLUMNS if c in df.columns]
 ACTIVITY_COLUMNS = [c for c in ACTIVITY_COLUMNS if c in df.columns]
-print(f"{len(df)} records after dropping those with null activity for all fields")
+print(f"{len(df):,} records after dropping those with null activity for all fields")
 
 # Convert height units to meters
 index = df.mic_ht_units == "feet"
@@ -158,7 +156,7 @@ df.loc[df.contributor == "Bryce Maxell", "contributor"] = "Montana NHP"
 
 # Convert night into a datetime obj (split off time component if present, else
 # causes errors)
-df["night"] = pd.to_datetime(df.night.apply(lambda d: d.split(' ')[0]))
+df["night"] = pd.to_datetime(df.night.apply(lambda d: d.split(" ")[0]))
 df["year"] = df.night.dt.year.astype("uint16")
 df["month"] = df.night.dt.month.astype("uint8")
 
@@ -185,7 +183,7 @@ df = df.drop_duplicates(subset=core_columns, keep="first")
 print(f"{len(df):,} records after dropping complete duplicates")
 
 
-df.reset_index().to_feather(derived_dir / "merged_raw.feather")
+df.reset_index(drop=True).to_feather(derived_dir / "merged_raw.feather")
 
 
 #### Get dataset names from Data Basin ##############################
@@ -206,7 +204,8 @@ missing_names = missing_names.loc[missing_names.dataset_name.isnull()]
 missing_names.dataset_name = missing_names.apply(
     lambda row: get_dataset_title(row.name), axis=1
 )
-dataset_names = pd.concat([dataset_names, missing_names], sort=False, ignore_index=False
+dataset_names = pd.concat(
+    [dataset_names, missing_names], sort=False, ignore_index=False
 ).reindex()
 dataset_names.reset_index().to_feather(dataset_names_file)
 
@@ -341,7 +340,7 @@ print(f"{len(df):,} records after removing duplicate detector / night combinatio
 
 
 # Write out merged data
-df.reset_index().to_feather(derived_dir / "merged.feather")
+df.reset_index(drop=True).to_feather(derived_dir / "merged.feather")
 
 
 print("Calculating statistics...")

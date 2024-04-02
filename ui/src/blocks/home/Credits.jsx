@@ -43,7 +43,7 @@ const About = () => (
           &nbsp; (CBI), now with{' '}
           <OutboundLink to="https://astutespruce.com/" target="_blank">
             Astute Spruce, LLC
-          </OutboundLink>
+          </OutboundLink>{' '}
           in partnership with{' '}
           <OutboundLink to="https://www.fs.fed.us/psw/programs/cb/staff/tweller/">
             Ted Weller
