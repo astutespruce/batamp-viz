@@ -13,7 +13,7 @@ import shapely
 from shapely.geometry import Polygon
 from pyogrio import read_dataframe, write_dataframe
 
-from constants import SPECIES
+from analysis.constants import SPECIES
 
 HAWAII_BOUNDS = [-166.317558, 12.803013, -148.124199, 27.129348]
 

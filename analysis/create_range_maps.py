@@ -6,7 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pymgl import Map
 
-from data.constants import SPECIES
+from analysis.constants import SPECIES
 
 
 load_dotenv()

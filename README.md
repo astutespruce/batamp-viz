@@ -6,7 +6,7 @@ The data included in this tool were obtained from the [Bat Acoustic Monitoring P
 
 ## Architecture
 
-Data were processed from multiple source datasets using `pandas` in `Python`. These data were coalesced into a series of JSON files that could be queried from the user interface tier. Data processing steps are described in `data/README.md`.
+Data were processed from multiple source datasets using `pandas` in `Python`. These data were coalesced into a series of JSON files that could be queried from the user interface tier. Data processing steps are described in `analysis/README.md`.
 
 The user interface is built using `GatsbyJS`. All JSON data are 'baked in' at build time. The build step needs to be repeated each time the data are updated.
 
@@ -14,7 +14,7 @@ This application is deployed to [Netlify](https://www.netlify.com/).
 
 ## Data Pre-processing
 
-See `data/README.md`.
+See `analysis/README.md`.
 
 ## Gatsby Build
 

@@ -64,11 +64,11 @@ To create the above variables, you must first have a Data Basin account with the
 
 ### Download
 
-Use `data/download.py` to download the activity and presence-only datasets. Each is based on a list of dataset IDs that are known in advance, and correspond to the IDs of aggregate datasets. There is generally one per year from 2006 to present.
+Use `analysis/download.py` to download the activity and presence-only datasets. Each is based on a list of dataset IDs that are known in advance, and correspond to the IDs of aggregate datasets. There is generally one per year from 2006 to present.
 
 ### Merge
 
-Use `data/merge.py` to merge the downloaded datasets into the structure needed for this tool.
+Use `analysis/merge.py` to merge the downloaded datasets into the structure needed for this tool.
 
 ## Map Images
 
@@ -76,4 +76,4 @@ Map images are generated using [pymgl](https://github.com/brendan-ward/pymgl).
 
 You must have a `MAPBOX_TOKEN` entry in the `.env` file in the root of this project.
 
-Run `data/create_range_maps.py` to create the range map thumbnails.
+Run `analysis/create_range_maps.py` to create the range map thumbnails.

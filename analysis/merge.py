@@ -9,18 +9,18 @@ import shapely
 
 from databasin.client import Client
 
-from data.constants import (
+from analysis.constants import (
     SPECIES,
     ACTIVITY_COLUMNS,
     GROUP_ACTIVITY_COLUMNS,
     DETECTOR_FIELDS,
     SPECIES_ID,
 )
-from data.util import camelcase
+from analysis.util import camelcase
 
 # API key stored in .env.
 # generated using https://databasin.org/auth/api-keys/
-from data.settings import DATABASIN_KEY, DATABASIN_USER
+from analysis.settings import DATABASIN_KEY, DATABASIN_USER
 
 client = Client()
 client.set_api_key(DATABASIN_USER, DATABASIN_KEY)

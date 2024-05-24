@@ -1,13 +1,11 @@
 import os
 from pathlib import Path
-from datetime import datetime
-from dateutil.parser import parse
 
 from databasin.client import Client
 
 # API key stored in .env.
 # generated using https://databasin.org/auth/api-keys/
-from settings import DATABASIN_KEY, DATABASIN_USER
+from analysis.settings import DATABASIN_KEY, DATABASIN_USER
 
 data_dir = Path("data/src")
 activity_dir = data_dir / "activity"
