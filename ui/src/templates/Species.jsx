@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react'
+import PropTypes from 'prop-types'
+import { Box, Flex } from 'theme-ui'
 
-import Layout from 'components/Layout'
+import { ClientOnly, Layout, SEO } from 'components/Layout'
 import {
   Provider as CrossfilterProvider,
   FilteredMap as Map,
@@ -8,28 +10,13 @@ import {
 } from 'components/Crossfilter'
 
 import Sidebar from 'components/Sidebar'
-import { Flex } from 'components/Grid'
 import DetectorDetails from 'components/DetectorDetails'
-import styled from 'style'
-import TopBar from 'components/Map/TopBar'
 import SpeciesFilters from 'components/SpeciesFilters'
 import { join, groupBy } from 'util/data'
 import { useDetectors, useSpeciesTS } from 'data'
 import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
 
-const Wrapper = styled(Flex)`
-  height: 100%;
-`
-
-const MapContainer = styled.div`
-  position: relative;
-  flex: 1 0 auto;
-  height: 100%;
-`
-
 const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
-  const { commonName, sciName } = SPECIES[selectedSpecies]
-
   const [selected, setSelected] = useState({ features: [], feature: null })
 
   const speciesDetectors = useDetectors().filter(
@@ -156,7 +143,7 @@ const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
       filters: initFilters,
       visibleFilters: initFilters.filter(({ internal }) => !internal),
     }
-  })
+  }, [])
 
   const handleSelectFeatures = (ids) => {
     const features = detectors
@@ -186,47 +173,75 @@ const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
   }
 
   return (
-    <Layout title={`${commonName} (${sciName})`}>
-      <Wrapper>
-        <CrossfilterProvider
-          data={data}
-          filters={filters}
-          options={{ valueField: 'detections' }}
-        >
-          <Sidebar allowScroll={false}>
-            {selected.features.length > 0 ? (
-              <DetectorDetails
-                selectedSpecies={selectedSpecies}
-                detectors={selected.features}
-                onSetDetector={handleSetFeature}
-                onClose={handleDetailsClose}
-              />
-            ) : (
-              <SpeciesFilters
+    <Layout>
+      <ClientOnly>
+        <Flex sx={{ height: '100%' }}>
+          <CrossfilterProvider
+            data={data}
+            filters={filters}
+            options={{ valueField: 'detections' }}
+          >
+            <Sidebar allowScroll={false}>
+              {selected.features.length > 0 ? (
+                <DetectorDetails
+                  selectedSpecies={selectedSpecies}
+                  detectors={selected.features}
+                  onSetDetector={handleSetFeature}
+                  onClose={handleDetailsClose}
+                />
+              ) : (
+                <SpeciesFilters
+                  species={selectedSpecies}
+                  filters={visibleFilters}
+                />
+              )}
+            </Sidebar>
+
+            <Box
+              sx={{ position: 'relative', flex: '1 0 auto', height: '100%' }}
+            >
+              <Flex
+                sx={{
+                  p: '0.5rem',
+                  bg: '#FFF',
+                  borderRadius: '0 0 0.5rem 0.5rem',
+                  boxShadow: '1px 1px 8px #433c4c',
+                  position: 'absolute',
+                  zIndex: 1000,
+                  top: 0,
+                  left: '1rem',
+                }}
+              >
+                <ValueFieldSelector
+                  fields={['detections', 'detectionNights', 'id']}
+                />
+              </Flex>
+
+              <Map
+                detectors={detectorLocations}
                 species={selectedSpecies}
-                filters={visibleFilters}
+                selectedFeature={selected.feature}
+                onSelectFeatures={handleSelectFeatures}
               />
-            )}
-          </Sidebar>
-
-          <MapContainer>
-            <TopBar>
-              <ValueFieldSelector
-                fields={['detections', 'detectionNights', 'id']}
-              />
-            </TopBar>
-
-            <Map
-              detectors={detectorLocations}
-              species={selectedSpecies}
-              selectedFeature={selected.feature}
-              onSelectFeatures={handleSelectFeatures}
-            />
-          </MapContainer>
-        </CrossfilterProvider>
-      </Wrapper>
+            </Box>
+          </CrossfilterProvider>
+        </Flex>
+      </ClientOnly>
     </Layout>
   )
 }
 
+SpeciesTemplate.propTypes = {
+  pageContext: PropTypes.shape({
+    species: PropTypes.string.isRequired,
+  }).isRequired,
+}
+
 export default SpeciesTemplate
+
+/* eslint-disable-next-line react/prop-types */
+export const Head = ({ pageContext: { species: selectedSpecies } }) => {
+  const { commonName, sciName } = SPECIES[selectedSpecies]
+
+  return <SEO title={`${commonName} (${sciName})`} />
+}

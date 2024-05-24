@@ -39,9 +39,10 @@ const initCrossfilter = (data, filters) => {
 
 export const Crossfilter = (data, filters, options = {}) => {
   // Memoize construction of crossfilter and dimensions, so they only get created once
-  const { crossfilter, dimensions } = useMemo(() => {
-    return initCrossfilter(data, filters)
-  }, [])
+  const { crossfilter, dimensions } = useMemo(
+    () => initCrossfilter(data, filters),
+    []
+  )
 
   // create the initial state in the callback so that we only construct it once
   const [state, setState] = useState(() => {

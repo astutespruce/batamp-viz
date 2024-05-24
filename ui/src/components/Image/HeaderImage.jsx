@@ -1,87 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { GatsbyImage as Img, getImage } from 'gatsby-plugin-image'
+import { GatsbyImage, getImage } from 'gatsby-plugin-image'
 
-import { Text } from 'components/Text'
-import { Container } from 'components/Grid'
+import { Box, Container, Heading } from 'theme-ui'
 
-import styled, { themeGet } from 'style'
-
-const Wrapper = styled.div`
-  margin-top: 0;
-  height: ${({ height }) => height};
-  min-height: ${({ minHeight }) => minHeight};
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-`
-
-const StyledImage = styled(Img)`
-  position: absolute !important;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  top: 0;
-  img {
-    object-position: center ${({ position }) => position} !important;
-  }
-`
-
-const Overlay = styled.div`
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 1),
-    50%,
-    rgba(0, 0, 0, 0)
-  );
-`
-
-const TitleContainer = styled(Container)`
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 3rem;
-  text-shadow: 1px 1px 3px #000;
-  border-top: 3px solid #fff;
-  border-bottom: 3px solid #fff;
-`
-
-const Title = styled(Text).attrs({
-  as: 'h1',
-  fontSize: ['3rem', '3rem', '5rem'],
-})`
-  color: #fff;
-  margin: 0 0 0.5rem 0;
-`
-
-const Subtitle = styled(Text).attrs({
-  as: 'h3',
-  fontSize: ['1.5rem', '2rem', '3rem'],
-})`
-  color: #fff;
-  margin: 0;
-`
-
-const ImageCredits = styled.div`
-  color: ${themeGet('colors.grey.300')};
-  background: rgba(0, 0, 0, 0.5);
-  position: absolute;
-  z-index: 1000;
-  bottom: 0;
-  right: 0;
-  padding: 0.5em;
-  font-size: smaller;
-  text-align: right;
-
-  a {
-    color: ${themeGet('colors.grey.300')};
-  }
-`
+import { OutboundLink } from 'components/Link'
 
 const HeaderImage = ({
   image,
@@ -92,28 +15,98 @@ const HeaderImage = ({
   credits,
   position,
 }) => (
-  <Wrapper height={height} minHeight={minHeight}>
-    <StyledImage image={getImage(image)} position={position} alt="" />
+  <Box
+    sx={{
+      height,
+      minHeight,
+      mt: 0,
+      width: '100%',
+      position: 'relative',
+      overflow: 'hidden',
+      '& img': {
+        objectPosition: `center ${position} !important`,
+      },
+    }}
+  >
+    <GatsbyImage
+      image={getImage(image)}
+      alt=""
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        top: 0,
+      }}
+    />
 
     {title ? (
       <>
-        <Overlay />
-        <TitleContainer>
-          <Title>{title}</Title>
-          {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
-        </TitleContainer>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background:
+              'linear-gradient(to bottom, rgba(0, 0, 0, 1), 50%, rgba(0, 0, 0, 0))',
+          }}
+        />
+        <Container
+          sx={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: '3rem',
+            textShadow: '1px 1px 3px #000',
+            borderTop: '3px solid #FFF',
+            borderBottom: '3px solid #FFF',
+          }}
+        >
+          <Heading
+            as="h1"
+            sx={{
+              fontSize: ['3rem', '3rem', '5rem'],
+              color: '#FFF',
+              mb: '0.5rem',
+            }}
+          >
+            {title}
+          </Heading>
+          {subtitle ? (
+            <Heading
+              as="h3"
+              sx={{ fontSize: ['1.5rem', '2rem', '3rem'], color: '#FFF', m: 0 }}
+            >
+              {subtitle}
+            </Heading>
+          ) : null}
+        </Container>
       </>
     ) : null}
 
     {credits ? (
-      <ImageCredits>
+      <Box
+        sx={{
+          color: 'grey.3',
+          bg: 'rgba(0,0,0, 0.5)',
+          position: 'absolute',
+          zIndex: 1000,
+          bottom: 0,
+          right: 0,
+          p: '0.5em',
+          fontSize: 'smaller',
+          textAlign: 'right',
+        }}
+      >
         Photo:&nbsp;
-        <a href={credits.url} target="_blank" rel="noopener noreferrer">
+        <OutboundLink to={credits.url} sx={{ color: 'grey.3' }}>
           {credits.author}
-        </a>
-      </ImageCredits>
+        </OutboundLink>
+      </Box>
     ) : null}
-  </Wrapper>
+  </Box>
 )
 
 HeaderImage.propTypes = {

@@ -1,23 +1,11 @@
+/** @jsxRuntime classic */
+/** @jsx jsx */
+
+// eslint-disable-next-line no-unused-vars
 import React from 'react'
-import PropTypes from 'prop-types'
-import { Link as GatsbyLink } from 'gatsby'
+import { Link as BaseLink } from 'gatsby'
+import { jsx } from 'theme-ui'
 
-const Link = ({ to, from, children, className }) => (
-  <GatsbyLink to={to} className={className}>
-    {children}
-  </GatsbyLink>
-)
-
-Link.propTypes = {
-  to: PropTypes.string.isRequired,
-  from: PropTypes.string,
-  children: PropTypes.any.isRequired,
-  className: PropTypes.string,
-}
-
-Link.defaultProps = {
-  className: ``,
-  from: `unnamed link`,
-}
+const Link = (props) => <BaseLink {...props} />
 
 export default Link

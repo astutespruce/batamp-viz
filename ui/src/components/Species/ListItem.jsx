@@ -1,89 +1,11 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
-import { css } from 'styled-components'
-import { GatsbyImage as Img, getImage } from 'gatsby-plugin-image'
+import { Box, Flex, Grid, Text } from 'theme-ui'
+import { GatsbyImage } from 'gatsby-plugin-image'
 
-import { Flex, Box } from 'components/Grid'
 import { OutboundLink, Link } from 'components/Link'
-import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
 import { SPECIES } from '../../../config/constants'
-
-const Wrapper = styled.div`
-  &:not(:first-child) {
-    border-top: 1px solid ${themeGet('colors.grey.200')};
-    padding-top: 0.5rem;
-    margin-top: 1.5rem;
-  }
-`
-
-const Header = styled(Box).attrs({ px: '1rem' })``
-
-const Content = styled(Flex).attrs({ flexWrap: 'wrap', px: '1rem' })`
-  line-height: 1.4;
-`
-
-const ThumbnailColumn = styled(Box).attrs({
-  flex: ['1 0 auto', '0 1 auto', 0],
-})`
-  padding-right: 1rem;
-`
-
-const Thumbnail = styled(Box)`
-  min-width: 210px;
-`
-
-const ImageCredits = styled.div`
-  margin-top: 0.5rem;
-  font-size: 0.6rem;
-  color: ${themeGet('colors.grey.600')};
-  line-height: 1.2;
-`
-
-const MapCredits = styled(ImageCredits)`
-  margin: 0;
-  font-size: 0.6rem;
-`
-
-const Name = styled.div`
-  color: ${themeGet('colors.link')};
-  font-size: 1.75rem;
-`
-
-const ScientificName = styled.span`
-  font-size: 1rem;
-  color: ${themeGet('colors.grey.700')};
-`
-
-const Stats = styled.ul`
-  min-width: 200px;
-  flex: 1;
-  margin: 1rem 0 0 0;
-  list-style: none;
-  color: ${themeGet('colors.grey.800')};
-
-  li {
-    margin-bottom: 0.5rem;
-  }
-`
-
-const Metric = styled.span`
-  ${({ isActive }) =>
-    isActive &&
-    css`
-      font-weight: bold;
-      color: ${themeGet('colors.highlight.500')};
-    `}
-`
-
-const Footnote = styled.div`
-  font-size: 0.8rem;
-  color: ${themeGet('colors.grey.700')};
-`
-
-const Map = styled.div`
-  margin-left: 1rem;
-`
 
 const ListItem = ({
   item: {
@@ -106,47 +28,107 @@ const ListItem = ({
   const { imageCredits } = SPECIES[species]
 
   return (
-    <Wrapper>
-      <Header>
+    <Box
+      sx={{
+        mt: '1rem',
+        ':not(:first-of-type)': {
+          borderTop: '1px solid',
+          borderTopColor: 'grey.2',
+          pt: '1rem',
+          mt: '2rem',
+        },
+      }}
+    >
+      <Box sx={{ ml: '1rem', fontSize: '1.75rem' }}>
         <Link to={`/species/${species}`}>
-          <Name>
-            {commonName} <ScientificName>({sciName})</ScientificName>
-          </Name>
+          {commonName}{' '}
+          <Text sx={{ display: 'inline', fontSize: '1.25rem' }}>
+            ({sciName})
+          </Text>
         </Link>
-      </Header>
+      </Box>
 
-      <Content>
-        <ThumbnailColumn>
-          <Link to={`/species/${species}`}>
-            <Thumbnail>
-              <Img
+      <Grid
+        columns={[0, '208px 1fr 160px']}
+        sx={{
+          flexWrap: ['wrap', 'nowrap', 'nowrap'],
+          justifyContent: 'space-between',
+          gap: '1rem',
+          mt: '0.5rem',
+          px: '1rem',
+          lineHeight: 1.4,
+        }}
+      >
+        <Box sx={{ flex: '0 1 auto' }}>
+          {thumbnail ? (
+            <>
+              <GatsbyImage
                 image={thumbnail}
                 alt={`species photo for ${commonName} (${sciName})`}
               />
-            </Thumbnail>
-          </Link>
-          <ImageCredits>
-            credit:{' '}
-            {imageCredits || (
-              <>
-                <OutboundLink to="https://www.merlintuttle.org">
-                  MerlinTuttle.org
-                </OutboundLink>{' '}
-                |{' '}
-                <OutboundLink to="http://www.batcon.org/">
-                  batcon.org
-                </OutboundLink>
-              </>
-            )}
-          </ImageCredits>
-        </ThumbnailColumn>
+              <Box
+                sx={{
+                  mt: '0.25rem',
+                  fontSize: 0,
+                  color: 'grey.6',
+                  lineHeight: 1.2,
+                }}
+              >
+                credit:{' '}
+                {imageCredits || (
+                  <>
+                    <OutboundLink to="https://www.merlintuttle.org">
+                      MerlinTuttle.org
+                    </OutboundLink>{' '}
+                    |{' '}
+                    <OutboundLink to="http://www.batcon.org/">
+                      batcon.org
+                    </OutboundLink>
+                  </>
+                )}
+              </Box>
+            </>
+          ) : (
+            <Flex
+              sx={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 0,
+                color: 'grey.6',
+                bg: 'grey.2',
+                height: '100%',
+                minHeight: '4rem',
+              }}
+            >
+              no photo available
+            </Flex>
+          )}
+        </Box>
 
-        <Stats>
+        <Box
+          as="ul"
+          sx={{
+            fontSize: [2, 2, 3],
+            mt: '0.5rem',
+            pl: 0,
+            listStyle: 'none',
+            '& li': { mb: '0.25rem' },
+            '& li+li': {
+              mt: '0.75rem',
+            },
+          }}
+        >
           {detections > 0 ? (
             <li>
-              <Metric isActive={metric === 'detections'}>
+              <Text
+                sx={{
+                  display: 'inline',
+                  fontWeight: metric === 'detections' ? 'bold' : 'normal',
+                  color: metric === 'detections' ? 'highlight.5' : 'inherit',
+                }}
+              >
                 {formatNumber(detections, 0)}
-              </Metric>{' '}
+              </Text>{' '}
               detections
             </li>
           ) : null}
@@ -155,9 +137,17 @@ const ListItem = ({
             {detectionNights > 0 ? (
               <>
                 on{' '}
-                <Metric isActive={metric === 'nights detected'}>
+                <Text
+                  sx={{
+                    display: 'inline',
+                    fontWeight:
+                      metric === 'nights detected' ? 'bold' : 'normal',
+                    color:
+                      metric === 'nights detected' ? 'highlight.5' : 'inherit',
+                  }}
+                >
                   {formatNumber(detectionNights, 0)}
-                </Metric>{' '}
+                </Text>{' '}
               </>
             ) : (
               'not detected on any '
@@ -166,43 +156,62 @@ const ListItem = ({
           </li>
 
           <li>
-            <Metric isActive={metric === 'detectors'}>
+            <Text
+              sx={{
+                display: 'inline',
+                fontWeight: metric === 'detectors' ? 'bold' : 'normal',
+                color: metric === 'detectors' ? 'highlight.5' : 'inherit',
+              }}
+            >
               {formatNumber(detectors, 0)}
-            </Metric>{' '}
+            </Text>{' '}
             detectors monitored by{' '}
-            <Metric isActive={metric === 'contributors'}>{contributors}</Metric>{' '}
+            <Text
+              sx={{
+                display: 'inline',
+                fontWeight: metric === 'contributors' ? 'bold' : 'normal',
+                color: metric === 'contributors' ? 'highlight.5' : 'inherit',
+              }}
+            >
+              {contributors}
+            </Text>{' '}
             {quantityLabel('contributors', contributors)}
           </li>
 
           {!!presenceOnlyDetectors && (
             <li>
-              <Footnote>
+              <Text variant="help" sx={{ fontSize: 1 }}>
                 Note: {formatNumber(presenceOnlyDetections, 0)} detections on
                 the {formatNumber(presenceOnlyDetectorNights, 0)} nights
                 monitored at {formatNumber(presenceOnlyDetectors, 0)} detectors
                 only recorded species presence, not activity.
-              </Footnote>
+              </Text>
             </li>
           )}
-        </Stats>
+        </Box>
 
-        <Map>
-          <Link to={`/species/${species}`}>
-            <Img
-              image={getImage(map)}
-              alt={`distribution map thumnbnail for ${commonName} (${sciName})`}
-            />
-          </Link>
-          <MapCredits>
+        <Box>
+          <GatsbyImage
+            image={map}
+            alt={`distribution map thumnbnail for ${commonName} (${sciName})`}
+          />
+          <Box
+            sx={{
+              fontSize: 0,
+              color: 'grey.6',
+              lineHeight: 1.2,
+              textAlign: 'right',
+            }}
+          >
             range:{' '}
             <OutboundLink to="http://www.batcon.org/">batcon.org</OutboundLink>{' '}
             | <OutboundLink to="http://www.iucnredlist.org/">IUCN</OutboundLink>
             <br />
             basemap: © Mapbox, © OpenStreetMap
-          </MapCredits>
-        </Map>
-      </Content>
-    </Wrapper>
+          </Box>
+        </Box>
+      </Grid>
+    </Box>
   )
 }
 

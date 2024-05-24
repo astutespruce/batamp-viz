@@ -1,103 +1,65 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 
-import { Text } from 'components/Text'
-import { Flex, Columns, Column } from 'components/Grid'
-import styled, { css, themeGet } from 'style'
+import { Box, Flex } from 'theme-ui'
 import { formatNumber } from 'util/format'
 
-const Wrapper = styled.div`
-  line-height: 1;
-  margin-bottom: 1rem;
-`
-
-const Label = styled(Text)`
-  color: ${themeGet('colors.grey.900')};
-`
-
-const Sublabel = styled.span`
-  margin-left: 0.5rem;
-  color: ${themeGet('colors.grey.700')};
-`
-
-const Quantity = styled(Text)`
-  color: ${themeGet('colors.grey.700')};
-`
-
-const Labels = styled(Columns).attrs({
-  justifyContent: 'space-between',
-})`
-  font-size: 0.8rem;
-
-  ${({ highlight }) =>
-    highlight &&
-    css`
-      ${Label}, ${Sublabel}, ${Quantity} {
-        color: ${themeGet('colors.highlight.500')}!important;
-      }
-  `}
-`
-
-const BarWrapper = styled(Flex).attrs({
-  flexWrap: 'nowrap',
-})`
-  height: 1rem;
-  background-color: ${themeGet('colors.grey.200')};
-  border: 1px solid ${themeGet('colors.grey.200')};
-`
-
-const Bar = styled.div`
-  background-color: ${({ highlight }) =>
-    highlight
-      ? themeGet('colors.highlight.500')
-      : themeGet('colors.primary.500')};
-  flex-grow: ${({ width }) => width};
-  transition: flex-grow 300ms;
-`
-
-const Filler = styled.div`
-  transition: flex-grow 300ms;
-`
-
-const HorizontalBarChart = ({ label, sublabel, quantity, max, highlight }) => {
+const HorizontalBarChart = ({ label, quantity, max, highlight }) => {
   const position = quantity / max
   const remainder = 1 - position
 
   return (
-    <Wrapper>
-      <Labels highlight={highlight}>
-        <Column>
-          <Label>
-            {label}
-
-            {sublabel ? <Sublabel>{sublabel}</Sublabel> : null}
-          </Label>
-        </Column>
-        <Column flex="0 0 auto">
-          <Quantity>{formatNumber(quantity)}</Quantity>
-        </Column>
-      </Labels>
-      <BarWrapper>
+    <Box sx={{ lineHeight: 1, mb: '1rem' }}>
+      <Flex sx={{ justifyContent: 'space-between', fontSize: '0.8rem' }}>
+        <Box
+          sx={{ flex: '1 1 auto', color: highlight ? 'highlight.5' : 'grey.9' }}
+        >
+          {label}
+        </Box>
+        <Box
+          sx={{ flex: '0 0 auto', color: highlight ? 'highlight.5' : 'grey.7' }}
+        >
+          {formatNumber(quantity)}
+        </Box>
+      </Flex>
+      <Flex
+        sx={{
+          flexWrap: 'nowrap',
+          height: '1rem',
+          bg: 'grey.2',
+          border: '1px solid',
+          borderColor: 'grey.2',
+        }}
+      >
         {position > 0 && (
-          <Bar highlight={highlight} style={{ flexGrow: position }} />
+          <Box
+            sx={{
+              bg: highlight ? 'highlight.5' : 'primary.5',
+              transition: 'flex-grow 300ms',
+            }}
+            style={{ flexGrow: position }}
+          />
         )}
 
-        {remainder > 0 && <Filler style={{ flexGrow: remainder }} />}
-      </BarWrapper>
-    </Wrapper>
+        {remainder > 0 && (
+          <Box
+            sx={{ transition: 'flex-grow 300ms' }}
+            style={{ flexGrow: remainder }}
+          />
+        )}
+      </Flex>
+    </Box>
   )
 }
 
 HorizontalBarChart.propTypes = {
   label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  sublabel: PropTypes.string,
   quantity: PropTypes.number.isRequired,
   max: PropTypes.number.isRequired,
   highlight: PropTypes.bool,
 }
 
 HorizontalBarChart.defaultProps = {
-  sublabel: null,
   highlight: false,
 }
 

@@ -1,12 +1,10 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
-import { FaRegTimesCircle, FaExclamationTriangle } from 'react-icons/fa'
+import { Box, Flex, Heading, Text } from 'theme-ui'
+import { TimesCircle, ExclamationTriangle } from '@emotion-icons/fa-solid'
 
-import { Text, HelpText } from 'components/Text'
-import Tabs, { Tab as BaseTab } from 'components/Tabs'
+import { Tab, Tabs } from 'components/Tabs'
 import { useCrossfilter } from 'components/Crossfilter'
-import { Column, Columns, RightColumn, Box, Flex } from 'components/Grid'
-import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
 import { sumBy, groupBy, filterObject } from 'util/data'
 import TotalCharts from './TotalCharts'
@@ -15,73 +13,14 @@ import { MONTHS, SPECIES, METRIC_LABELS } from '../../../config/constants'
 
 import DetectorMetadata from './DetectorMetadata'
 
-const Wrapper = styled(Flex).attrs({ flexDirection: 'column' })`
-  height: 100%;
-`
-
-const Header = styled.div`
-  flex: 0 0 auto;
-  padding: 1rem 1rem 0.5rem;
-  background-color: ${themeGet('colors.highlight.100')};
-  line-height: 1.2;
-  border-bottom: 2px solid ${themeGet('colors.grey.500')};
-`
-
-const Title = styled(Text).attrs({ as: 'h1' })`
-  margin: 0 0 0.25rem 0;
-  font-size: 1.5rem;
-`
-
-const Summary = styled(Box).attrs({ pt: '0.5rem', mt: '0.25rem' })`
-  border-top: 1px solid #fff;
-  font-size: 0.9rem;
-  color: ${themeGet('colors.grey.900')};
-  line-height: 1.5;
-`
-
-const CloseIcon = styled(FaRegTimesCircle).attrs({ size: '1.5rem' })`
-  height: 1.5rem;
-  width: 1.5rem;
-  cursor: pointer;
-  color: ${themeGet('colors.grey.600')};
-  &:hover {
-    color: ${themeGet('colors.grey.900')};
-  }
-`
-
-const TabContainer = styled(Tabs)`
-  flex: 1;
-  height: 100%;
-  overflow: hidden;
-`
-
-const Tab = styled(BaseTab)`
-  padding: 1rem;
-  overflow-y: auto;
-  overflow-x: auto;
-  flex: 1 1 auto;
-`
-
-const SectionHeader = styled(Text).attrs({
-  as: 'h3',
-  py: '0.5rem',
+const tabCSS = {
+  flex: '1 1 auto',
+  pt: '1rem',
   px: '1rem',
-})`
-  background-color: ${themeGet('colors.grey.200')};
-  border-radius: 0.5rem;
-  text-align: center;
-  text-transform: capitalize;
-`
-
-const WarningIcon = styled(FaExclamationTriangle)`
-  width: 1.5em;
-  height: 1em;
-`
-
-const Highlight = styled(Box)`
-  color: ${themeGet('colors.highlight.500')};
-  margin-bottom: 2rem;
-`
+  pb: '2rem',
+  overflowY: 'auto',
+  overflowX: 'auto',
+}
 
 const Details = ({ detector, selectedSpecies, onClose }) => {
   const { state } = useCrossfilter()
@@ -108,8 +47,9 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
   // calculate totals by species, for non-zero species
 
-  const bySpp = filterObject(sumBy(ts, 'species', valueField), d => d > 0)
+  const bySpp = filterObject(sumBy(ts, 'species', valueField), (d) => d > 0)
 
+  /* eslint-disable-next-line no-unused-vars */
   const sppTotals = Object.entries(bySpp).sort(([sppA, a], [sppB, b]) =>
     a < b ? 1 : -1
   )
@@ -127,18 +67,16 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
       ? Object.assign(
           ...Object.entries(groupBy(ts, 'species')).map(([spp, records]) => {
             const byMonth = sumBy(records, 'month', valueField)
-            return { [spp]: MONTHS.map(month => byMonth[month] || 0) }
+            return { [spp]: MONTHS.map((month) => byMonth[month] || 0) }
           })
         )
       : []
 
-  const seasonalityData = sppTotals.map(([spp]) => {
-    return {
-      species: spp,
-      ...SPECIES[spp],
-      values: monthlyData[spp],
-    }
-  })
+  const seasonalityData = sppTotals.map(([spp]) => ({
+    species: spp,
+    ...SPECIES[spp],
+    values: monthlyData[spp],
+  }))
 
   const metric = METRIC_LABELS[valueField]
 
@@ -150,54 +88,89 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
   if (presenceOnly && metric === 'detections') {
     presenceOnlyWarning = (
-      <Highlight>
-        <WarningIcon />
+      <Box sx={{ color: 'highlight.5', mb: '2rem', fontSize: 1 }}>
+        <ExclamationTriangle size="1.5em" />
         This detector monitored nightly occurrence instead of nightly activity.
         Only one detection was recorded per night for each species.
-      </Highlight>
+      </Box>
     )
   }
 
   if (!hasBats) {
     speciesWarning = (
-      <Highlight>
-        <WarningIcon />
+      <Box sx={{ color: 'highlight.5', mb: '2rem' }}>
+        <ExclamationTriangle size="1.5em" />
         No bats were detected on any night.
-      </Highlight>
+      </Box>
     )
   } else if (!hasSpecies) {
     speciesWarning = (
-      <Highlight>
-        <WarningIcon />
+      <Box sx={{ color: 'highlight.5', mb: '2rem' }}>
+        <ExclamationTriangle size="1.5em" />
         No species were detected on any night.
         <br />
         {detectionNights} bat detections were not identified to species.
-      </Highlight>
+      </Box>
     )
   }
 
   const filterNote = hasVisibleFilters ? (
-    <HelpText fontSize="0.8rem" mb="1rem">
-      <WarningIcon />
+    <Text variant="help" sx={{ mb: '1rem' }}>
+      <ExclamationTriangle size="1.5em" />
       Note: your filters are not applied to the following data.
-    </HelpText>
+    </Text>
   ) : null
 
   return (
-    <Wrapper>
-      <Header>
-        <Columns>
-          <Column flex="1 1 auto">
-            <Title>{name}</Title>
-          </Column>
-          <Column flex="0 0 auto">
-            <CloseIcon onClick={onClose} />
-          </Column>
-        </Columns>
+    <Flex
+      sx={{
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          flex: '0 0 auto',
+          p: '1rem 1rem 0.5rem',
+          bg: 'highlight.1',
+          lineHeight: 1.2,
+          borderBottom: '2px solid',
+          borderBottomColor: 'grey.5',
+        }}
+      >
+        <Flex sx={{ justifyContent: 'space-between' }}>
+          <Box sx={{ flex: '1 1 auto' }}>
+            <Heading as="h1" sx={{ fontSize: '1.5rem', m: '0 0 0.25rem 0' }}>
+              {name}
+            </Heading>
+          </Box>
+          <Box
+            onClick={onClose}
+            sx={{
+              flex: '0 0 auto',
+              cursor: 'pointer',
+              color: 'grey.6',
+              '&:hover': {
+                color: 'grey.9',
+              },
+            }}
+          >
+            <TimesCircle size="1.5em" />
+          </Box>
+        </Flex>
 
-        <Summary>
-          <Columns>
-            <Column>
+        <Box
+          sx={{
+            pt: '0.5rem',
+            mt: '0.25rem',
+            borderTop: '1px solid #FFF',
+            color: 'grey.9',
+            lineHeight: 1.5,
+          }}
+        >
+          <Flex sx={{ justifyContent: 'space-between' }}>
+            <Box sx={{ flex: '1 1 auto' }}>
               {admin1Name ? (
                 <b>
                   {admin1Name}
@@ -206,23 +179,34 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
               ) : null}
               <br />
               {dateRange}
-            </Column>
-            <RightColumn>
+            </Box>
+            <Box sx={{ flex: '0 0 auto', textAlign: 'right' }}>
               <b>{formatNumber(detections, 0)}</b> species detections
               <br />
               <b>{formatNumber(detectorNights, 0)}</b> nights monitored
-            </RightColumn>
-          </Columns>
-        </Summary>
-      </Header>
+            </Box>
+          </Flex>
+        </Box>
+      </Box>
 
-      <TabContainer>
-        <Tab id="species" label="Species Detected">
+      <Tabs sx={{ flex: '1 1 auto', overflow: 'hidden' }}>
+        <Tab id="species" label="Species Detected" sx={tabCSS}>
           {filterNote}
-
           {speciesWarning || (
             <>
-              <SectionHeader>Total {metric}</SectionHeader>
+              <Heading
+                as="h3"
+                sx={{
+                  py: '0.25rem',
+                  px: '1rem',
+                  textAlign: 'center',
+                  bg: 'grey.2',
+                  mb: '0.5rem',
+                  textTransform: 'capitalize',
+                }}
+              >
+                Total {metric}
+              </Heading>
               {presenceOnlyWarning}
               <TotalCharts
                 data={sppTotals}
@@ -232,17 +216,29 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
             </>
           )}
         </Tab>
-        <Tab id="seasonality" label="Seasonality">
+        <Tab sx={tabCSS} id="seasonality" label="Seasonality">
           {filterNote}
 
           {speciesWarning || (
             <>
-              <SectionHeader>{metric} by month</SectionHeader>
+              <Heading
+                as="h3"
+                sx={{
+                  py: '0.25rem',
+                  px: '1rem',
+                  textAlign: 'center',
+                  bg: 'grey.2',
+                  mb: '0.5rem',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {metric} by month
+              </Heading>
 
               {years > 1 && (
-                <HelpText fontSize="0.8rem" mb="1rem">
+                <Text variant="help" sx={{ mb: '1rem' }}>
                   Note: monthly data may include multiple years.
-                </HelpText>
+                </Text>
               )}
 
               {presenceOnlyWarning}
@@ -255,11 +251,11 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
           )}
         </Tab>
 
-        <Tab id="overview" label="Detector Information">
+        <Tab sx={tabCSS} id="overview" label="Detector Information">
           <DetectorMetadata {...detector} selectedSpecies={selectedSpecies} />
         </Tab>
-      </TabContainer>
-    </Wrapper>
+      </Tabs>
+    </Flex>
   )
 }
 

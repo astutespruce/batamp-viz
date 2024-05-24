@@ -1,27 +1,16 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
-import { FaExclamationTriangle } from 'react-icons/fa'
+import { ExclamationTriangle } from '@emotion-icons/fa-solid'
+import { Box } from 'theme-ui'
 
-import { Box } from 'components/Grid'
-import styled, { themeGet } from 'style'
 import { SPECIES } from '../../../config/constants'
 
-const WarningIcon = styled(FaExclamationTriangle)`
-  width: 1.5em;
-  height: 1em;
-`
-const Highlight = styled(Box)`
-  color: ${themeGet('colors.highlight.500')};
-`
-
-const MissingSpeciesWarning = ({ species, ...props }) => {
-  return (
-    <Highlight {...props}>
-      <WarningIcon />
-      {SPECIES[species].commonName} was not detected on any night.
-    </Highlight>
-  )
-}
+const MissingSpeciesWarning = ({ species }) => (
+  <Box sx={{ color: 'highlight.5' }}>
+    <ExclamationTriangle size="1.5em" />
+    {SPECIES[species].commonName} was not detected on any night.
+  </Box>
+)
 
 MissingSpeciesWarning.propTypes = {
   species: PropTypes.string.isRequired,

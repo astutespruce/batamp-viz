@@ -1,3 +1,8 @@
+// load appropriate dotenv file
+require('dotenv').config({
+  path: `.env.${process.env.NODE_ENV}`,
+})
+
 // since we are searching on species names and codes that include common English
 // articles, we need to clear the stop words used by elasticlunr
 // or these prevent species from being found during autocomplete in search widgets
@@ -6,15 +11,15 @@ elasticlunr.clearStopWords()
 
 module.exports = {
   siteMetadata: {
-    siteUrl: `https://visualize.batamp.databasin.org`,
+    siteUrl: `https://batamp.org`,
     title: `Bat Acoustic Monitoring Visualization Tool`,
     description: `Data exploration tool for bat acoustic monitoring data across North America.`,
-    author: `Brendan C. Ward, Conservation Biology Institute`,
+    author: `Brendan C. Ward`,
+    contactEmail: 'bcward@astutespruce.com',
     sentryDSN: process.env.GATSBY_SENTRY_DSN,
     mapboxToken: process.env.GATSBY_MAPBOX_API_TOKEN,
   },
   plugins: [
-    `gatsby-plugin-react-helmet`,
     `gatsby-plugin-image`,
     {
       resolve: `gatsby-source-filesystem`,
@@ -30,15 +35,14 @@ module.exports = {
         path: `${__dirname}/src/pages`,
       },
     },
-    `gatsby-transformer-sharp`,
-    `gatsby-plugin-sharp`,
     {
-      resolve: `gatsby-plugin-styled-components`,
+      resolve: `gatsby-plugin-theme-ui`,
       options: {
-        displayName: process.env.NODE_ENV !== `production`,
-        fileName: false,
+        injectColorFlashScript: false,
       },
     },
+    `gatsby-transformer-sharp`,
+    `gatsby-plugin-sharp`,
     {
       resolve: `gatsby-source-filesystem`,
       options: {
@@ -57,18 +61,14 @@ module.exports = {
             : `${node.name}Json`,
       },
     },
-    {
-      resolve: `gatsby-plugin-typography`,
-      options: {
-        pathToConfigModule: `./config/typography.js`,
-      },
-    },
     `gatsby-plugin-catch-links`,
     `gatsby-plugin-sitemap`,
     {
       resolve: `gatsby-plugin-google-gtag`,
       options: {
-        trackingIds: [process.env.GATSBY_GOOGLE_ANALYTICS_ID],
+        trackingIds: process.env.GATSBY_GOOGLE_ANALYTICS_ID
+          ? [process.env.GATSBY_GOOGLE_ANALYTICS_ID]
+          : [],
         gtagConfig: {
           anonymize_ip: true,
         },

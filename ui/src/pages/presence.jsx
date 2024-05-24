@@ -1,32 +1,18 @@
 import React, { useMemo, useState } from 'react'
+import { Box, Flex } from 'theme-ui'
 
 import FiltersList from 'components/FiltersList'
-import Layout from 'components/Layout'
-import { HelpText as BaseHelpText, ExpandableParagraph } from 'components/Text'
+import { ClientOnly, Layout, SEO } from 'components/Layout'
+import { ExpandableParagraph } from 'components/Text'
 import {
   Provider as CrossfilterProvider,
   FilteredMap as Map,
 } from 'components/Crossfilter'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
-import { Flex, Box } from 'components/Grid'
 import { useDetectors, useSpeciesTS } from 'data'
-import styled from 'style'
 import { join } from 'util/data'
 import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
-
-const Wrapper = styled(Flex)`
-  height: 100%;
-  width: 100%;
-`
-
-const MapContainer = styled.div`
-  position: relative;
-  flex: 1 0 auto;
-  height: 100%;
-`
-
-const HelpText = styled(BaseHelpText).attrs({ mx: '1rem', mb: '1rem' })``
 
 const PresencePage = () => {
   const [selected, setSelected] = useState({ features: [], feature: null })
@@ -153,26 +139,35 @@ const PresencePage = () => {
   }
 
   return (
-    <Layout title="Explore Species Occurrences">
-      <Wrapper>
-        <CrossfilterProvider
-          data={data}
-          filters={filters}
-          options={{ valueField: 'species' }}
-        >
-          <Sidebar allowScroll={false}>
-            {selected.features.length > 0 ? (
-              <DetectorDetails
-                detectors={selected.features}
-                onSetDetector={handleSetFeature}
-                onClose={handleDetailsClose}
-              />
-            ) : (
-              <>
-                <Box flex="0 0 auto">
-                  <SidebarHeader title="Species Occurrences" icon="slidersH" />
-                  <HelpText>
+    <Layout>
+      <ClientOnly>
+        <Flex sx={{ height: '100%', width: '100%' }}>
+          <CrossfilterProvider
+            data={data}
+            filters={filters}
+            options={{ valueField: 'species' }}
+          >
+            <Sidebar allowScroll={false}>
+              {selected.features.length > 0 ? (
+                <DetectorDetails
+                  detectors={selected.features}
+                  onSetDetector={handleSetFeature}
+                  onClose={handleDetailsClose}
+                />
+              ) : (
+                <>
+                  <Box flex="0 0 auto">
+                    <SidebarHeader title="Species Occurrences" />
+
                     <ExpandableParagraph
+                      sx={{
+                        px: '1rem',
+                        '& p': {
+                          fontSize: 2,
+                          color: 'grey.8',
+                          lineHeight: 1.3,
+                        },
+                      }}
                       snippet="An occurrence is anytime a species was detected by an acoustic
                 detector at a given location during a given night. Use the
                 following filters to ..."
@@ -189,25 +184,29 @@ const PresencePage = () => {
                       filter. For example, you can select Fringed Bat in March
                       and April.
                     </ExpandableParagraph>
-                  </HelpText>
-                </Box>
+                  </Box>
 
-                <FiltersList filters={visibleFilters} />
-              </>
-            )}
-          </Sidebar>
+                  <FiltersList filters={visibleFilters} />
+                </>
+              )}
+            </Sidebar>
 
-          <MapContainer>
-            <Map
-              detectors={detectorLocations}
-              selectedFeature={selected.feature}
-              onSelectFeatures={handleSelectFeatures}
-            />
-          </MapContainer>
-        </CrossfilterProvider>
-      </Wrapper>
+            <Box
+              sx={{ position: 'relative', flex: '1 0 auto', height: '100%' }}
+            >
+              <Map
+                detectors={detectorLocations}
+                selectedFeature={selected.feature}
+                onSelectFeatures={handleSelectFeatures}
+              />
+            </Box>
+          </CrossfilterProvider>
+        </Flex>
+      </ClientOnly>
     </Layout>
   )
 }
 
 export default PresencePage
+
+export const Head = () => <SEO title="Explore Species Occurrences" />

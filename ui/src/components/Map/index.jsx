@@ -1,15 +1,14 @@
-/* eslint-disable max-len, no-underscore-dangle camelcase */
+/* eslint-disable max-len,no-underscore-dangle,camelcase */
 import React, { useRef, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { useDebouncedCallback } from 'use-debounce'
+import { Box } from 'theme-ui'
 
 // exclude Mapbox GL from babel transpilation per https://docs.mapbox.com/mapbox-gl-js/guides/migrate-to-v2/
 /* eslint-disable-next-line */
 import mapboxgl from '!mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
-import styled from 'style'
-import { hasWindow } from 'util/dom'
 import { formatNumber, quantityLabel } from 'util/format'
 import { niceNumber, difference, clone } from 'util/data'
 import { useIsEqualEffect } from 'util/hooks'
@@ -38,12 +37,6 @@ import {
 } from './config'
 import { METRIC_LABELS, SPECIES } from '../../../config/constants'
 
-const Wrapper = styled.div`
-  position: relative;
-  flex: 1 0 auto;
-  height: 100%;
-`
-
 const Map = ({
   detectors,
   valueField,
@@ -55,11 +48,6 @@ const Map = ({
   onSelectFeatures,
   onBoundsChange,
 }) => {
-  // if there is no window, we cannot render this component
-  if (!hasWindow) {
-    return null
-  }
-
   const { accessToken, styles } = config
 
   // Use refs to coordinate values set after map is constructed
@@ -579,7 +567,7 @@ const Map = ({
       : `Number of ${METRIC_LABELS[valueField]}`
 
   return (
-    <Wrapper>
+    <Box sx={{ position: 'relative', flex: '1 0 auto', height: '100%' }}>
       <div ref={mapNode} style={{ width: '100%', height: '100%' }} />
 
       <Legend
@@ -599,7 +587,7 @@ const Map = ({
           onChange={handleBasemapChange}
         />
       )}
-    </Wrapper>
+    </Box>
   )
 }
 

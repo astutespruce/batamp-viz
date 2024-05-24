@@ -58,7 +58,11 @@ const Thumbnail = ({ species, ...props }) => {
   const thumbnail = useThumbnail(species)
 
   return thumbnail ? (
-    <Img image={thumbnail} alt={`species photo for ${species}`} {...props} />
+    <Img
+      image={getImage(thumbnail)}
+      alt={`species photo for ${species}`}
+      {...props}
+    />
   ) : null
 }
 

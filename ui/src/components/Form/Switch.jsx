@@ -1,20 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-
-import { Flex } from 'components/Grid'
-import styled, { themeGet } from 'style'
-
-const Wrapper = styled(Flex).attrs({ alignItems: 'center' })``
-
-const Label = styled.label`
-  color: ${themeGet('colors.grey.800')};
-  font-size: 0.9em;
-  margin-left: 0.5em;
-`
-
-const Toggle = styled.input.attrs({
-  type: 'checkbox',
-})``
+import { Flex, Input, Label } from 'theme-ui'
 
 const Switch = ({ enabled, label, onChange }) => {
   const handleChange = ({ target: { checked } }) => {
@@ -22,10 +8,12 @@ const Switch = ({ enabled, label, onChange }) => {
   }
 
   return (
-    <Wrapper>
-      <Toggle checked={enabled} onChange={handleChange} />
-      {label && <Label>{label}</Label>}
-    </Wrapper>
+    <Flex sx={{ alignItems: 'center', gap: '0.5em' }}>
+      <Input type="checkbox" checked={enabled} onChange={handleChange} />
+      {label ? (
+        <Label sx={{ color: 'grey.8', fontSize: '0.9em' }}>{label}</Label>
+      ) : null}
+    </Flex>
   )
 }
 

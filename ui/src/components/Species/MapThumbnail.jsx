@@ -5,16 +5,6 @@ import { GatsbyImage as Img, getImage } from 'gatsby-plugin-image'
 
 import { extractNodes } from 'util/data'
 
-/**
- * Retrieve a fixed-size, blur-up image for each species in `src/images/species`:
- * {species: <img>, ...}
- *
- * <Img image={getImage(thumbnails[species])} />
- *
- *
- * NOTE: Due to the way graphql queries work at the moment, we have to do this for all
- * profile images, and then filter out the one we want.
- */
 export const useThumbnails = () => {
   const data = useStaticQuery(graphql`
     query MapThumbnailQuery {
@@ -25,9 +15,10 @@ export const useThumbnails = () => {
             species: name
             childImageSharp {
               gatsbyImageData(
-                width: 175
-                height: 150
-                layout: FIXED
+                # width: 175
+                # height: 150
+                # layout: FIXED
+                layout: FULL_WIDTH
                 formats: [PNG]
                 placeholder: BLURRED
                 quality: 100

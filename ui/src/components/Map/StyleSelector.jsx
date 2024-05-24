@@ -1,43 +1,25 @@
 import React, { useState, memo } from 'react'
 import PropTypes from 'prop-types'
 
-import styled, { css, themeGet } from 'style'
+import { Box, Image } from 'theme-ui'
 
 import LightIcon from 'images/light-v9.png'
 import StreetsIcon from 'images/streets-v11.png'
 import SatelliteIcon from 'images/satellite-streets-v11.jpg'
 
-const Wrapper = styled.div`
-  cursor: pointer;
-  position: absolute;
-  left: 10px;
-  bottom: 24px;
-  z-index: 999;
-`
-
-const Basemap = styled.img`
-  box-sizing: border-box;
-  border: 2px solid
-    ${({ isActive }) => (isActive ? themeGet('colors.highlight.500') : '#fff')};
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
-  margin: 0;
-
-  ${({ size }) => css`
-    width: ${size};
-    height: ${size};
-    border-radius: ${size};
-  `}
-
-  &:not(:first-child) {
-    margin-left: 0.25rem;
-  }
-`
-
-// Original method heavily used the Mapbox raster tile API, resulting in costs!
-// const getSrc = ({ styleID, z, x, y, token }) => {
-//   console.log('get src', styleID)
-//   return `https://api.mapbox.com/styles/v1/mapbox/${styleID}/tiles/256/${z}/${x}/${y}?access_token=${token}`
-// }
+const basemapCSS = {
+  boxSizing: 'border-box',
+  border: '2px solid',
+  borderColor: '#FFF',
+  borderRadius: '64px',
+  boxShadow: '0 1px 5px rgba(0,0,0,0.65)',
+  m: 0,
+  width: '64px',
+  height: '64px',
+  '&:not(:first-of-type)': {
+    ml: '0.25rem',
+  },
+}
 
 const styleImages = {
   'light-v9': LightIcon,
@@ -45,7 +27,7 @@ const styleImages = {
   'streets-v11': StreetsIcon,
 }
 
-const StyleSelector = ({ token, styles, size, onChange }) => {
+const StyleSelector = ({ styles, onChange }) => {
   const [basemap, setBasemap] = useState(styles[0])
   const [isOpen, setIsOpen] = useState(false)
 
@@ -71,59 +53,74 @@ const StyleSelector = ({ token, styles, size, onChange }) => {
     const nextBasemap = basemap === styles[0] ? styles[1] : styles[0]
 
     return (
-      <Wrapper>
-        <Basemap
-          size={size}
+      <Box
+        sx={{
+          cursor: 'pointer',
+          position: 'absolute',
+          left: '10px',
+          bottom: '24px',
+          zIndex: 999,
+        }}
+      >
+        <Image
+          sx={basemapCSS}
           src={styleImages[nextBasemap]}
           onClick={() => handleBasemapClick(nextBasemap)}
         />
-      </Wrapper>
+      </Box>
     )
   }
 
   const nextBasemap = styles.filter((style) => style !== basemap)[0]
 
   return (
-    <Wrapper onMouseEnter={toggleOpen} onMouseLeave={toggleClosed}>
+    <Box
+      sx={{
+        cursor: 'pointer',
+        position: 'absolute',
+        left: '10px',
+        bottom: '24px',
+        zIndex: 999,
+      }}
+      onMouseEnter={toggleOpen}
+      onMouseLeave={toggleClosed}
+    >
       {isOpen ? (
         <>
-          <Basemap
-            size={size}
+          <Image
+            sx={basemapCSS}
             src={styleImages[nextBasemap]}
             onClick={() => handleBasemapClick(nextBasemap)}
           />
           {styles
             .filter((style) => style !== nextBasemap)
             .map((styleID) => (
-              <Basemap
+              <Image
                 key={styleID}
-                isActive={styleID === basemap}
-                size={size}
+                sx={{
+                  ...basemapCSS,
+                  borderColor: styleID === basemap ? 'highlight.5' : '#FFF',
+                }}
                 src={styleImages[styleID]}
                 onClick={() => handleBasemapClick(styleID)}
               />
             ))}
         </>
       ) : (
-        <Basemap
-          size={size}
+        <Image
+          sx={basemapCSS}
           src={styleImages[nextBasemap]}
           onClick={toggleOpen}
         />
       )}
-    </Wrapper>
+    </Box>
   )
 }
 
 StyleSelector.propTypes = {
   // list of mapbox style IDs.  NOTE: these are hard-coded to images above
   styles: PropTypes.arrayOf(PropTypes.string).isRequired,
-  size: PropTypes.string,
   onChange: PropTypes.func.isRequired,
-}
-
-StyleSelector.defaultProps = {
-  size: '64px',
 }
 
 // don't rerender based on container

@@ -39,9 +39,10 @@ const FilteredMap = ({
 
   const { data, valueField, hasVisibleFilters } = state
 
-  const filteredIds = useIsEqualMemo(() => {
-    return new Set(data.map(({ id }) => id))
-  }, [data])
+  const filteredIds = useIsEqualMemo(
+    () => new Set(data.map(({ id }) => id)),
+    [data]
+  )
 
   // Any detector not included below can be assumed to have a total of 0
   const totalById = useIsEqualMemo(() => {

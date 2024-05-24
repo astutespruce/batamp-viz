@@ -13,10 +13,11 @@ const useIndex = () => {
 
   // Wrap setup of the index and query function in setState
   // to memoize it
+  /* eslint-disable-next-line no-unused-vars */
   const [queryFunc, _] = useState(() => {
     const searchIndex = Index.load(data.siteSearchIndex.index)
     const { documentStore } = searchIndex
-    return query =>
+    return (query) =>
       searchIndex
         .search(query, {
           expand: true,

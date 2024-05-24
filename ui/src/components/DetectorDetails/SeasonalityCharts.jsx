@@ -1,21 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { scaleLinear } from 'd3-scale'
+import { Box } from 'theme-ui'
 
 import BarChart from 'components/Chart/BarChart'
-import styled, { themeGet } from 'style'
 import MissingSpeciesWarning from './MissingSpeciesWarning'
 import { MONTH_LABELS } from '../../../config/constants'
-
-const Wrapper = styled.div``
-
-const BarChartWrapper = styled.div`
-  &:not(:first-child) {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 2px solid ${themeGet('colors.grey.200')};
-  }
-`
 
 const SeasonalityCharts = ({ data, selectedSpecies }) => {
   const maxBySpp = data.map(({ values }) => Math.max(...values))
@@ -25,10 +15,10 @@ const SeasonalityCharts = ({ data, selectedSpecies }) => {
 
   const sppData = data
     .filter(({ species }) => species !== selectedSpecies)
-    .sort((left, right) => {
+    .sort((left, right) =>
       // sort alphabetically on name
-      return left.commonName < right.commonName ? -1 : 1
-    })
+      left.commonName < right.commonName ? -1 : 1
+    )
 
   let detectedSelected = false
   let selectedSppChart = null
@@ -42,7 +32,16 @@ const SeasonalityCharts = ({ data, selectedSpecies }) => {
       // else, species was not detected at this detector
       const { commonName, sciName, values } = selectedSppData
       selectedSppChart = (
-        <BarChartWrapper>
+        <Box
+          sx={{
+            '&:not(:first-of-type)': {
+              mt: '1.5rem',
+              pt: '1rem',
+              borderTop: '2px solid',
+              borderTopColor: 'grey.2',
+            },
+          }}
+        >
           <BarChart
             title={commonName}
             subtitle={`(${sciName})`}
@@ -53,13 +52,13 @@ const SeasonalityCharts = ({ data, selectedSpecies }) => {
             scale={chartScale}
             highlight
           />
-        </BarChartWrapper>
+        </Box>
       )
     }
   }
 
   return (
-    <Wrapper>
+    <Box>
       {selectedSpecies ? (
         <>
           {detectedSelected ? (
@@ -71,7 +70,17 @@ const SeasonalityCharts = ({ data, selectedSpecies }) => {
       ) : null}
 
       {sppData.map(({ species, commonName, sciName, values }) => (
-        <BarChartWrapper key={species}>
+        <Box
+          key={species}
+          sx={{
+            '&:not(:first-of-type)': {
+              mt: '1.5rem',
+              pt: '1rem',
+              borderTop: '2px solid',
+              borderTopColor: 'grey.2',
+            },
+          }}
+        >
           <BarChart
             title={commonName}
             subtitle={`(${sciName})`}
@@ -82,9 +91,9 @@ const SeasonalityCharts = ({ data, selectedSpecies }) => {
             scale={chartScale}
             highlight={species === selectedSpecies}
           />
-        </BarChartWrapper>
+        </Box>
       ))}
-    </Wrapper>
+    </Box>
   )
 }
 

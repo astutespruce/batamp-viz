@@ -1,74 +1,13 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
-import { FaRegTimesCircle, FaCaretDown, FaCaretRight } from 'react-icons/fa'
+import { Box, Flex, Text } from 'theme-ui'
+import { CaretDown, CaretRight, TimesCircle } from '@emotion-icons/fa-solid'
 
-import { HelpText } from 'components/Text'
 import { useCrossfilter } from 'components/Crossfilter'
-import { Flex } from 'components/Grid'
 import { useIsEqualCallback, useIsEqualMemo } from 'util/hooks'
 
-import styled, { theme, themeGet } from 'style'
 import HorizontalBars from './HorizontalBars'
 import VerticalBars from './VerticalBars'
-
-const Wrapper = styled.div`
-  padding-top: 0.25rem;
-
-  &:not(:first-child) {
-    border-top: 1px solid ${themeGet('colors.grey.200')};
-  }
-`
-
-const Header = styled(Flex).attrs({
-  justifyContent: 'space-between',
-})``
-
-const Title = styled(Flex).attrs({ alignItems: 'center', flex: 1 })`
-  cursor: pointer;
-`
-
-const ResetIcon = styled(FaRegTimesCircle).attrs({
-  size: '1rem',
-})`
-  width: 1rem;
-  height: 1rem;
-  margin-left: 1rem;
-  visibility: ${({ visible }) => visible};
-  cursor: pointer;
-  color: ${themeGet('colors.highlight.500')};
-`
-
-const expandoColor = theme.colors.grey[800]
-const expandoSize = '1.5rem'
-
-const CaretDown = styled(FaCaretDown).attrs({
-  color: expandoColor,
-  size: expandoSize,
-})`
-  width: 1rem;
-  height: 1rem;
-  margin-right: 0.25rem;
-`
-
-const CaretRight = styled(FaCaretRight).attrs({
-  color: expandoColor,
-  size: expandoSize,
-})`
-  width: 1rem;
-  height: 1rem;
-  margin-right: 0.25rem;
-`
-
-const Container = styled.div`
-  padding: 0.5rem 0 0 1rem;
-`
-
-const EmptyMessage = styled.div`
-  color: ${themeGet('colors.grey.600')};
-  text-align: center;
-  font-style: italic;
-  font-size: smaller;
-`
 
 const Filter = ({
   field,
@@ -127,11 +66,11 @@ const Filter = ({
   }, [filterValues, totals, isOpen])
 
   const toggle = () => {
-    setIsOpen(prev => !prev)
+    setIsOpen((prev) => !prev)
   }
 
   const handleFilterToggle = useIsEqualCallback(
-    value => {
+    (value) => {
       // NOTE: do not mutate filter values or things break
       // (not seen as a state update and memoized function above doesn't fire)!
       // Copy instead.
@@ -153,24 +92,49 @@ const Filter = ({
   }
 
   return (
-    <Wrapper>
-      <Header>
-        <Title onClick={toggle}>
-          {isOpen ? <CaretDown /> : <CaretRight />}
-          <div>{title}</div>
-        </Title>
-        {
-          <ResetIcon
-            onClick={handleReset}
-            visible={filterValues.size > 0 ? 'visible' : 'hidden'}
-          />
-        }
-      </Header>
+    <Box
+      sx={{
+        pt: '0.25rem',
+        '&:not(:first-of-type)': {
+          borderTop: '1px solid',
+          borderTopColor: 'grey.2',
+        },
+      }}
+    >
+      <Flex sx={{ justifyContent: 'space-between', gap: '1em' }}>
+        <Flex
+          sx={{
+            alignItems: 'center',
+            flex: '1 1 auto',
+            cursor: 'pointer',
+            gap: '0.25rem',
+          }}
+          onClick={toggle}
+        >
+          <Box sx={{ color: 'grey.8' }}>
+            {isOpen ? <CaretDown size="1.5em" /> : <CaretRight size="1.5em" />}
+          </Box>
+          <Text sx={{ fontSize: 3, fontWeight: isOpen ? 'bold' : 'inherit' }}>
+            {title}
+          </Text>
+        </Flex>
+
+        <Box
+          sx={{
+            visibility: filterValues.size > 0 ? 'visible' : 'hidden',
+            color: 'highlight.5',
+            cursor: 'pointer',
+          }}
+          onClick={handleReset}
+        >
+          <TimesCircle size="1em" />
+        </Box>
+      </Flex>
 
       {isOpen && (
         <>
           {data.length > 0 && max > 0 ? (
-            <Container>
+            <Box sx={{ pt: '0.5rem', pl: '1rem' }}>
               {vertical ? (
                 <VerticalBars
                   data={data}
@@ -187,17 +151,26 @@ const Filter = ({
               )}
 
               {help && (
-                <HelpText fontSize="0.8rem" mb="1rem">
+                <Text variant="help" sx={{ mb: '1rem' }}>
                   {help}
-                </HelpText>
+                </Text>
               )}
-            </Container>
+            </Box>
           ) : (
-            <EmptyMessage>No data available</EmptyMessage>
+            <Box
+              sx={{
+                color: 'grey.6',
+                textAlign: 'center',
+                fontStyle: 'italic',
+                fontSize: 'smaller',
+              }}
+            >
+              No data available
+            </Box>
           )}
         </>
       )}
-    </Wrapper>
+    </Box>
   )
 }
 

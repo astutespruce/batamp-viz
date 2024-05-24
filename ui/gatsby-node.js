@@ -53,23 +53,28 @@ exports.onCreateWebpackConfig = ({ actions, stage, loaders, plugins }) => {
   const config = {
     resolve: {
       alias: {
+        assert: require.resolve('assert'),
+        os: require.resolve('os-browserify/browser'),
         path: require.resolve('path-browserify'),
+        stream: require.resolve('stream-browserify'),
+        util: require.resolve('util'),
+        zlib: require.resolve('browserify-zlib'),
       },
       fallback: {
-        assert: require.resolve('assert'),
-        constants: require.resolve('constants-browserify'),
-        crypto: require.resolve('crypto-browserify'),
+        assert: false,
         fs: false,
-        os: require.resolve('os-browserify/browser'),
-        stream: require.resolve('stream-browserify'),
-        util: require.resolve('util/'),
-        zlib: require.resolve('browserify-zlib'),
+        crypto: false,
       },
 
       // Enable absolute imports with `/src` as root.
       modules: [path.resolve(__dirname, 'src'), 'node_modules'],
     },
-    plugins: [plugins.provide({ process: 'process/browser' })],
+    plugins: [
+      plugins.provide({
+        process: 'process/browser',
+        Buffer: ['buffer', 'Buffer'],
+      }),
+    ],
   }
 
   // when building HTML, window is not defined, so mapbox-gl causes the build to blow up
@@ -101,23 +106,21 @@ exports.onCreateNode = ({ node, actions: { createNodeField } }) => {
   }
 }
 
-exports.createPages = ({ graphql, actions: { createPage } }) => {
-  return new Promise((resolve, reject) => {
+exports.createPages = ({ graphql, actions: { createPage } }) =>
+  new Promise((resolve, reject) => {
     resolve(
-      graphql(
-        `
-          {
-            allSpeciesJson {
-              edges {
-                node {
-                  id
-                  species
-                }
+      graphql(`
+        {
+          allSpeciesJson {
+            edges {
+              node {
+                id
+                species
               }
             }
           }
-        `
-      ).then(result => {
+        }
+      `).then((result) => {
         if (result.errors) {
           console.error(result.errors)
           reject(result.errors)
@@ -135,4 +138,3 @@ exports.createPages = ({ graphql, actions: { createPage } }) => {
       })
     )
   })
-}

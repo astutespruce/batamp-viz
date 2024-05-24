@@ -1,72 +1,7 @@
 import React, { useState, memo } from 'react'
 import PropTypes from 'prop-types'
 
-import { Text } from 'components/Text'
-import { Flex, Box } from 'components/Grid'
-
-import styled, { themeGet } from 'style'
-
-const Wrapper = styled.div`
-  cursor: pointer;
-  position: absolute;
-  max-width: 200px;
-  right: 10px;
-  bottom: 24px;
-  z-index: 10000;
-  background-color: #fff;
-  border-radius: 0.5rem;
-  border: 1px solid ${themeGet('colors.grey.400')};
-  box-shadow: 1px 1px 4px #666;
-  padding: 0.25rem 0.5rem 0.5rem;
-`
-
-const Title = styled(Text).attrs({
-  fontSize: ['0.8rem', '0.8rem', '1rem'],
-})`
-  line-height: 1.2;
-`
-
-const Entry = styled(Flex).attrs({
-  alignItems: 'center',
-})`
-  &:not(:first-child) {
-    margin-top: 0.25rem;
-  }
-`
-// sized to the max size of all patches / circles
-const CircleContainer = styled(Flex).attrs({
-  justifyContent: 'center',
-  alignItems: 'center',
-})`
-  width: 36px;
-  text-align: center;
-`
-
-const Patch = styled(Box).attrs({
-  flex: '0 0 auto',
-})`
-  flex: 0 0 1.25rem;
-  width: 1.25rem;
-  height: 1.25rem;
-  background-color: ${({ color }) => color || 'transparent'};
-  border-style: solid;
-  border-width: ${({ borderWidth }) => borderWidth || 0}px;
-  border-color: ${({ borderColor }) => borderColor || 'transparent'};
-  border-radius: 0.25rem;
-`
-
-const Label = styled(Box).attrs({})`
-  font-size: 0.7rem;
-  color: ${themeGet('colors.grey.800')};
-  margin-left: 0.5rem;
-`
-
-const Note = styled(Text)`
-  font-size: 0.8rem;
-  color: ${themeGet('colors.grey.600')};
-  line-height: 1.1;
-  margin-top: 0.5rem;
-`
+import { Box, Flex, Text } from 'theme-ui'
 
 const Circle = ({ radius, color, borderColor, borderWidth, scale }) => {
   const width = 2 * borderWidth + 2 * radius * scale
@@ -102,35 +37,117 @@ Circle.defaultProps = {
 }
 
 const Legend = ({ title, entries, note }) => {
-  if (!(entries.length || note)) return null
-
   const [isClosed, setIsClosed] = useState(false)
-  const toggle = () => setIsClosed(prevIsClosed => !prevIsClosed)
+  const toggle = () => setIsClosed((prevIsClosed) => !prevIsClosed)
 
   return (
-    <Wrapper onClick={toggle}>
+    <Box
+      sx={{
+        cursor: 'pointer',
+        position: 'absolute',
+        maxWidth: '200px',
+        right: '10px',
+        bottom: '24px',
+        zIndex: 10000,
+        bg: '#FFF',
+        borderRadius: '0.5rem',
+        border: '1px solid',
+        borderColor: 'grey.4',
+        boxShadow: '1px 1px 4px #666',
+        p: '0.25rem 0.5rem 0.5rem',
+      }}
+      onClick={toggle}
+    >
       {isClosed ? (
-        <Title>Legend</Title>
+        <Text sx={{ fontSize: ['0.8rem', '0.8rem', '1rem'], lineHeight: 1.2 }}>
+          Legend
+        </Text>
       ) : (
         <div>
-          {title && <Title>{title}</Title>}
-          {entries.map(({ type, label, ...entry }) => (
-            <Entry key={label}>
-              {type === 'circle' ? (
-                <CircleContainer>
-                  <Circle scale={1} {...entry} />
-                </CircleContainer>
-              ) : (
-                <Patch {...entry} />
-              )}
-              <Label>{label}</Label>
-            </Entry>
-          ))}
+          {title ? (
+            <Text
+              sx={{
+                fontSize: 2,
+                fontWeight: 'bold',
+                lineHeight: 1.2,
+                mb: '0.5rem',
+              }}
+            >
+              {title}
+            </Text>
+          ) : null}
 
-          {note && <Note>{note}</Note>}
+          {entries.map(
+            ({
+              type,
+              label,
+              radius,
+              color = 'transparent',
+              borderWidth = 0,
+              borderColor = 'transparent',
+            }) => (
+              <Flex
+                sx={{
+                  alignItems: 'center',
+                  '&:not(:first-of-type)': {
+                    mt: '0.25rem',
+                  },
+                }}
+                key={label}
+              >
+                {type === 'circle' ? (
+                  <Flex
+                    sx={{
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      width: '36px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Circle
+                      radius={radius}
+                      scale={1}
+                      color={color}
+                      borderColor={borderColor}
+                      borderWidth={borderWidth}
+                    />
+                  </Flex>
+                ) : (
+                  <Box
+                    sx={{
+                      flex: '0 0 1.25rem',
+                      width: '1.25rem',
+                      height: '1.25rem',
+                      bg: color,
+                      borderStyle: 'solid',
+                      borderWidth: `${borderWidth}px`,
+                      borderColor,
+                      borderRadius: '0.25rem',
+                    }}
+                  />
+                )}
+                <Box sx={{ fontSize: 1, color: 'grey.8', ml: '0.5rem' }}>
+                  {label}
+                </Box>
+              </Flex>
+            )
+          )}
+
+          {note ? (
+            <Text
+              sx={{
+                fontSize: 0,
+                color: 'grey.6',
+                lineHeight: 1.1,
+                mt: '0.5rem',
+              }}
+            >
+              {note}
+            </Text>
+          ) : null}
         </div>
       )}
-    </Wrapper>
+    </Box>
   )
 }
 

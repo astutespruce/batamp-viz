@@ -2,11 +2,11 @@ import React from 'react'
 import { graphql } from 'gatsby'
 import PropTypes from 'prop-types'
 
-import Layout from 'components/Layout'
+import { Layout, SEO } from 'components/Layout'
 import { HeaderImage } from 'components/Image'
 
 const NotFoundPage = ({ data: { headerImage } }) => (
-  <Layout title="404: Not found">
+  <Layout>
     <HeaderImage
       image={headerImage}
       height="100vh"
@@ -42,3 +42,5 @@ export const pageQuery = graphql`
 `
 
 export default NotFoundPage
+
+export const Head = () => <SEO title="NOT FOUND" />

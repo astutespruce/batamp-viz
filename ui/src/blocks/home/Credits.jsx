@@ -1,35 +1,22 @@
 import React from 'react'
-import { Image } from 'rebass'
+import { Box, Flex, Grid, Image, Paragraph } from 'theme-ui'
 
-import { Columns, Column as BaseColumn, Flex } from 'components/Grid'
 import { OutboundLink } from 'components/Link'
-import styled, { themeGet } from 'style'
 import CBILogo from 'images/cbi_logo.png'
 import USFSLogo from 'images/usfs_logo.png'
-import { Section as BaseSection } from './styles'
-
-const Section = styled(BaseSection)`
-  border-top: 0.5rem solid ${themeGet('colors.primary.700')};
-  p {
-    font-size: 0.9rem;
-  }
-`
-
-const Column = styled(BaseColumn).attrs({
-  width: ['100%', '100%', '30%'],
-})``
-
-const Logos = styled(Flex).attrs({ alignItems: 'center', flexWrap: 'wrap' })``
-
-const Logo = styled.img`
-  margin: 0.5rem 1rem;
-`
 
 const About = () => (
-  <Section>
-    <Columns>
-      <Column>
-        <p>
+  <Box
+    sx={{
+      pt: '3rem',
+      mt: '2rem',
+      borderTop: '0.5rem solid',
+      borderTopColor: 'primary.5',
+    }}
+  >
+    <Grid columns={[0, '1.5fr 1fr']} gap={4}>
+      <Box>
+        <Paragraph sx={{ fontSize: 2 }}>
           This application was created by{' '}
           <a href="mailto:bcward@astutespruce.com">Brendan C. Ward</a> at
           the&nbsp;
@@ -54,16 +41,29 @@ const About = () => (
             Research Station
           </OutboundLink>
           .
-        </p>
-      </Column>
-      <Column>
-        <Logos>
-          <Logo src={CBILogo} alt="CBI logo" />
-          <Logo src={USFSLogo} alt="USFS logo" />
-        </Logos>
-      </Column>
-    </Columns>
-  </Section>
+        </Paragraph>
+      </Box>
+      <Flex
+        sx={{
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '2rem',
+        }}
+      >
+        <Image
+          src={CBILogo}
+          alt="CBI logo"
+          sx={{ height: '48px', width: '218px' }}
+        />
+        <Image
+          src={USFSLogo}
+          alt="USFS logo"
+          sx={{ height: '72px', width: '66px' }}
+        />
+      </Flex>
+    </Grid>
+  </Box>
 )
 
 export default About

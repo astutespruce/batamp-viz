@@ -1,18 +1,12 @@
 import React, { memo, useState } from 'react'
 import PropTypes from 'prop-types'
+import { Box, Flex, Grid, Heading, Paragraph } from 'theme-ui'
 
-import { Flex } from 'components/Grid'
+import { ExpandableParagraph } from 'components/Text'
 import { SortBar } from 'components/List'
-import styled from 'style'
 import { formatNumber } from 'util/format'
-import { Section, Subtitle, Subheading } from '../styles'
 import Contributor from './Contributor'
 import { METRIC_LABELS } from '../../../../config/constants'
-
-const NameList = styled.p`
-  margin-top: 1rem;
-  font-size: 0.9em !important;
-`
 
 const metrics = [
   'sppDetections',
@@ -22,7 +16,7 @@ const metrics = [
   'species',
 ]
 
-const sortOptions = metrics.map(m => METRIC_LABELS[m] || m)
+const sortOptions = metrics.map((m) => METRIC_LABELS[m] || m)
 
 const Contributors = ({ contributors, totals }) => {
   const {
@@ -35,7 +29,7 @@ const Contributors = ({ contributors, totals }) => {
 
   const [sortIdx, setSortIdx] = useState(0)
 
-  const handleSortChange = idx => {
+  const handleSortChange = (idx) => {
     setSortIdx(idx)
   }
 
@@ -47,16 +41,16 @@ const Contributors = ({ contributors, totals }) => {
 
   const topN = contributors
     .slice(0, 6)
-    .map(d => ({ percent: (100 * d[metric]) / total, ...d }))
+    .map((d) => ({ percent: (100 * d[metric]) / total, ...d }))
 
   const remainder = contributors
     .slice(6, contributors.length)
     .map(({ contributor }) => contributor)
 
   return (
-    <Section>
-      <Subtitle>Made possible by contributors like you</Subtitle>
-      <p>
+    <Box sx={{ py: '3rem' }}>
+      <Heading as="h2">Made possible by contributors like you</Heading>
+      <Paragraph sx={{ color: 'grey.8' }}>
         This application leverages the combined efforts of{' '}
         <b>{contributors.length}</b> contributors and would not be possible
         without their hard work. Together, these contributors have collected
@@ -65,10 +59,16 @@ const Contributors = ({ contributors, totals }) => {
         <b>{formatNumber(detectors, 0)}</b> detectors, and they have collected{' '}
         <b>{formatNumber(sppDetections, 0)}</b> detections of at least{' '}
         <b>{totalSpp}</b> species.
-      </p>
+      </Paragraph>
 
-      <Flex alignItems="center" justifyContent="space-between">
-        <Subheading>Top contributors</Subheading>
+      <Flex
+        sx={{
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mt: '2rem',
+        }}
+      >
+        <Heading as="h3">Top contributors</Heading>
         <SortBar
           index={sortIdx}
           options={sortOptions}
@@ -76,17 +76,24 @@ const Contributors = ({ contributors, totals }) => {
         />
       </Flex>
 
-      <Flex flexWrap="wrap">
-        {topN.map(contributor => (
+      <Grid columns={[2, 3]} gap={3} sx={{ mt: '0.5rem' }}>
+        {topN.map((contributor) => (
           <Contributor
             key={contributor.contributor}
             metric={metric}
             {...contributor}
           />
         ))}
-      </Flex>
-      {remainder.length > 0 && <NameList>And {remainder.join(', ')}.</NameList>}
-    </Section>
+      </Grid>
+      {remainder.length > 0 && (
+        <ExpandableParagraph
+          sx={{ mt: '1rem', '& p': { fontSize: 2 } }}
+          snippet={`And ${remainder.slice(0, 32).join(', ')}...`}
+        >
+          And {remainder.join(', ')}.
+        </ExpandableParagraph>
+      )}
+    </Box>
   )
 }
 
