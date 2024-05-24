@@ -9,9 +9,12 @@ Species: join to species 4-letter code, and merge together species that are effe
 """
 
 from pathlib import Path
+
+import pandas as pd
+from pyogrio import read_dataframe, write_dataframe
 import shapely
 from shapely.geometry import Polygon
-from pyogrio import read_dataframe, write_dataframe
+
 
 from analysis.constants import SPECIES
 
@@ -74,7 +77,7 @@ admin_df = (
 admin_df["id"] = admin_df.index.astype("uint8") + 1
 
 
-write_dataframe(admin_df, boundaries_dir / "na_admin1.json")
+write_dataframe(admin_df, boundaries_dir / "na_admin1.fgb")
 admin_df.to_feather(boundaries_dir / "na_admin1.feather")
 
 
@@ -90,14 +93,14 @@ laci = range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus"]
 Hawaii = shapely.box(*HAWAII_BOUNDS)
 haba = laci.copy()
 # add new geometry for haba
-haba.geometry = shapely.intersection(laci.geometry.values.data, Hawaii)
+haba.geometry = shapely.intersection(laci.geometry.values, Hawaii)
 haba.SCI_NAME = SPECIES["haba"]["SNAME"]
 haba.COMMON_NAM = SPECIES["haba"]["CNAME"]
-range_df = range_df.append(haba, ignore_index=True, sort=False)
+range_df = pd.concat([range_df, haba], ignore_index=True, sort=False)
 
 # clip out Hawaii from laci
 range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus", "geometry"] = shapely.difference(
-    laci.geometry.values.data, Hawaii
+    laci.geometry.values, Hawaii
 )
 
 # add in alias of Myotis melanorhinus to Myotis ciliolabrum
@@ -109,9 +112,12 @@ range_df = range_df.dissolve(by="species").reset_index()
 
 
 range_df.to_feather(boundaries_dir / "species_ranges.feather")
-write_dataframe(range_df, boundaries_dir / "species_ranges.json")
-# for verification
-# write_dataframe(range_df, "/tmp/species_ranges.gpkg")
+
+# Extract data for files
+write_dataframe(
+    range_df.loc[range_df.species.notnull(), ["species", "geometry"]],
+    boundaries_dir / "species_ranges.fgb",
+)
 
 
 ### Process grids

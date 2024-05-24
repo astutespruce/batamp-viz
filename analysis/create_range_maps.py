@@ -4,7 +4,9 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+import geopandas as gp
 from pymgl import Map
+import shapely
 
 from analysis.constants import SPECIES
 
@@ -21,8 +23,6 @@ WIDTH = 175
 HEIGHT = 150
 
 
-range_tiles = Path("tiles/species_ranges.mbtiles").absolute()
-
 STYLE = {
     "version": 8,
     "sources": {
@@ -35,8 +35,8 @@ STYLE = {
             "tileSize": 512,
         },
         "species": {
-            "type": "vector",
-            "url": f"mbtiles://{range_tiles}",
+            "type": "geojson",
+            "data": [],
             "minzoom": 0,
             "maxzoom": 6,
         },
@@ -62,12 +62,22 @@ STYLE = {
 tile_dir = Path("tiles")
 out_dir = Path("ui/src/images/maps")
 
+df = gp.read_feather(
+    "data/boundaries/species_ranges.feather", columns=["species", "geometry"]
+)
+
+available_spps = set(df.species.unique())
 
 for id in sorted(SPECIES.keys()):
+    if id not in available_spps:
+        continue
+
     print(f"Rendering map for {id}")
     style = deepcopy(STYLE)
 
-    style["layers"][-1]["filter"] = ["==", "species", id]
+    style["sources"]["species"]["data"] = json.loads(
+        shapely.to_geojson(df.loc[df.species == id].geometry.values[0])
+    )
 
     with Map(
         json.dumps(style),
