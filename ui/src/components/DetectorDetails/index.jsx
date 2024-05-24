@@ -2,17 +2,10 @@ import React, { useState, useLayoutEffect, memo } from 'react'
 import PropTypes from 'prop-types'
 import { dequal } from 'dequal'
 
-import styled from 'style'
-import { Flex } from 'components/Grid'
+import { Flex } from 'theme-ui'
 
 import Details from './Details'
 import Iterator from './Iterator'
-
-const Wrapper = styled(Flex).attrs({
-  flexDirection: 'column',
-})`
-  height: 100%;
-`
 
 const DetectorDetails = ({
   detectors,
@@ -33,7 +26,7 @@ const DetectorDetails = ({
   }
 
   return (
-    <Wrapper>
+    <Flex sx={{ flexDirection: 'column', height: '100%' }}>
       {detectors.length > 1 ? (
         <Iterator
           index={index}
@@ -47,7 +40,7 @@ const DetectorDetails = ({
         selectedSpecies={selectedSpecies}
         onClose={onClose}
       />
-    </Wrapper>
+    </Flex>
   )
 }
 

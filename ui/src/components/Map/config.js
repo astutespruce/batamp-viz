@@ -1,7 +1,6 @@
 import { interpolate, interpolateRgb } from 'd3-interpolate'
 
 import { formatNumber } from 'util/format'
-import { theme } from 'style'
 import { siteMetadata } from '../../../gatsby-config'
 
 export const MINRADIUS = 4
@@ -55,7 +54,7 @@ export const layers = [
       'circle-stroke-color': [
         'case',
         ['boolean', ['feature-state', 'highlight-cluster'], false],
-        theme.colors.highlight[500],
+        '#ee7a14', // highlight.5
         '#FFF',
       ],
       // other props specified dynamically
@@ -94,7 +93,7 @@ export const layers = [
           ['boolean', ['feature-state', 'highlight'], false],
           ['boolean', ['feature-state', 'selected'], false],
         ],
-        theme.colors.highlight[500],
+        '#ee7a14', // highlight.5
         '#FFF',
       ],
       // other props specified dynamically
@@ -122,8 +121,13 @@ export const speciesLayers = [
     maxzoom: 22,
     // filter: set dynamically when loaded
     paint: {
-      'fill-color': theme.colors.highlight[500],
-      'fill-opacity': { stops: [[0, 0.1], [8, 0.05]] },
+      'fill-color': '#ee7a14', // highlight.5
+      'fill-opacity': {
+        stops: [
+          [0, 0.1],
+          [8, 0.05],
+        ],
+      },
     },
   },
   {
@@ -135,9 +139,21 @@ export const speciesLayers = [
     maxzoom: 22,
     // filter: set dynamically when loaded
     paint: {
-      'line-color': theme.colors.highlight[500],
-      'line-opacity': { stops: [[0, 0.1], [6, 0.5], [10, 0.75]] },
-      'line-width': { stops: [[0, 0.1], [6, 0.5], [10, 0.75]] },
+      'line-color': '#ee7a14', // highlight.5
+      'line-opacity': {
+        stops: [
+          [0, 0.1],
+          [6, 0.5],
+          [10, 0.75],
+        ],
+      },
+      'line-width': {
+        stops: [
+          [0, 0.1],
+          [6, 0.5],
+          [10, 0.75],
+        ],
+      },
     },
   },
 ]
@@ -145,8 +161,8 @@ export const speciesLayers = [
 export const legends = {
   species: () => [
     {
-      color: `${theme.colors.highlight[500]}33`,
-      borderColor: `${theme.colors.highlight[500]}33`,
+      color: '#ee7a1433',
+      borderColor: '#ee7a1433',
       borderWidth: 1,
       label: 'Species range',
     },
@@ -180,7 +196,7 @@ export const legends = {
           label: `≥ ${formatNumber(upperValue, 0)} ${label}`,
           color: LIGHTESTCOLOR,
         },
-        ...breaks.map(b => ({
+        ...breaks.map((b) => ({
           type: 'circle',
           label: `${formatNumber(upperValue * b, 0)}`,
           radius: radiusInterpolator(b),

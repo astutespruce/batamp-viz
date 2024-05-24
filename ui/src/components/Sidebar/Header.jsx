@@ -1,46 +1,41 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { SlidersH } from '@emotion-icons/fa-solid'
+import { Box, Flex, Heading } from 'theme-ui'
 
-import { Text } from 'components/Text'
-import { Flex } from 'components/Grid'
-import FaIcon from 'components/Icon/FaIcon'
-import styled, { themeGet } from 'style'
-
-const Wrapper = styled(Flex).attrs({
-  alignItems: 'center',
-  flexWrap: 'nowrap',
-})`
-  line-height: 1;
-  padding: 1rem 1rem 0.25rem;
-  flex: 0 0 auto;
-`
-
-const Icon = styled(FaIcon).attrs({})`
-  margin-right: 0.25em;
-  color: ${themeGet('colors.grey.900')};
-  opacity: 0.6;
-`
-
-const Title = styled(Text).attrs({
-  fontSize: ['1.5rem', '1.75rem'],
-  as: 'h2',
-})`
-  margin: 0;
-  font-weight: normal;
-  color: ${themeGet('colors.grey.900')};
-`
-
-const Header = ({ icon, title }) => (
-  <Wrapper>
-    <Text fontSize={['1.5rem', '1.75rem']}>
-      <Icon name={icon} />
-    </Text>
-    <Title>{title}</Title>
-  </Wrapper>
+const Header = ({ title }) => (
+  <Flex
+    sx={{
+      alignItems: 'center',
+      flexWrap: 'nowrap',
+      lineHeight: 1,
+      p: '1rem 1rem 0.25rem',
+      flex: '0 0 auto',
+      gap: '0.5rem',
+    }}
+  >
+    <Box
+      sx={{
+        fontSize: ['1.5rem', '1.75rem'],
+        mr: '0.25em',
+        opacity: 0.6,
+      }}
+    >
+      <SlidersH size="1em" />
+    </Box>
+    <Heading
+      as="h2"
+      sx={{
+        fontSize: ['1.5rem', '1.75rem'],
+        m: 0,
+      }}
+    >
+      {title}
+    </Heading>
+  </Flex>
 )
 
 Header.propTypes = {
-  icon: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
 }
 

@@ -1,41 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { css } from 'styled-components'
+import { Box, Flex, Grid, Text } from 'theme-ui'
 
-import { Box, Columns, Column } from 'components/Grid'
 import { Donut } from 'components/Chart'
-import styled, { themeGet } from 'style'
 import { formatNumber } from 'util/format'
 
-const ContributorWrapper = styled(Box).attrs({
-  p: '1rem',
-  m: '0.5rem',
-  flex: '0 0 auto',
-})`
-  border-radius: 0.25rem;
-  background-color: ${themeGet('colors.grey.100')};
-  width: 310px;
-`
-
-const Name = styled.div`
-  border-bottom: 1px solid ${themeGet('colors.grey.400')};
-  margin-bottom: 0.5rem;
-`
-
-const Stats = styled.div`
-  color: ${themeGet('colors.grey.600')};
-  font-size: 0.8rem;
-  line-height: 1.4;
-`
-
-const Metric = styled.span`
-  ${({ isActive }) =>
-    isActive &&
-    css`
-      font-weight: bold;
-      color: ${themeGet('colors.grey.800')};
-    `}
-`
+const activeLabelCSS = {
+  fontWeight: 'bold',
+  color: 'grey.8',
+}
 
 const donutLabels = {
   sppDetections: 'detections',
@@ -53,41 +26,79 @@ const Contributor = ({
   percent,
   metric,
 }) => (
-  <ContributorWrapper>
-    <Name>{contributor}</Name>
+  <Box
+    sx={{
+      p: '1rem',
+      flex: '0 0 auto',
+      borderRadius: '0.25rem',
+      bg: 'grey.1',
+      width: '310px',
+    }}
+  >
+    <Box
+      sx={{
+        fontSize: 3,
+        pb: '0.25rem',
+        mb: '0.75rem',
+        borderBottom: '1px solid',
+        borderBottomColor: 'grey.4',
+      }}
+    >
+      {contributor}
+    </Box>
 
-    <Columns justifyContent="space-between">
-      <Column>
-        <Stats>
-          <Metric
-            isActive={metric === 'allDetections' || metric === 'sppDetections'}
+    <Flex sx={{ justifyContent: 'space-between' }}>
+      <Box sx={{ flex: '1 1 auto', fontSize: 2 }}>
+        <Box sx={{ color: 'grey.7', lineHeight: 1.4 }}>
+          <Text
+            sx={{
+              display: 'inline',
+              ...(metric === 'allDetections' || metric === 'sppDetections'
+                ? activeLabelCSS
+                : {}),
+            }}
           >
             {formatNumber(
               metric === 'allDetections' ? allDetections : sppDetections,
               0
             )}{' '}
             detections
-          </Metric>
+          </Text>
           <br />
           on{' '}
-          <Metric isActive={metric === 'detectorNights'}>
+          <Text
+            sx={{
+              display: 'inline',
+              ...(metric === 'detectorNights' ? activeLabelCSS : {}),
+            }}
+          >
             {formatNumber(detectorNights, 0)} nights
-          </Metric>
+          </Text>
           <br />
           using{' '}
-          <Metric isActive={metric === 'detectors'}>
+          <Text
+            sx={{
+              display: 'inline',
+              ...(metric === 'detectors' ? activeLabelCSS : {}),
+            }}
+          >
             {detectors} detectors
-          </Metric>
+          </Text>
           .
           <br />
           <br />
-          <Metric isActive={metric === 'species'}>
+          <Text
+            sx={{
+              display: 'inline',
+              ...(metric === 'species' ? activeLabelCSS : {}),
+            }}
+          >
             {species} species
-          </Metric>{' '}
+          </Text>{' '}
           detected.
-        </Stats>
-      </Column>
-      <Column flex="0 0 auto">
+        </Box>
+      </Box>
+      <Box sx={{ flex: '0 0 auto' }}>
         <Donut
           size={100}
           percentSize={24}
@@ -95,9 +106,9 @@ const Contributor = ({
           label={`of ${donutLabels[metric] || metric}`}
           percent={percent}
         />
-      </Column>
-    </Columns>
-  </ContributorWrapper>
+      </Box>
+    </Flex>
+  </Box>
 )
 
 Contributor.propTypes = {

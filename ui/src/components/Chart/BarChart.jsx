@@ -1,111 +1,89 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-import { Flex } from 'components/Grid'
-import { Text } from 'components/Text'
+import { Box, Flex, Text } from 'theme-ui'
+
 import { formatNumber } from 'util/format'
-import styled, { css, themeGet } from 'style'
-
-const Wrapper = styled.div`
-  ${({ highlight }) =>
-    highlight &&
-    css`
-
-
-  ${Title}, ${Subtitle}, ${ValueLabel} {
-    color: ${themeGet('colors.highlight.500')};
-  }
-
-  ${Bar} {
-    background-color: ${themeGet('colors.highlight.500')};
-    border-top-color: ${themeGet('colors.highlight.600')};
-  }
-  `}
-`
-
-const Title = styled(Text)`
-  color: ${themeGet('colors.grey.900')};
-`
-
-const Subtitle = styled.span`
-  margin-left: 0.5em;
-  font-size: 0.8rem;
-  color: ${themeGet('colors.grey.700')};
-`
-
-const Bars = styled(Flex).attrs({
-  flexWrap: 'no-wrap',
-  justifyContent: 'space-evenly',
-})`
-  flex: 1;
-`
-
-const Column = styled.div`
-  flex: 1;
-`
-
-const BarWrapper = styled(Flex).attrs({
-  flexDirection: 'column',
-  justifyContent: 'flex-end',
-})`
-  height: ${({ height }) => height}px;
-  border-bottom: 1px solid ${themeGet('colors.grey.200')};
-`
-
-// height set dynamically using style
-const Bar = styled.div`
-  background-color: ${themeGet('colors.primary.400')};
-  border-top: 2px solid ${themeGet('colors.primary.600')};
-  border-left: 1px solid ${themeGet('colors.grey.200')};
-  border-right: 1px solid ${themeGet('colors.grey.200')};
-`
-
-const EmptyBar = styled(Bar)`
-  border: none;
-`
-
-const Label = styled(Text).attrs({ fontSize: '0.6rem' })`
-  color: ${themeGet('colors.grey.600')};
-  text-align: center;
-`
-
-const ValueLabel = styled(Text)`
-  font-size: 0.6rem;
-  color: ${themeGet('colors.grey.800')};
-  text-align: center;
-  flex: 0 0 auto;
-`
 
 const BarChart = ({ title, subtitle, data, scale, highlight }) => {
   const max = Math.max(...data.map(({ value }) => value))
   const maxHeight = Math.max(scale(max), 32)
 
   return (
-    <Wrapper highlight={highlight}>
-      <Title>
+    <Box>
+      <Text sx={{ color: highlight ? 'highlight.5' : 'grey.9', fontSize: 3 }}>
         {title}
 
-        {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
-      </Title>
+        {subtitle ? (
+          <Text
+            sx={{
+              display: 'inline',
+              ml: '0.5em',
+              fontSize: 2,
+              color: highlight ? 'highlight.5' : 'grey.7',
+            }}
+          >
+            {subtitle}
+          </Text>
+        ) : null}
+      </Text>
 
-      <Bars>
+      <Flex sx={{ flexWrap: 'no-wrap', justifyContent: 'space-evenly' }}>
         {data.map(({ label, value }) => (
-          <Column key={label}>
-            <BarWrapper height={maxHeight}>
+          <Box key={label} sx={{ flex: '1 1 auto' }}>
+            <Flex
+              sx={{
+                height: `${maxHeight}px`,
+                flexDirection: 'column',
+                justifyContent: 'flex-end',
+                borderBottom: '1px solid',
+                borderBottomColor: 'grey.2',
+              }}
+            >
               {value > 0 ? (
                 <>
-                  <ValueLabel>{formatNumber(value)}</ValueLabel>
-                  <Bar style={{ flexBasis: scale(value) }} />
+                  <Text
+                    sx={{
+                      fontSize: '0.6rem',
+                      color: highlight ? 'highlight.5' : 'grey.8',
+                      textAlign: 'center',
+                      flex: '0 0 auto',
+                    }}
+                  >
+                    {formatNumber(value)}
+                  </Text>
+                  <Box
+                    sx={{
+                      bg: highlight ? 'highlight.5' : 'primary.4',
+                      borderTop: '2px solid',
+                      borderTopColor: highlight ? 'highlight.6' : 'primary.6',
+                      borderLeft: '1px solid',
+                      borderLeftColor: 'grey.2',
+                      borderRight: '1px solid',
+                      borderRightColor: 'grey.2',
+                    }}
+                    style={{ flexBasis: scale(value) }}
+                  />
                 </>
               ) : (
-                <EmptyBar />
+                <Box sx={{ bg: 'primary.4' }} />
               )}
-            </BarWrapper>
-            {label ? <Label>{label}</Label> : null}
-          </Column>
+            </Flex>
+            {label ? (
+              <Text
+                sx={{
+                  fontSize: '0.6rem',
+                  color: 'grey.6',
+                  textAlign: 'center',
+                }}
+              >
+                {label}
+              </Text>
+            ) : null}
+          </Box>
         ))}
-      </Bars>
-    </Wrapper>
+      </Flex>
+    </Box>
   )
 }
 

@@ -3,30 +3,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-import styled, { theme, themeGet } from 'style'
 import { formatNumber } from 'util/format'
-
-const Circle = styled.circle`
-  fill: transparent;
-  transition: stroke-dasharray 0.5s;
-`
-
-const PercentLabel = styled.tspan`
-  font-size: ${({ fontSize }) => fontSize}px;
-  fill: ${({ isActive }) =>
-    isActive ? themeGet('colors.secondary.800') : themeGet('colors.grey.800')};
-`
-
-const Percent = styled.tspan`
-  font-size: ${({ fontSize }) => fontSize}px;
-  fill: ${themeGet('colors.grey.700')};
-`
-
-const Label = styled.tspan`
-  font-size: ${({ fontSize }) => fontSize}px;
-  fill: ${themeGet('colors.grey.700')};
-  text-shadow: 0px 0px 2px #fff;
-`
 
 const Donut = ({
   percent,
@@ -45,8 +22,9 @@ const Donut = ({
   const halfsize = size * 0.5
   const radius = halfsize - donutWidth * 0.5
   const circumference = 2 * Math.PI * radius
-  const rotateval = `rotate(${(offset / 100) * 365 -
-    90} ${halfsize},${halfsize})`
+  const rotateval = `rotate(${
+    (offset / 100) * 365 - 90
+  } ${halfsize},${halfsize})`
 
   return (
     <svg
@@ -55,14 +33,15 @@ const Donut = ({
       className={className}
       onClick={onClick}
     >
-      <Circle
+      <circle
         r={radius}
         cx={halfsize}
         cy={halfsize}
-        stroke={theme.colors.grey[200]}
+        stroke="#ededee" // grey.2
         strokeWidth={donutWidth}
+        fill="transparent"
       />
-      <Circle
+      <circle
         r={radius}
         cx={halfsize}
         cy={halfsize}
@@ -70,6 +49,7 @@ const Donut = ({
         stroke={color}
         strokeWidth={donutWidth}
         strokeDasharray={`${(percent * circumference) / 100} ${circumference}`}
+        fill="transparent"
       />
       <text
         className="donutchart-text"
@@ -78,34 +58,45 @@ const Donut = ({
         style={{
           textAnchor: 'middle',
           dominantBaseline: label ? '' : 'central',
+          fontSize: `${percentSize * 0.8}px`,
         }}
       >
-        <PercentLabel isActive={active} percentSize={percentSize}>
+        {/* secondary.8 vs grey.8 */}
+        <tspan fill={active ? '#550007' : '#6f6976'}>
           {percentLabel !== null
             ? percentLabel
             : formatNumber(percent, percent < 1 ? 1 : 0)}
-        </PercentLabel>
+        </tspan>
 
-        {isPercent && <Percent fontSize={percentSize * 0.6}>%</Percent>}
+        {isPercent && (
+          <tspan fill="#a19ea6" style={{ fontSize: `${percentSize * 0.7}px` }}>
+            %
+          </tspan>
+        )}
 
         {label && (
-          <Label
+          <tspan
             x={halfsize}
             y={halfsize + percentSize * 0.5}
-            fontSize={percentSize * 0.5}
+            fill="#a19ea6"
+            style={{
+              fontSize: `${percentSize * 0.5}px`,
+              textShadow: '0px 0px 2px #FFF',
+            }}
           >
             {label}
-          </Label>
+          </tspan>
         )}
       </text>
 
       {active ? (
-        <Circle
+        <circle
           r={halfsize - 2}
           cx={halfsize}
           cy={halfsize}
-          stroke={theme.colors.primary[600]}
+          stroke="#004d84" // primary.6
           strokeWidth={4}
+          fill="transparent"
         />
       ) : null}
     </svg>
@@ -131,7 +122,7 @@ Donut.defaultProps = {
   percentLabel: null,
   label: null,
   donutWidth: 26,
-  color: theme.colors.primary[300],
+  color: '#abc4d6', // primary.3
   size: 200,
   percentSize: 30,
   offset: 0,

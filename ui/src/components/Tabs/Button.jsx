@@ -1,41 +1,52 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
+import { Box } from 'theme-ui'
 
-import styled, { themeGet } from 'style'
-
-const InactiveButton = styled.div`
-  text-align: center;
-  cursor: pointer;
-  flex-grow: 1;
-  padding: 0.25rem 0.5rem;
-  color: ${themeGet('colors.grey.700')};
-  border-bottom: 1px solid ${themeGet('colors.grey.300')};
-  &:hover {
-    background-color: ${themeGet('colors.grey.200')};
-  }
-`
-
-const ActiveButton = styled(InactiveButton)`
-  font-weight: bold;
-  color: ${themeGet('colors.grey.900')};
-  border-bottom-color: transparent;
-  background-color: #fff !important;
-  &:not(:first-child) {
-    border-left: 1px solid ${themeGet('colors.grey.300')};
-  }
-  &:not(:last-child) {
-    border-right: 1px solid ${themeGet('colors.grey.300')};
-  }
-`
+const baseCSS = {
+  textAlign: 'center',
+  cursor: 'pointer',
+  flex: '1 1 auto',
+  p: '0.5rem',
+  borderBottom: '1px solid',
+  '&:hover': {
+    bg: 'grey.2',
+  },
+}
 
 const Button = ({ id, label, active, onClick }) => {
   const handleClick = () => {
     onClick(id)
   }
   return active ? (
-    <ActiveButton>{label}</ActiveButton>
+    <Box
+      sx={{
+        ...baseCSS,
+        color: 'grey.9',
+        fontWeight: 'bold',
+        borderBottomColor: 'transparent',
+        bg: '#FFF',
+        '&:not(:first-of-type)': {
+          borderLeft: '1px solid',
+          borderLeftColor: 'grey.3',
+        },
+        '&:not(:last-of-type)': {
+          borderRight: '1px solid',
+          borderRightColor: 'grey.3',
+        },
+        '&:hover': {
+          bg: '#FFF',
+        },
+      }}
+    >
+      {label}
+    </Box>
   ) : (
-    <InactiveButton onClick={handleClick}>{label}</InactiveButton>
+    <Box
+      sx={{ ...baseCSS, color: 'grey.7', borderBottomColor: 'grey.3' }}
+      onClick={handleClick}
+    >
+      {label}
+    </Box>
   )
 }
 

@@ -1,7 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Box } from 'theme-ui'
 
-const Tab = ({ id, children, ...props }) => <div {...props}>{children}</div>
+const Tab = ({ id, children, ...props }) => <Box {...props}>{children}</Box>
 
 Tab.propTypes = {
   id: PropTypes.string.isRequired,

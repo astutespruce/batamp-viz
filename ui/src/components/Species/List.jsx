@@ -1,11 +1,12 @@
 import React, { useReducer, memo } from 'react'
 import PropTypes from 'prop-types'
 
+import { Box, Flex } from 'theme-ui'
+
 import { useIndex } from 'components/Search'
-import { Box, Flex, Columns, Column } from 'components/Grid'
 import { SortBar, SearchBar } from 'components/List'
-import { useThumbnails, useMapThumbnails } from 'components/Species'
-import styled, { themeGet } from 'style'
+import { useThumbnails as useMapThumbnails } from 'components/Species/MapThumbnail'
+import { useThumbnails } from 'components/Species/Thumbnail'
 import ListItem from './ListItem'
 
 const sortOptions = [
@@ -34,27 +35,6 @@ const sortOptions = [
     sortFunc: (a, b) => b.contributors - a.contributors,
   },
 ]
-
-export const Wrapper = styled(Flex).attrs({
-  flex: '1 1 auto',
-  flexDirection: 'column',
-})``
-
-export const Count = styled.span`
-  color: ${themeGet('colors.grey.600')};
-  font-size: 0.8em;
-  line-height: 1.2;
-`
-
-export const ListWrapper = styled.div`
-  flex: 1 1 auto;
-`
-
-export const NoResults = styled(Box)`
-  color: ${themeGet('colors.grey.600')};
-  margin-top: 2rem;
-  text-align: center;
-`
 
 const SpeciesList = ({ species }) => {
   const queryIndex = useIndex()
@@ -103,11 +83,11 @@ const SpeciesList = ({ species }) => {
 
   const [state, dispatch] = useReducer(speciesReducer, initialState)
 
-  const handleQueryChange = value => {
+  const handleQueryChange = (value) => {
     dispatch({ type: 'query', payload: value })
   }
 
-  const handleSortChange = idx => {
+  const handleSortChange = (idx) => {
     dispatch({ type: 'sort', payload: idx })
   }
 
@@ -118,29 +98,38 @@ const SpeciesList = ({ species }) => {
   const maps = useMapThumbnails()
 
   return (
-    <Wrapper>
-      <Columns px="1rem" alignItems="baseline">
-        <Column>
-          <Count>{items.length} species currently visible</Count>
-        </Column>
-        <Column>
+    <Box>
+      <Flex
+        sx={{
+          flex: '0 0 auto',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          px: '1rem',
+        }}
+      >
+        <Box sx={{ color: 'grey.7', lineHeight: 1.2 }}>
+          {items.length} species currently visible
+        </Box>
+        <Box>
           <SortBar
             index={state.sortIdx || 0}
             options={sortOptions.map(({ label }) => label)}
             onChange={handleSortChange}
           />
-        </Column>
-      </Columns>
+        </Box>
+      </Flex>
 
-      <SearchBar
-        value={state.query || ''}
-        placeholder="Enter a species name"
-        onChange={handleQueryChange}
-      />
+      <Box sx={{ my: '0.5rem' }}>
+        <SearchBar
+          value={state.query || ''}
+          placeholder="Enter a species name"
+          onChange={handleQueryChange}
+        />
+      </Box>
 
-      <div>
+      <Box>
         {items.length > 0 ? (
-          items.map(item => (
+          items.map((item) => (
             <ListItem
               key={item.species}
               item={item}
@@ -150,10 +139,12 @@ const SpeciesList = ({ species }) => {
             />
           ))
         ) : (
-          <NoResults>No visible species...</NoResults>
+          <Box sx={{ color: 'grey.6', mt: '2rem', textAlign: 'center' }}>
+            No visible species...
+          </Box>
         )}
-      </div>
-    </Wrapper>
+      </Box>
+    </Box>
   )
 }
 

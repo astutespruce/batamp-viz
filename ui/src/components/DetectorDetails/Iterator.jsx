@@ -1,45 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { FaAngleDoubleLeft, FaAngleDoubleRight } from 'react-icons/fa'
-
-import { Flex, Box } from 'components/Grid'
-import styled, { themeGet } from 'style'
-
-const Wrapper = styled(Flex).attrs({
-  justifyContent: 'space-between',
-  flex: '0 0 auto',
-  px: '1rem',
-})`
-  background: ${themeGet('colors.grey.700')};
-  font-size: 0.9rem;
-`
-
-const Label = styled(Box).attrs({ px: '0.5em', flex: 1 })`
-  color: #fff;
-  text-align: center;
-`
-
-const Back = styled(Flex).attrs({ flex: 1 })`
-  color: #fff;
-  line-height: 1;
-`
-const Forward = styled(Back).attrs({ justifyContent: 'flex-end' })`
-  text-align: right;
-`
-
-const BackIcon = styled(FaAngleDoubleLeft)`
-  width: 1em;
-  height: 1em;
-`
-
-const ForwardIcon = styled(FaAngleDoubleRight)`
-  width: 1em;
-  height: 1em;
-`
-
-const Link = styled(Flex).attrs({ alignItems: 'center' })`
-  cursor: pointer;
-`
+import { AngleDoubleLeft, AngleDoubleRight } from '@emotion-icons/fa-solid'
+import { Box, Flex, Text } from 'theme-ui'
 
 const Iterator = ({ index, count, onChange }) => {
   const handleBack = () => {
@@ -50,29 +12,72 @@ const Iterator = ({ index, count, onChange }) => {
     onChange(index + 1)
   }
   return (
-    <Wrapper>
-      <Back>
+    <Flex
+      sx={{
+        justifyContent: 'space-between',
+        flex: '0 0 auto',
+        px: '0.75rem',
+        py: '0.25rem',
+        bg: 'grey.7',
+        lineHeight: 1,
+      }}
+    >
+      <Flex
+        sx={{
+          flex: '1 1 auto',
+          color: '#FFF',
+          cursor: 'pointer',
+          '&:hover': {
+            color: 'grey.9',
+          },
+        }}
+      >
         {index > 0 ? (
-          <Link onClick={handleBack}>
-            <BackIcon />
-            <div>previous</div>
-          </Link>
+          <Flex
+            sx={{ alignItems: 'center', gap: '0.25rem' }}
+            onClick={handleBack}
+          >
+            <AngleDoubleLeft size="1em" />
+            <Text>previous</Text>
+          </Flex>
         ) : null}
-      </Back>
+      </Flex>
 
-      <Label>
+      <Box
+        sx={{
+          flex: '1 1 auto',
+          px: '0.5em',
+          color: '#FFF',
+          textAlign: 'center',
+        }}
+      >
         detector {index + 1} of {count}
-      </Label>
+      </Box>
 
-      <Forward>
+      <Flex
+        sx={{
+          flex: '1 1 auto',
+          gap: '0.5rem',
+          justifyContent: 'flex-end',
+          color: '#FFF',
+          textAlign: 'right',
+          cursor: 'pointer',
+          '&:hover': {
+            color: 'grey.9',
+          },
+        }}
+      >
         {index < count - 1 ? (
-          <Link onClick={handleForward}>
+          <Flex
+            sx={{ alignItems: 'center', gap: '0.25rem' }}
+            onClick={handleForward}
+          >
             <div>next</div>
-            <ForwardIcon />
-          </Link>
+            <AngleDoubleRight size="1em" />
+          </Flex>
         ) : null}
-      </Forward>
-    </Wrapper>
+      </Flex>
+    </Flex>
   )
 }
 

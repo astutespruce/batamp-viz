@@ -1,23 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
+import { Container, Heading } from 'theme-ui'
 
-import { Text } from 'components/Text'
-import Layout from 'components/Layout'
+import { Layout, SEO } from 'components/Layout'
 import { SubpageHeaderImage as HeaderImage } from 'components/Image'
-import { Container } from 'components/Grid'
 import { SpeciesList } from 'components/Species'
 import { extractNodes } from 'util/data'
-import styled from 'style'
 import { SPECIES } from '../../config/constants'
-
-const Title = styled(Text).attrs({
-  fontSize: '3rem',
-  as: 'h1',
-  mb: '3rem',
-})`
-  line-height: 1.2;
-`
 
 const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
   const species = extractNodes(allSpeciesJson).map((d) => ({
@@ -26,11 +16,11 @@ const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
   }))
 
   return (
-    <Layout title="Explore Bat Species">
+    <Layout>
       <HeaderImage
         image={headerImage}
         height="40vh"
-        minHeight="20rem"
+        minHeight="23rem"
         position="bottom"
         credits={{
           author:
@@ -38,7 +28,9 @@ const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
         }}
       />
       <Container py="2rem">
-        <Title>Explore Data for North American Bat Species</Title>
+        <Heading as="h1" sx={{ fontSize: '3rem', mb: '3rem', lineHeight: 1.2 }}>
+          Explore Data for North American Bat Species
+        </Heading>
         <SpeciesList species={species} />
       </Container>
     </Layout>
@@ -99,3 +91,5 @@ export const pageQuery = graphql`
 `
 
 export default SpeciesPage
+
+export const Head = () => <SEO title="Explore Bat Species" />

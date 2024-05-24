@@ -1,12 +1,11 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
+import { Button, Text } from 'theme-ui'
 
-import styled from 'style'
-import { DefaultButton, PrimaryButton } from './Button'
 import ButtonGroup from './ButtonGroup'
 
 const ToggleButton = ({ value, options, onChange, ...props }) => {
-  const handleClick = newValue => {
+  const handleClick = (newValue) => {
     if (newValue === value) return
 
     onChange(newValue)
@@ -15,10 +14,15 @@ const ToggleButton = ({ value, options, onChange, ...props }) => {
   if (value === null)
     return (
       <ButtonGroup {...props}>
-        {options.map(({ value: v, label }) => (
-          <PrimaryButton key={v} onClick={() => handleClick(v)}>
+        {options.map(({ value: v, label, sublabel }) => (
+          <Button
+            key={v}
+            onClick={() => handleClick(v)}
+            variant="toggle-inactive"
+          >
             {label}
-          </PrimaryButton>
+            {sublabel ? <Text sx={{ fontSize: 0 }}>{sublabel}</Text> : null}
+          </Button>
         ))}
       </ButtonGroup>
     )
@@ -27,11 +31,17 @@ const ToggleButton = ({ value, options, onChange, ...props }) => {
     <ButtonGroup {...props}>
       {options.map(({ value: v, label }) =>
         v === value ? (
-          <PrimaryButton key={v}>{label}</PrimaryButton>
-        ) : (
-          <DefaultButton key={v} onClick={() => handleClick(v)}>
+          <Button key={v} variant="toggle-active">
             {label}
-          </DefaultButton>
+          </Button>
+        ) : (
+          <Button
+            key={v}
+            onClick={() => handleClick(v)}
+            variant="toggle-inactive"
+          >
+            {label}
+          </Button>
         )
       )}
     </ButtonGroup>

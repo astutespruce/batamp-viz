@@ -1,90 +1,88 @@
 import React, { useState } from 'react'
+import { Box, Text } from 'theme-ui'
 
-import { SearchField, useIndex } from 'components/Search'
 import { Link } from 'components/Link'
-import { Box } from 'components/Grid'
-import styled, { themeGet } from 'style'
-
-const SearchWrapper = styled(Box).attrs({
-  display: ['none', 'none', 'none', 'unset'],
-  width: ['200px', 'auto'],
-})`
-  position: relative;
-`
-
-const Results = styled.div`
-  list-style: none;
-  position: absolute;
-  z-index: 20000;
-  right: 0;
-  background: #fff;
-  margin: 4px 0 0 0;
-  box-shadow: 2px 2px 6px ${themeGet('colors.grey.800')};
-  overflow-y: auto;
-  max-height: 50vh;
-  width: 300px;
-  border-radius: 0.25rem;
-  border-bottom: 4px solid #fff;
-`
-
-const Result = styled(Link)`
-  display: block;
-  &:not(:first-child) {
-    border-top: 1px solid ${themeGet('colors.grey.200')};
-  }
-
-  padding: 0.25em 1em;
-  margin: 0;
-
-  &:hover {
-    background-color: ${themeGet('colors.grey.100')};
-  }
-`
-
-const NoResult = styled.li`
-  padding: 0.25em 1em;
-  margin: 0;
-  color: ${themeGet('colors.grey.400')};
-  text-align: center;
-  font-size: 0.8em;
-`
-
-const ScientificName = styled.div`
-  font-size: 0.8rem;
-  color: ${themeGet('colors.grey.600')};
-`
+import { SearchField, useIndex } from 'components/Search'
 
 const Search = () => {
   const queryIndex = useIndex()
   const [query, setQuery] = useState('')
 
-  const handleChange = value => {
+  const handleChange = (value) => {
     setQuery(value)
   }
 
   const results = query ? queryIndex(query) : []
 
   return (
-    <>
-      <SearchWrapper>
-        <SearchField value={query} onChange={handleChange} />
-        {query && (
-          <Results>
-            {results && results.length > 0 ? (
-              results.map(({ id, path, commonName, sciName }) => (
-                <Result key={id} to={path}>
+    <Box
+      sx={{
+        display: ['none', 'none', 'none', 'unset'],
+        width: ['200px', 'auto'],
+        position: 'relative',
+        zIndex: 1,
+      }}
+    >
+      <SearchField value={query} onChange={handleChange} />
+      {query ? (
+        <Box
+          sx={{
+            position: 'absolute',
+            zIndex: 20000,
+            right: 0,
+            background: '#fff',
+            margin: '4px 0 0 0',
+            boxShadow: '2px 2px 6px #004274',
+            overflowY: 'auto',
+            maxHeight: '50vh',
+            width: '300px',
+            borderRadius: '0.25rem',
+            borderBottom: '4px solid #fff',
+          }}
+        >
+          {results && results.length > 0 ? (
+            results.map(({ id, path, commonName, sciName }) => (
+              <Link
+                key={id}
+                to={path}
+                sx={{
+                  display: 'block',
+                  p: '0.25em 1em',
+                  m: '0',
+                  lineHeight: 1.3,
+                  '&:not(:first-of-type)': {
+                    borderTop: '1px solid',
+                    borderTopColor: 'grey.2',
+                  },
+                  '&:hover': {
+                    bg: 'grey.1',
+                  },
+                }}
+              >
+                <Text sx={{ color: 'link', fontSize: '1.1rem' }}>
                   {commonName}
-                  <br />
-                  <ScientificName>({sciName})</ScientificName>
-                </Result>
-              ))
-            ) : (
-              <NoResult>No pages match your query...</NoResult>
-            )}
-          </Results>
-        )}
-      </SearchWrapper>
-    </>
+                </Text>
+                <Text sx={{ fontSize: '0.9rem', color: 'grey.6' }}>
+                  ({sciName})
+                </Text>
+              </Link>
+            ))
+          ) : (
+            <Text
+              sx={{
+                padding: '0.25em 1em',
+                margin: 0,
+                color: 'grey.4',
+                textAlign: 'center',
+                fontSize: '0.8em',
+              }}
+            >
+              No pages match your query...
+            </Text>
+          )}
+        </Box>
+      ) : null}
+    </Box>
   )
 }
 

@@ -30,6 +30,4 @@ Provider.defaultProps = {
 }
 
 // Hook for easier use in context
-export const useCrossfilter = () => {
-  return useContext(Context)
-}
+export const useCrossfilter = () => useContext(Context)

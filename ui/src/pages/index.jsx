@@ -1,10 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
+import { Container } from 'theme-ui'
 
 import { HeaderImage } from 'components/Image'
-import Layout from 'components/Layout'
-import { Container } from 'components/Grid'
+import { Layout, SEO } from 'components/Layout'
 import { TopSection, ContributorsSection, CreditsSection } from 'blocks/home'
 
 const IndexPage = ({
@@ -17,7 +17,7 @@ const IndexPage = ({
       <HeaderImage
         image={img}
         height="60vh"
-        minHeight="34rem"
+        minHeight="39rem"
         position="bottom"
         credits={{
           author:
@@ -28,7 +28,7 @@ const IndexPage = ({
         subtitle="is essential for helping study and conserve bats in North America."
       />
 
-      <Container pb="3rem">
+      <Container>
         <TopSection {...summaryJson} />
 
         <ContributorsSection contributors={contributors} totals={summaryJson} />
@@ -105,3 +105,5 @@ export const pageQuery = graphql`
 `
 
 export default IndexPage
+
+export const Head = () => <SEO />

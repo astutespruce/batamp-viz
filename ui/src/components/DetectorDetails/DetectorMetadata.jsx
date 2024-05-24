@@ -1,80 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { FaCheck, FaTimes } from 'react-icons/fa'
-import { css } from 'styled-components'
+import { Check, Times } from '@emotion-icons/fa-solid'
+import { Box, Text } from 'theme-ui'
 
 import { OutboundLink } from 'components/Link'
-import styled, { themeGet } from 'style'
 import { formatNumber, quantityLabel } from 'util/format'
+import Field from './Field'
 import { SPECIES } from '../../../config/constants'
-
-const Field = styled.section`
-  &:not(:first-child) {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid ${themeGet('colors.grey.200')};
-  }
-`
-
-const FieldHeader = styled.h4`
-  margin-bottom: 0;
-`
-
-const FieldValue = styled.div`
-  margin-left: 1rem;
-  color: ${themeGet('colors.grey.900')};
-`
-
-const FieldValueList = styled.ul`
-  margin-bottom: 0.5rem;
-
-  li {
-    margin-bottom: 0;
-  }
-`
-
-const FieldHelp = styled.p`
-  color: ${themeGet('colors.grey.700')};
-  font-size: smaller;
-  line-height: 1.2;
-`
-
-const SpeciesList = styled(FieldValueList)`
-  list-style: none;
-`
-
-const DetectedIcon = styled(FaCheck)`
-  height: 1em;
-  width: 1em;
-  margin-right: 0.25em;
-  color: green;
-  opacity: 0.5;
-`
-
-const NotDetectedIcon = styled(FaTimes)`
-  height: 1em;
-  width: 1em;
-  margin-right: 0.25em;
-  color: red;
-  opacity: 0.5;
-`
-
-const SpeciesListItem = styled.li`
-  ${({ highlight }) =>
-    highlight &&
-    css`
-      color: ${themeGet('colors.highlight.500')};
-
-      ${ScientificName} {
-        color: ${themeGet('colors.highlight.500')};
-      }
-    `}
-`
-
-const ScientificName = styled.span`
-  font-size: 0.8em;
-  color: ${themeGet('colors.grey.600')};
-`
 
 const DetectorMetadata = ({
   lat,
@@ -125,108 +57,124 @@ const DetectorMetadata = ({
 
   return (
     <>
-      <Field>
-        <FieldHeader>Detector data contributed by:</FieldHeader>
-        <FieldValue>{numContributors}</FieldValue>
+      <Field label="Detector data contributed by:">{numContributors}</Field>
+      <Field label="Location:">
+        {formatNumber(lat, 2)}° North / {formatNumber(lon, 2)}° East
       </Field>
-      <Field>
-        <FieldHeader>Location:</FieldHeader>
-        <FieldValue>
-          {formatNumber(lat, 2)}° North / {formatNumber(lon, 2)}° East
-        </FieldValue>
+      <Field label="Microphone height:">{micHt} meters</Field>
+      <Field label="Detector effort:">
+        Operated for {formatNumber(detectorNights, 0)} nights.
+        <br />
+        {detectionNights === detectorNights
+          ? 'Bats detected on all nights.'
+          : `Bats detected on ${formatNumber(detectionNights, 0)} nights.`}
+        <br />
+        This detector measured{' '}
+        {presenceOnly ? 'nightly presence only' : 'nightly activity'}.
       </Field>
-
-      <Field>
-        <FieldHeader>Microphone height:</FieldHeader>
-        <FieldValue>{micHt} meters</FieldValue>
-      </Field>
-      <Field>
-        <FieldHeader>Detector effort:</FieldHeader>
-        <FieldValue>
-          Operated for {formatNumber(detectorNights, 0)} nights.
-          <br />
-          {detectionNights === detectorNights
-            ? 'Bats detected on all nights.'
-            : `Bats detected on ${formatNumber(detectionNights, 0)} nights.`}
-          <br />
-          This detector measured{' '}
-          {presenceOnly ? 'nightly presence only' : 'nightly activity'}.
-        </FieldValue>
-      </Field>
-      <Field>
-        <FieldHeader>
-          {numDetected} of {numMonitored} monitored species were detected:
-        </FieldHeader>
-        <SpeciesList>
+      <Field
+        label={`${numDetected} of ${numMonitored} monitored species were detected:`}
+      >
+        <Box
+          as="ul"
+          sx={{
+            pl: 0,
+            mb: '0.5rem',
+            listStyle: 'none',
+            '& li': {
+              mb: 0,
+            },
+          }}
+        >
           {monitoredSpp.map(
             ({ species: spp, commonName, sciName, detected }) => (
-              <SpeciesListItem key={spp} highlight={spp === selectedSpecies}>
-                {detected ? <DetectedIcon /> : <NotDetectedIcon />}
-                {commonName} <ScientificName>({sciName})</ScientificName>
-              </SpeciesListItem>
+              <Box
+                key={spp}
+                as="li"
+                sx={{
+                  color: spp === selectedSpecies ? 'highlight.5' : 'inherit',
+                }}
+              >
+                {detected ? (
+                  <Check
+                    size="1em"
+                    style={{
+                      color: 'green',
+                      opacity: 0.5,
+                      marginRight: '0.5rem',
+                    }}
+                  />
+                ) : (
+                  <Times
+                    size="1em"
+                    style={{
+                      color: 'red',
+                      opacity: 0.5,
+                      marginRight: '0.5rem',
+                    }}
+                  />
+                )}
+                {commonName}{' '}
+                <Text
+                  sx={{
+                    display: 'inline',
+                    fontSize: '0.9rem',
+                    color: spp === selectedSpecies ? 'highlight.5' : 'grey.8',
+                  }}
+                >
+                  ({sciName})
+                </Text>
+              </Box>
             )
           )}
-        </SpeciesList>
+        </Box>
       </Field>
 
       {mfg ? (
-        <Field>
-          <FieldHeader>Detector model:</FieldHeader>
-          <FieldValue>
-            {mfg}
-            {model ? `(${model})` : null}
-          </FieldValue>
+        <Field label="Detector model:">
+          {mfg}
+          {model ? `(${model})` : null}
         </Field>
       ) : null}
 
-      {micType ? (
-        <Field>
-          <FieldHeader>Microphone type:</FieldHeader>
-          <FieldValue>{micType}</FieldValue>
-        </Field>
-      ) : null}
+      {micType ? <Field label="Microphone type:">{micType}</Field> : null}
 
-      {reflType ? (
-        <Field>
-          <FieldHeader>Reflector type:</FieldHeader>
-          <FieldValue>{reflType}</FieldValue>
-        </Field>
-      ) : null}
+      {reflType ? <Field label="Reflector type:">{reflType}</Field> : null}
 
       {callId ? (
-        <Field>
-          <FieldHeader>How were species identified?</FieldHeader>
-          <FieldValue>{callId}</FieldValue>
-        </Field>
+        <Field label="How were species identified?">{callId}</Field>
       ) : null}
 
-      <Field>
-        <FieldHeader>
-          Source {quantityLabel('datasets', datasetInfo.length)} on{' '}
-          <OutboundLink to="https://batamp.databasin.org/" target="_blank">
-            BatAMP
-          </OutboundLink>
-          :
-        </FieldHeader>
+      <Field
+        label={`Source ${quantityLabel('datasets', datasetInfo.length)} on BatAMP:`}
+      >
         {datasetInfo.length === 1 ? (
-          <FieldValue>
-            <OutboundLink to={datasetInfo[0].url}>
-              {datasetInfo[0].name}
-            </OutboundLink>
-          </FieldValue>
+          <OutboundLink to={datasetInfo[0].url}>
+            {datasetInfo[0].name}
+          </OutboundLink>
         ) : (
-          <FieldValueList>
+          <Box
+            as="ul"
+            sx={{
+              pl: 0,
+              listStyle: 'none',
+              my: '0.5rem',
+              '& li+li': {
+                mt: '0.5rem',
+              },
+            }}
+          >
             {datasetInfo.map(({ id, url, name }) => (
               <li key={id}>
                 <OutboundLink to={url}>{name}</OutboundLink>
               </li>
             ))}
-          </FieldValueList>
+          </Box>
         )}
-        <FieldHelp>
-          The dataset page on BatAMP may contain additional information about
+        <Text variant="help" sx={{ ml: '-1rem' }}>
+          The dataset page(s) on BatAMP may contain additional information about
           this detector and the methods used to detect species at this location.
-        </FieldHelp>
+        </Text>
       </Field>
     </>
   )

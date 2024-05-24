@@ -1,14 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Box } from 'theme-ui'
 
 import { HorizontalBarChart } from 'components/Chart'
-import styled from 'style'
 import MissingSpeciesWarning from './MissingSpeciesWarning'
 import { SPECIES } from '../../../config/constants'
-
-const Wrapper = styled.div``
-
-const Warning = styled(MissingSpeciesWarning).attrs({ mb: '1rem' })``
 
 const TotalCharts = ({ data, selectedSpecies, max }) => {
   let detectedSelected = false
@@ -31,13 +27,15 @@ const TotalCharts = ({ data, selectedSpecies, max }) => {
   }
 
   return (
-    <Wrapper>
+    <Box>
       {selectedSpecies ? (
         <>
           {detectedSelected ? (
             selectedSppChart
           ) : (
-            <Warning species={selectedSpecies} />
+            <Box sx={{ mb: '1rem' }}>
+              <MissingSpeciesWarning species={selectedSpecies} />
+            </Box>
           )}
         </>
       ) : null}
@@ -63,7 +61,7 @@ const TotalCharts = ({ data, selectedSpecies, max }) => {
             max={max}
           />
         ))}
-    </Wrapper>
+    </Box>
   )
 }
 

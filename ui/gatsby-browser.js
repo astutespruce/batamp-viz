@@ -1,13 +1,6 @@
-import React from 'react'
 import * as Sentry from '@sentry/react'
 
-import { ThemeProvider, theme } from 'style'
-
 import { siteMetadata } from './gatsby-config'
-
-export const wrapRootElement = ({ element }) => (
-  <ThemeProvider theme={theme}>{element}</ThemeProvider>
-)
 
 const { sentryDSN } = siteMetadata
 export const onClientEntry = () => {
@@ -20,9 +13,19 @@ export const onClientEntry = () => {
           if (error.message.match(/ResizeObserver loop limit exceeded/i)) {
             return null
           }
+          // extension errors
+          if (error.message.match(/extension context/i)) {
+            return null
+          }
         }
         return event
       },
+      denyUrls: [
+        // Chrome extensions
+        /extensions\//i,
+        /^chrome:\/\//i,
+        /^chrome-extension:\/\//i,
+      ],
     })
     window.Sentry = Sentry
   }

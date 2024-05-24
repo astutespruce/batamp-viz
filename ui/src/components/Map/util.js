@@ -162,7 +162,7 @@ export const interpolateExpr = ({
 export const maxProperty = (features, property, fallback = null) => {
   const values = features
     .map(({ properties: { [property]: v } }) => v)
-    .filter((v) => !isNaN(v))
+    .filter((v) => !Number.isNaN(v))
 
   if (values.length) {
     return Math.max(...values)

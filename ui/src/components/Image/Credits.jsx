@@ -1,37 +1,33 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Box } from 'theme-ui'
 
 import { OutboundLink } from 'components/Link'
-import styled, { themeGet } from 'style'
-
-const Wrapper = styled.div`
-  font-size: smaller;
-  text-align: right;
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  color: ${themeGet('colors.white')};
-  padding: 0.25rem 1rem;
-  text-shadow: 1px 1px 3px ${themeGet('colors.black')};
-  background-color: rgba(0, 0, 0, 0.4);
-
-  a {
-    color: ${themeGet('colors.white')};
-    text-decoration: none;
-  }
-`
 
 const Credits = ({ author, url }) => (
-  <Wrapper>
+  <Box
+    sx={{
+      fontSize: 'smaller',
+      textAlign: 'right',
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      color: '#FFF',
+      py: '0.25rem',
+      px: '1rem',
+      textShadow: '1px 1px 3px #000',
+      bg: 'rgba(0, 0,0,0.4)',
+    }}
+  >
     Photo:&nbsp;
     {url ? (
-      <OutboundLink to={url} target="_blank" rel="noopener noreferrer">
+      <OutboundLink to={url} sx={{ color: '#FFF', textDecoration: 'none' }}>
         {author}
       </OutboundLink>
     ) : (
       author
     )}
-  </Wrapper>
+  </Box>
 )
 
 Credits.propTypes = {

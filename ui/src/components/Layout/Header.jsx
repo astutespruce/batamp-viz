@@ -1,73 +1,78 @@
 import React from 'react'
+import { Flex, Heading, Image, Text } from 'theme-ui'
 
-import { Text, ResponsiveText } from 'components/Text'
-import { Flex } from 'components/Grid'
 import { Link, OutboundLink } from 'components/Link'
-import styled, { themeGet } from 'style'
 import LogoSVG from 'images/logo.svg'
 import Navigation from './Navigation'
 import Search from './Search'
 
-const Wrapper = styled(Flex).attrs({
-  alignItems: 'center',
-  justifyContent: 'space-between',
-})`
-  border-bottom: 0.25rem solid ${themeGet('colors.primary.800')};
-  padding: 0.5rem;
-`
-
-const SiteLogo = styled.img.attrs({ src: LogoSVG })`
-  margin-right: 0.25rem;
-  height: 2.5rem;
-  width: auto;
-`
-
-const RootLink = styled(Link)`
-  text-decoration: none;
-  color: ${themeGet('colors.primary.800')} !important;
-`
-
-const Title = styled(ResponsiveText).attrs({
-  my: 0,
-  as: 'h1',
-  fontSize: ['1rem', '1rem', '1.5rem'],
-  display: ['none', 'block'],
-})``
-
-const Subtitle = styled(Text).attrs({
-  fontSize: ['0.9rem', '0.9rem', '0.9rem'],
-})`
-  font-style: italic;
-  color: ${themeGet('colors.primary.800')};
-
-  a {
-    color: ${themeGet('colors.primary.800')};
-    text-decoration: underline;
-  }
-`
-
-const MobileTitle = styled(Title).attrs({ display: ['block', 'none'] })``
-
 const Header = () => (
-  <Wrapper as="header">
-    <Flex alignItems="center">
-      <SiteLogo />
-
-      <Title>
-        <RootLink to="/">Bat Acoustic Monitoring Visualization Tool</RootLink>
-        <Subtitle>
+  <Flex
+    as="header"
+    sx={{
+      flex: '0 0 auto',
+      flexWrap: ['wrap', 'nowrap'],
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderBottom: '0.25rem solid',
+      borderBottomColor: 'primary.8',
+      p: '0.5rem',
+      gap: '2rem',
+    }}
+  >
+    <Flex sx={{ flex: '0 1 auto', alignItems: 'center', gap: '0.5rem' }}>
+      <Image
+        src={LogoSVG}
+        sx={{ flex: '1 0 auto', height: '44px', width: '87px' }}
+      />
+      <Heading
+        as="h1"
+        sx={{
+          flex: '1 1 auto',
+          my: 0,
+          fontSize: ['1rem', '1.25rem', '1.75rem'],
+          lineHeight: 1,
+          color: 'primary.8',
+          '& a': {
+            color: 'primary.8',
+          },
+        }}
+      >
+        <Link to="/" sx={{ textDecoration: 'none' }}>
+          Bat Acoustic Monitoring <br />
+          Visualization Tool
+        </Link>
+        <Text
+          sx={{
+            display: ['none', 'block'],
+            fontSize: '1rem',
+            fontStyle: 'italic',
+            mt: '0.25rem',
+          }}
+        >
           (a companion to{' '}
-          <OutboundLink to="https://batamp.databasin.org/">BatAMP</OutboundLink>
+          <OutboundLink
+            to="https://batamp.databasin.org/"
+            sx={{ textDecoration: 'underline' }}
+          >
+            BatAMP
+          </OutboundLink>
           )
-        </Subtitle>
-      </Title>
-      <MobileTitle>
-        <RootLink to="/">Bat Acoustic Monitoring Visualization Tool</RootLink>
-      </MobileTitle>
+        </Text>
+      </Heading>
     </Flex>
-    <Navigation />
-    <Search />
-  </Wrapper>
+    <Flex
+      sx={{
+        flex: '1 1 auto',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        pr: '1rem',
+      }}
+    >
+      <Navigation />
+      <Search />
+    </Flex>
+  </Flex>
 )
 
 export default Header
