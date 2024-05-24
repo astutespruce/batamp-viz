@@ -72,11 +72,8 @@ Use `data/merge.py` to merge the downloaded datasets into the structure needed f
 
 ## Map Images
 
-Map images are generated using [`mbgl-renderer`](https://github.com/consbio/mbgl-renderer).
+Map images are generated using [pymgl](https://github.com/brendan-ward/pymgl).
 
-You must have a `.env` file that defines `MAPBOX_TOKEN` in the `/maps` directory.
+You must have a `MAPBOX_TOKEN` entry in the `.env` file in the root of this project.
 
-In `/maps` directory, using a version of NodeJS that is compatible with `mbgl-renderer` (Node 8-10):
-
--   `npm install`
--   `npm run maps`
+Run `data/create_range_maps.py` to create the range map thumbnails.
