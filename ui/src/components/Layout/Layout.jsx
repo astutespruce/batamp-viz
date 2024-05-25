@@ -2,9 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { useErrorBoundary } from 'use-error-boundary'
 import { Box, Flex } from 'theme-ui'
+import { Global } from '@emotion/react'
 
 import { isUnsupported, hasWindow } from 'util/dom'
 import UnsupportedBrowser from './UnsupportedBrowser'
+import { fonts } from './fonts'
 import Header from './Header'
 import PageError from './PageError'
 
@@ -25,37 +27,40 @@ const Layout = ({ children }) => {
   })
 
   return (
-    <Flex sx={{ height: '100%', flexDirection: 'column' }}>
-      <Header />
+    <>
+      <Global styles={fonts} />
+      <Flex sx={{ height: '100%', flexDirection: 'column' }}>
+        <Header />
 
-      <Box
-        sx={{
-          flex: '1 1 auto',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          height: '100%',
-        }}
-      >
-        {isUnsupported ? (
-          <UnsupportedBrowser />
-        ) : (
-          <Box
-            sx={{
-              flex: '1 1 auto',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              height: '100%',
-            }}
-          >
-            {didCatch ? (
-              <PageError />
-            ) : (
-              <ErrorBoundary>{children}</ErrorBoundary>
-            )}
-          </Box>
-        )}
-      </Box>
-    </Flex>
+        <Box
+          sx={{
+            flex: '1 1 auto',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            height: '100%',
+          }}
+        >
+          {isUnsupported ? (
+            <UnsupportedBrowser />
+          ) : (
+            <Box
+              sx={{
+                flex: '1 1 auto',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                height: '100%',
+              }}
+            >
+              {didCatch ? (
+                <PageError />
+              ) : (
+                <ErrorBoundary>{children}</ErrorBoundary>
+              )}
+            </Box>
+          )}
+        </Box>
+      </Flex>
+    </>
   )
 }
 

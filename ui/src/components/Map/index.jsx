@@ -97,7 +97,6 @@ const Map = ({
     }
 
     mapboxgl.accessToken = accessToken
-    mapboxgl.Style.setSourceType(PmTilesSource.SOURCE_TYPE, PmTilesSource)
 
     const map = new mapboxgl.Map({
       container: mapNode.current,
@@ -110,6 +109,9 @@ const Map = ({
     window.map = map
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right')
+
+    // enable PMTiles source
+    mapboxgl.Style.setSourceType(PmTilesSource.SOURCE_TYPE, PmTilesSource)
 
     // show tooltip on hover
     const tooltip = new mapboxgl.Popup({
