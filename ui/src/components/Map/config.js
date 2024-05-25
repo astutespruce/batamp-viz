@@ -101,12 +101,9 @@ export const layers = [
   },
 ]
 
-// id: "source"
 export const speciesSource = {
-  type: 'vector',
-  tiles: [
-    'https://tiles.databasin.org/services/batamp/species_ranges/tiles/{z}/{x}/{y}.pbf',
-  ],
+  type: 'pmtile-source',
+  url: '/tiles/species_ranges.pmtiles',
   minzoom: 0,
   maxzoom: 6,
 }

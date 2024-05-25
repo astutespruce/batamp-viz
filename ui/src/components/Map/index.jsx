@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { useDebouncedCallback } from 'use-debounce'
 import { Box } from 'theme-ui'
+import { PmTilesSource } from 'mapbox-pmtiles/dist/mapbox-pmtiles'
 
 // exclude Mapbox GL from babel transpilation per https://docs.mapbox.com/mapbox-gl-js/guides/migrate-to-v2/
 /* eslint-disable-next-line */
@@ -108,6 +109,9 @@ const Map = ({
     window.map = map
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right')
+
+    // enable PMTiles source
+    mapboxgl.Style.setSourceType(PmTilesSource.SOURCE_TYPE, PmTilesSource)
 
     // show tooltip on hover
     const tooltip = new mapboxgl.Popup({
