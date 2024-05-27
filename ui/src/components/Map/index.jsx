@@ -3,7 +3,6 @@ import React, { useRef, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { useDebouncedCallback } from 'use-debounce'
 import { Box } from 'theme-ui'
-import { PmTilesSource } from 'mapbox-pmtiles/dist/mapbox-pmtiles'
 
 // exclude Mapbox GL from babel transpilation per https://docs.mapbox.com/mapbox-gl-js/guides/migrate-to-v2/
 /* eslint-disable-next-line */
@@ -36,7 +35,12 @@ import {
   LIGHTESTCOLOR,
   DARKESTCOLOR,
 } from './config'
+import { PMTilesSource } from './pmtiles'
 import { METRIC_LABELS, SPECIES } from '../../../config/constants'
+
+const { accessToken, styles } = config
+
+mapboxgl.accessToken = accessToken
 
 const Map = ({
   detectors,
@@ -49,8 +53,6 @@ const Map = ({
   onSelectFeatures,
   onBoundsChange,
 }) => {
-  const { accessToken, styles } = config
-
   // Use refs to coordinate values set after map is constructed
   const mapNode = useRef(null)
   const mapRef = useRef(null)
@@ -96,8 +98,6 @@ const Map = ({
       zoom = boundsZoom
     }
 
-    mapboxgl.accessToken = accessToken
-
     const map = new mapboxgl.Map({
       container: mapNode.current,
       style: `mapbox://styles/mapbox/${styles[0]}`,
@@ -111,7 +111,7 @@ const Map = ({
     map.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
     // enable PMTiles source
-    mapboxgl.Style.setSourceType(PmTilesSource.SOURCE_TYPE, PmTilesSource)
+    mapboxgl.Style.setSourceType(PMTilesSource.SOURCE_TYPE, PMTilesSource)
 
     // show tooltip on hover
     const tooltip = new mapboxgl.Popup({
@@ -585,11 +585,7 @@ const Map = ({
       />
 
       {mapRef.current && (
-        <StyleSelector
-          styles={styles}
-          token={accessToken}
-          onChange={handleBasemapChange}
-        />
+        <StyleSelector styles={styles} onChange={handleBasemapChange} />
       )}
     </Box>
   )

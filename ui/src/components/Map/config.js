@@ -102,7 +102,7 @@ export const layers = [
 ]
 
 export const speciesSource = {
-  type: 'pmtile-source',
+  type: 'pmtiles',
   url: '/tiles/species_ranges.pmtiles',
   minzoom: 0,
   maxzoom: 6,

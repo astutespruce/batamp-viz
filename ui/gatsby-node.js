@@ -85,10 +85,6 @@ exports.onCreateWebpackConfig = ({ actions, stage, loaders, plugins }) => {
           test: /mapbox-gl/,
           use: loaders.null(),
         },
-        {
-          test: /mapbox-pmtiles/,
-          use: loaders.null(),
-        },
       ],
     }
   }

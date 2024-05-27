@@ -15,9 +15,6 @@ export const useThumbnails = () => {
             species: name
             childImageSharp {
               gatsbyImageData(
-                # width: 175
-                # height: 150
-                # layout: FIXED
                 layout: FULL_WIDTH
                 formats: [PNG]
                 placeholder: BLURRED
