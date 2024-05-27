@@ -4,11 +4,6 @@ import PropTypes from 'prop-types'
 import { useDebouncedCallback } from 'use-debounce'
 import { Box } from 'theme-ui'
 
-// // exclude Mapbox GL from babel transpilation per https://docs.mapbox.com/mapbox-gl-js/guides/migrate-to-v2/
-// /* eslint-disable-next-line */
-// import mapboxgl from '!mapbox-gl'
-// import 'mapbox-gl/dist/mapbox-gl.css'
-
 import { formatNumber, quantityLabel } from 'util/format'
 import { niceNumber, difference, clone } from 'util/data'
 import { useIsEqualEffect } from 'util/hooks'
@@ -39,9 +34,7 @@ import {
 import { PMTilesSource } from './pmtiles'
 import { METRIC_LABELS, SPECIES } from '../../../config/constants'
 
-const { accessToken, styles } = config
-
-// mapboxgl.accessToken = accessToken
+const { styles } = config
 
 const Map = ({
   detectors,
