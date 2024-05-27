@@ -4,15 +4,16 @@ import PropTypes from 'prop-types'
 import { useDebouncedCallback } from 'use-debounce'
 import { Box } from 'theme-ui'
 
-// exclude Mapbox GL from babel transpilation per https://docs.mapbox.com/mapbox-gl-js/guides/migrate-to-v2/
-/* eslint-disable-next-line */
-import mapboxgl from '!mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+// // exclude Mapbox GL from babel transpilation per https://docs.mapbox.com/mapbox-gl-js/guides/migrate-to-v2/
+// /* eslint-disable-next-line */
+// import mapboxgl from '!mapbox-gl'
+// import 'mapbox-gl/dist/mapbox-gl.css'
 
 import { formatNumber, quantityLabel } from 'util/format'
 import { niceNumber, difference, clone } from 'util/data'
 import { useIsEqualEffect } from 'util/hooks'
 
+import { mapboxgl } from './mapbox'
 import StyleSelector from './StyleSelector'
 import Legend from './Legend'
 import {
@@ -40,7 +41,7 @@ import { METRIC_LABELS, SPECIES } from '../../../config/constants'
 
 const { accessToken, styles } = config
 
-mapboxgl.accessToken = accessToken
+// mapboxgl.accessToken = accessToken
 
 const Map = ({
   detectors,

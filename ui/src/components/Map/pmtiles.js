@@ -10,10 +10,7 @@
 /* eslint-disable max-classes-per-file */
 
 import { PMTiles, Protocol as PMTilesProtocol, TileType } from 'pmtiles'
-
-// exclude Mapbox GL from babel transpilation per https://docs.mapbox.com/mapbox-gl-js/guides/migrate-to-v2/
-/* eslint-disable-next-line */
-import mapboxgl from '!mapbox-gl'
+import { mapboxgl } from './mapbox'
 
 const VectorTileSourceImpl = mapboxgl.Style.getSourceType('vector')
 
