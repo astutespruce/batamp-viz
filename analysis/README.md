@@ -38,8 +38,6 @@ anges -o ui/static/tiles/species_ranges.pmtiles data/boundaries/species_ranges.f
 
 ## Bat Presence and Activity
 
-Bat presence and activity datasets are downloaded from Data Basin. You must have download permissions for these datasets granted by Ted Weller (owner of the aggregates) for the account you are using to download.
-
 ### Prerequisites
 
 You must have a `.env` file in the root of this project that defines the following environment variables:
@@ -51,9 +49,13 @@ DATABASIN_KEY=<your key>
 
 To create the above variables, you must first have a Data Basin account with the appropriate privileges, then go to https://databasin.org/auth/api-keys/ and create an API key for your user account.
 
-### Download
+### From BatAMP (DataBasin)
 
-Use `analysis/download.py` to download the activity and presence-only datasets. Each is based on a list of dataset IDs that are known in advance, and correspond to the IDs of aggregate datasets. There is generally one per year from 2006 to present.
+Bat presence and activity datasets are downloaded from Data Basin. You must have download permissions for these datasets granted by Ted Weller (owner of the aggregates) for the account you are using to download.
+
+#### Download
+
+Use `analysis/databasin/download.py` to download the activity and presence-only datasets. Each is based on a list of dataset IDs that are known in advance, and correspond to the IDs of aggregate datasets. There is generally one per year from 2006 to present.
 
 ### Merge
 

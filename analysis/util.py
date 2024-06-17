@@ -9,7 +9,7 @@ def to_nested_json(filename, df, field_name):
 
 def camelcase(fields):
     def to_camel(string):
-        if not "_" in string:
+        if "_" not in string:
             return string
 
         parts = string.split("_")
