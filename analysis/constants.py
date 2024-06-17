@@ -1,3 +1,6 @@
+GEO_CRS = "EPSG:4326"
+
+
 SPECIES = {
     "anpa": {"SNAME": "Antrozous pallidus", "CNAME": "Pallid Bat"},
     "chme": {"SNAME": "Choeronycteris mexicana", "CNAME": "Mexican Long-tongued Bat"},
@@ -131,7 +134,7 @@ DETECTOR_FIELDS = [
     # "call_id_1",
     # "call_id_2",
     "call_id",
-    "det_name"
+    "det_name",
     # "orig_site_id",
     # "orig_det_id",
     # source_dataset omitted since there may be multiple per detector

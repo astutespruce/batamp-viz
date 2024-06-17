@@ -13,65 +13,63 @@ from pathlib import Path
 import pandas as pd
 from pyogrio import read_dataframe, write_dataframe
 import shapely
-from shapely.geometry import Polygon
 
 
-from analysis.constants import SPECIES
+from analysis.constants import SPECIES, GEO_CRS
 
 HAWAII_BOUNDS = [-166.317558, 12.803013, -148.124199, 27.129348]
 
 
-def bounds_to_poly(bounds):
-    xmin, ymin, xmax, ymax = bounds
-    return Polygon(
-        [[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin]]
-    )
-
-
-def to_titlecase(text):
-    return " ".join([t.capitalize() for t in text.split(" ")])
-
-
 boundaries_dir = Path("data/boundaries")
-src_dir = boundaries_dir / "src"
+src_dir = boundaries_dir / "source"
 
 
 ### Process admin boundaries
 print("Extracting admin boundaries...")
-us_df = read_dataframe(src_dir / "us_state_wgs84.shp").rename(
-    columns={"NAME": "admin1_name"}
+us_df = (
+    read_dataframe(
+        src_dir / "tl_2023_us_state.zip", columns=["NAME", "STUSPS"], use_arrow=True
+    )
+    .to_crs(GEO_CRS)
+    .rename(columns={"NAME": "admin1_name"})
 )
 us_df["admin1"] = "US-" + us_df.STUSPS
 us_df["country"] = "US"
 
 
-ca_df = read_dataframe(src_dir / "canada_province_wgs84.shp").rename(
-    columns={"PRENAME": "admin1_name"}
+ca_df = (
+    read_dataframe(
+        src_dir / "canada_province.gdb", columns=["PRENAME", "PREABBR"], use_arrow=True
+    )
+    .to_crs(GEO_CRS)
+    .rename(columns={"PRENAME": "admin1_name"})
 )
 ca_df["admin1"] = "CA-" + ca_df.PREABBR.str.replace("\.", "")
 ca_df["country"] = "CA"
 
-mx_df = read_dataframe(
-    src_dir / "mexico_state.shp"
-)  # already in 4326, but needs to be simplified
+mx_df = (
+    read_dataframe(
+        src_dir / "mexico_state.zip",
+        columns=["NOMGEO", "CVEGEO"],
+        encoding="UTF-8",
+        use_arrow=True,
+    )
+    .to_crs(GEO_CRS)
+    .rename(columns={"NOMGEO": "admin1_name"})
+)
+# already in 4326, but needs to be simplified
 mx_df.geometry = mx_df.geometry.simplify(0.001)
-mx_df["admin1"] = "MX-" + mx_df.NUM_EDO
-mx_df["admin1_name"] = mx_df.ENTIDAD.apply(to_titlecase)
-mx_df = mx_df.dissolve(by="NUM_EDO")
+mx_df["admin1"] = "MX-" + mx_df.CVEGEO
 mx_df["country"] = "MX"
 
-admin_df = (
-    us_df[["geometry", "admin1", "admin1_name", "country"]]
-    .append(
+admin_df = pd.concat(
+    [
+        us_df[["geometry", "admin1", "admin1_name", "country"]],
         ca_df[["geometry", "admin1", "admin1_name", "country"]],
-        ignore_index=True,
-        sort=False,
-    )
-    .append(
         mx_df[["geometry", "admin1", "admin1_name", "country"]],
-        ignore_index=True,
-        sort=False,
-    )
+    ],
+    ignore_index=True,
+    sort=False,
 )
 
 admin_df["id"] = admin_df.index.astype("uint8") + 1
@@ -86,7 +84,7 @@ print("Processing species ranges...")
 # create lookup of species scientific name to code
 sci_name_lut = {value["SNAME"]: key for key, value in SPECIES.items()}
 
-range_df = read_dataframe("data/boundaries/src/species_ranges.shp")
+range_df = read_dataframe(src_dir / "species_ranges.shp")
 
 # split hoary bat into Hawaiian vs mainland
 laci = range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus"]

@@ -10,23 +10,14 @@ Data were processed and a single GRTS layer with IDs for 50k and 100k grids usin
 
 ### Admin boundaries
 
-US States were downloaded from https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.2018.html
+US States (2023 version) were downloaded from https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2023&layergroup=States+%28and+equivalent%29
+on 6/17/2024 and saved to `data/boundaries/source/tl_2023_us_state.zip`.
 
-And projected to WGS84 using ogr2ogr:
+Canadian provinces (2021 verison) were downloaded from https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
+on 6/17/2024 and saved to `data/boundaries/source/canada_province.gdb`.
 
-```
-ogr2ogr -t_srs EPSG:4326 us_state_wgs84.shp us_state.shp
-```
-
-Canadian provinces were downloaded from: https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/bound-limit-2011-eng.cfm
-
-And projected to WGS84 using ogr2ogr:
-
-```
-ogr2ogr -t_srs EPSG:4326 canada_province_wgs84.shp canada_province.shp
-```
-
-Mexican states were downloaded from: http://www.conabio.gob.mx/informacion/metadata/gis/dest_2010gw.xml?_httpcache=yes&_xsl=/db/metadata/xsl/fgdc_html.xsl&_indent=no
+Mexican states (2023 version) were downloaded from http://geoportal.conabio.gob.mx/metadatos/doc/html/dest23gw.html
+on 6/17/2024 and saved to `data/boundaries/source/mexico_state.zip`.
 
 ### Bat Species Ranges
 
