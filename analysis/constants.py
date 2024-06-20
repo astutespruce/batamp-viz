@@ -1,3 +1,6 @@
+NABAT_URL = "https://api.sciencebase.gov/nabat-graphql/graphql"
+
+
 GEO_CRS = "EPSG:4326"
 
 

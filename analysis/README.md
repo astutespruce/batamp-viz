@@ -45,9 +45,15 @@ You must have a `.env` file in the root of this project that defines the followi
 ```
 DATABASIN_USER=<your username>
 DATABASIN_KEY=<your key>
+
+NABAT_TOKEN=<NABat bearer token>
+NABAT_EMAIL=<NABat user email address>
 ```
 
-To create the above variables, you must first have a Data Basin account with the appropriate privileges, then go to https://databasin.org/auth/api-keys/ and create an API key for your user account.
+To create the above `DATABASIN_*` variables, you must first have a Data Basin account with the appropriate privileges, then go to https://databasin.org/auth/api-keys/ and create an API key for your user account.
+
+To obtain a short-lived NABat token, first manually login to NABat at: https://sciencebase.usgs.gov/nabat/#/explore
+Then click the API link in the upper right of the page, and paste the value of the token into the `.env` file. This token is only valid for 10 minutes.
 
 ### From BatAMP (DataBasin)
 

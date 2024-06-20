@@ -5,10 +5,6 @@ from databasin.client import Client
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
-
-# API key stored in .env.
-# generated using https://databasin.org/auth/api-keys/
-# These variables are stored in .env in the project root
 DATABASIN_USER = os.getenv("DATABASIN_USER")
 DATABASIN_KEY = os.getenv("DATABASIN_KEY")
 
@@ -61,12 +57,12 @@ PRESENCE_DATASET_IDS = [
 ]
 
 
-data_dir = Path("data/src")
+data_dir = Path("data/source/databasin")
 activity_dir = data_dir / "activity"
 presence_dir = data_dir / "presence"
 
-activity_dir.mkdir(exist_ok=True)
-presence_dir.mkdir(exist_ok=True)
+activity_dir.mkdir(exist_ok=True, parents=True)
+presence_dir.mkdir(exist_ok=True, parents=True)
 
 
 def download_datasets(client, dataset_ids, out_dir):
