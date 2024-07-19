@@ -53,4 +53,11 @@ NODE_OPTIONS="--max_old_space_size=4096"
 
 ## Credits
 
-Development of this application was supported by a grant from the U.S. Department of Agriculture Forest Service - Pacific Southwest Research Station.
+Initial development of this application was supported by a grant from the U.S.
+Department of Agriculture Forest Service - Pacific Southwest Research Station.
+This project is also supported in part by the
+[California Department of Fish and Wildlife](https://wildlife.ca.gov/) through a
+[U.S. Fish and Wildlife Service State Wildlife Grant](https://www.fws.gov/program/state-wildlife-grants).
+
+This project was initially developed by Brendan Ward at the [Conservation Biology Institute](https://consbio.org),
+now with [Astute Spruce, LLC](https://astutespruce.com) and [Ted Weller](https://www.fs.fed.us/psw/programs/cb/staff/tweller/) at the [Pacific Southwest Research Station (USFS)](https://www.fs.fed.us/psw/index.shtml).
