@@ -1,15 +1,20 @@
 import os
 from pathlib import Path
+import warnings
 
 from databasin.client import Client
 from dotenv import load_dotenv, find_dotenv
 
-load_dotenv(find_dotenv())
-DATABASIN_USER = os.getenv("DATABASIN_USER")
-DATABASIN_KEY = os.getenv("DATABASIN_KEY")
+from analysis.databasin.lib import download_datasets
+
+warnings.filterwarnings(
+    "ignore", message=".*this will no longer exclude empty.*", category=FutureWarning
+)
+
 
 # these are known IDs added manually
 ACTIVITY_DATASET_IDS = [
+    "150574eb100a432f9f6c700e1ec1ca9f",  # 2001
     "c708bee517044b1f921c96704f773d9d",  # 2003
     "4f057a7950b64cb18f6d7f4147503ffc",  # 2006
     "651a6494655443c6987002176b736dd3",  # 2007
@@ -33,7 +38,6 @@ ACTIVITY_DATASET_IDS = [
 ]
 
 PRESENCE_DATASET_IDS = [
-    "150574eb100a432f9f6c700e1ec1ca9f",  # 2001
     "63c48bec830b4e9d9880fbf93616bfce",  # 2002
     "527ea0cacaf34e189e35e67c44d63d20",  # 2006
     "79450e0f18fb4199ae279a87dda3a0f1",  # 2007
@@ -57,34 +61,22 @@ PRESENCE_DATASET_IDS = [
 ]
 
 
+load_dotenv(find_dotenv())
+DATABASIN_USER = os.getenv("DATABASIN_USER")
+DATABASIN_KEY = os.getenv("DATABASIN_KEY")
+
 data_dir = Path("data/source/databasin")
-activity_dir = data_dir / "activity"
-presence_dir = data_dir / "presence"
-
-activity_dir.mkdir(exist_ok=True, parents=True)
-presence_dir.mkdir(exist_ok=True, parents=True)
-
-
-def download_datasets(client, dataset_ids, out_dir):
-    for id in dataset_ids:
-        dataset = client.get_dataset(id)
-
-        print("Processing {}".format(dataset.title))
-        if not dataset.user_can_download:
-            print(
-                "ERROR: cannot download data for {} - no download permissions".format(
-                    dataset.id
-                )
-            )
-            continue
-
-        data = dataset.data
-
-        with open(out_dir / "{}.csv".format(id), "w") as outfile:
-            outfile.write(data)
-
+data_dir.mkdir(exist_ok=True, parents=True)
 
 client = Client()
 client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
-download_datasets(client, ACTIVITY_DATASET_IDS, activity_dir)
-download_datasets(client, PRESENCE_DATASET_IDS, presence_dir)
+
+print("Downloading activity datasets...")
+activity_df = download_datasets(client, ACTIVITY_DATASET_IDS)
+activity_df.to_feather(data_dir / "activity_datasets.feather")
+print(f"Downloaded {len(activity_df):,} activity records")
+
+print("\n\nDownloading presence-only datasets...")
+presence_df = download_datasets(client, PRESENCE_DATASET_IDS)
+presence_df.to_feather(data_dir / "presence_datasets.feather")
+print(f"Downloaded {len(presence_df):,} presence-only records")

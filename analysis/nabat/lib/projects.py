@@ -126,18 +126,20 @@ async def get_project_info(client, token, project_ids):
     # unpack nested fields
     df["organization"] = df.organization.apply(lambda x: x["name"])
     df["collaborating_organizations"] = df.collaborating_organizations.apply(
-        lambda x: [e["organization"]["name"].strip() for e in x["nodes"]]
+        lambda x: ", ".join([e["organization"]["name"].strip() for e in x["nodes"]])
     )
     df["num_surveys"] = df.surveys.apply(lambda x: x["count"])
     df["num_survey_events"] = df.surveys.apply(
         lambda x: sum([e["survey_events"]["count"] for e in x["nodes"]])
     )
     df["project_leads"] = df.users.apply(
-        lambda x: [
-            f"{e['user']['first'].strip()} {e['user']['last'].strip()}"
-            for e in x["nodes"]
-            if e["role"]["role"] == "Project Leader"
-        ]
+        lambda x: ", ".join(
+            [
+                f"{e['user']['first'].strip()} {e['user']['last'].strip()}"
+                for e in x["nodes"]
+                if e["role"]["role"] == "Project Leader"
+            ]
+        )
     )
 
     return df.drop(columns=["users"])

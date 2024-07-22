@@ -20,7 +20,7 @@ NABAT_REFRESH_TOKEN = parse_R_token_cmd(os.getenv("NABAT_TOKEN_CMD"))
 
 
 data_dir = Path("data/source/nabat")
-data_dir.mkdir(exist_ok=True)
+data_dir.mkdir(exist_ok=True, parents=True)
 
 
 async def download():

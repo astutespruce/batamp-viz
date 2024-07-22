@@ -55,7 +55,7 @@ To create the above `DATABASIN_*` variables, you must first have a Data Basin ac
 To obtain a short-lived NABat token, first manually login to NABat at: https://sciencebase.usgs.gov/nabat/#/explore
 Then click the API link in the upper right of the page, and paste the value of the token into the `.env` file. This token is only valid for 10 minutes.
 
-### From BatAMP (DataBasin)
+### From BatAMP (Data Basin)
 
 Bat presence and activity datasets are downloaded from Data Basin. You must have download permissions for these datasets granted by Ted Weller (owner of the aggregates) for the account you are using to download.
 

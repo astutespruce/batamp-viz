@@ -1,7 +1,9 @@
 NABAT_URL = "https://api.sciencebase.gov/nabat-graphql/graphql"
 
-
 GEO_CRS = "EPSG:4326"
+PROJ_CRS = "EPSG:5070"
+
+DUPLICATE_TOLERANCE = 5  # meters
 
 
 SPECIES = {

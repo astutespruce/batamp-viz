@@ -1,4 +1,3 @@
-import os
 import json
 from pathlib import Path
 
@@ -7,7 +6,6 @@ import geopandas as gp
 import numpy as np
 import shapely
 
-from databasin.client import Client
 
 from analysis.constants import (
     SPECIES,
@@ -15,199 +13,337 @@ from analysis.constants import (
     GROUP_ACTIVITY_COLUMNS,
     DETECTOR_FIELDS,
     SPECIES_ID,
+    GEO_CRS,
+    PROJ_CRS,
+    DUPLICATE_TOLERANCE,
 )
+from analysis.lib.graph import DirectedGraph
+from analysis.databasin.lib.clean import clean
 from analysis.util import camelcase
 
-# API key stored in .env.
-# generated using https://databasin.org/auth/api-keys/
-from analysis.settings import DATABASIN_KEY, DATABASIN_USER
-
-client = Client()
-client.set_api_key(DATABASIN_USER, DATABASIN_KEY)
-
-
-def get_dataset_title(id):
-    try:
-        return client.get_dataset(id).title
-    except Exception:
-        # will be handled in UI tier
-        return ""
-
-
-src_dir = Path("data/src")
-derived_dir = Path("data/derived")
-boundary_dir = Path("data/boundaries")
+data_dir = Path("data")
+src_dir = data_dir / "source"
+derived_dir = data_dir / "derived"
+boundary_dir = data_dir / "boundaries"
 json_dir = Path("ui/data")
 
-if not os.path.exists(derived_dir):
-    os.makedirs(derived_dir)
+derived_dir.mkdir(exist_ok=True)
+
 
 location_fields = ["lat", "lon"]
 detector_index_fields = location_fields + ["mic_ht", "presence_only"]
 # Due to size limits in Gatsby, just doing by month for now
 time_fields = ["year", "month"]
 
-
-#### Read raw source data from CSV ############################################
-print("Reading CSV data...")
-merged = None
-for filename in (src_dir / "activity").glob("*.csv"):
-    df = pd.read_csv(filename, low_memory=False)
-    df["presence_only"] = False
-
-    if merged is None:
-        merged = df
-    else:
-        merged = pd.concat([merged, df], ignore_index=True, sort=False)
-
-for filename in (src_dir / "presence").glob("*.csv"):
-    df = pd.read_csv(filename)
-    df["presence_only"] = True
-
-    merged = pd.concat([merged, df], ignore_index=True, sort=False)
-
-df = merged.reindex()
-
-# TODO: remove
-# make sure to add "haba" and "lyse" columns while we are waiting for this to be added to the aggregate dataset
-for spp in ["haba", "leye"]:
-    if spp not in df.columns:
-        df[spp] = np.nan
+################################################################################
+### Calculate center of each GRTS cell and use these to mark coordinates likely assigned there
+################################################################################
+grts = gp.read_feather(boundary_dir / "na_grts.feather", columns=["geometry"])
+grts["center"] = gp.GeoSeries(shapely.centroid(grts.geometry.values), crs=grts.crs)
 
 
-print(f"Read {len(df):,} raw records")
+################################################################################
+### Read and merge Data Basin datasets
+################################################################################
 
-#### Process source data and clean up ############################################
-print("Cleaning raw data...")
-# drop group activity columns and raw coordinate columns
-# TODO: revisit dropping site / detector ID (we assign our own, but do we need this info?)
+activity_df = pd.read_feather(src_dir / "databasin/activity_datasets.feather")
+activity_df["presence_only"] = False
 
-df = df.drop(columns=["x_coord", "y_coord"]).rename(
-    columns={"db_longitude": "lon", "db_latitude": "lat", "source_dataset": "dataset"}
+presence_df = pd.read_feather(src_dir / "databasin/presence_datasets.feather")
+presence_df["presence_only"] = True
+
+df = pd.concat([activity_df, presence_df], ignore_index=True, sort=True)
+df["geometry"] = shapely.points(df.lon.values, df.lat.values)
+df = gp.GeoDataFrame(df, geometry="geometry", crs=GEO_CRS)
+
+df = clean(df)
+
+
+# update activity columns based on ones that are actually present in the data
+group_activity_columns = [c for c in GROUP_ACTIVITY_COLUMNS if c in df.columns]
+activity_columns = [c for c in ACTIVITY_COLUMNS if c in df.columns]
+
+# add a night string to make it easier to query on night
+df["date"] = df.night.dt.strftime("%Y-%m-%d")
+
+# save lookup of dataset names to join back later
+dataset_names = df[["dataset", "name"]].groupby("dataset").name.first()
+
+
+### assign a point ID for easier joins
+points = gp.GeoDataFrame(geometry=df.geometry.unique(), crs=df.crs)
+# use 6 decimal places (~111 mm at equator) longitude / latitude, padded to 9 chars, no sign
+points["point_id"] = pd.Series(
+    np.abs((shapely.get_x(points.geometry.values) * 1e6).round())
+    .astype("uint")
+    .astype("str")
+).str.pad(width=9, side="left", fillchar="0") + pd.Series(
+    np.abs((shapely.get_y(points.geometry.values) * 1e6).round())
+    .astype("uint")
+    .astype("str")
+).str.pad(width=9, side="left", fillchar="0")
+
+df = df.join(points.set_index("geometry").point_id, on="geometry")
+
+# convert to CONUS NAD83 Albers for spatial analysis
+proj_points = points.to_crs(PROJ_CRS)
+
+# Some unique real-world coordinates are fuzzed to be near the center of GRTS cells;
+# do not deduplicate these against each other
+# NOTE: 10m is arbitrary but seems reasonable to capture whether or not points are at the center
+left, right = shapely.STRtree(grts.center.to_crs(PROJ_CRS).values).query(
+    proj_points.geometry.values, predicate="dwithin", distance=10
 )
 
-# round coordinates to 4 decimal places (~11 meters at equator)
-df[location_fields] = df[location_fields].round(4)
+grts_center_ids = proj_points.point_id.take(np.unique(left))
+df["at_grts_center"] = df.point_id.isin(grts_center_ids)
 
-# Drop completely null records
-df = df.dropna(axis=0, how="all", subset=ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS)
-# drop columns with completely missing data.
-df = df.dropna(axis=1, how="all")
-# This will drop some species columns, so update that variable
-GROUP_ACTIVITY_COLUMNS = [c for c in GROUP_ACTIVITY_COLUMNS if c in df.columns]
-ACTIVITY_COLUMNS = [c for c in ACTIVITY_COLUMNS if c in df.columns]
-print(f"{len(df):,} records after dropping those with null activity for all fields")
+### deduplicate identical location / mic height / night records
+# NOTE: some records were uploaded to Data Basin multiple times, sometimes after
+# running calls through auto classifiers again and generating higher counts for
+# some species; others were extracted for specific species and uploaded separately,
+# but already counted in the aggregate total.  Some were apparently run through species-specific
+# presence classiers and recorded absence of a species missing from other records,
+# so we take the max for each activity column (which may bring in a 0 that overrides <NAN>).
+# NOTE: some of the duplicates have varying site_id
+# NOTE: there may be a mix of presence_only and non presence_only records present
+# at a location; we need to treat them as different detectors when aggregating
+# data
 
-# Convert height units to meters
-index = df.mic_ht_units == "feet"
-df.loc[index, "mic_ht"] = df.loc[index].mic_ht * 0.3048
-df.loc[index, "mic_ht_units"] = "meters"
+prev_count = len(df)
 
-
-# Cleanup text columns
-for col in [
-    "first_name",
-    "last_name",
-    "det_mfg",
-    "det_model",
-    "mic_type",
-    "refl_type",
-    "call_id_1",
-    "call_id_2",
-    "site_id",
-    "det_id",
-    "wthr_prof",
-]:
-    df[col] = df[col].fillna("").str.strip()
-    df.loc[df[col].str.lower() == "none", [col]] = ""
-
-
-# Set location fields to 32 bit float
-df[location_fields] = df[location_fields].astype("float32")
-
-
-# create site name
-df["det_name"] = df.site_id
-index = df.det_id != ""
-df.loc[index, "det_name"] = df.loc[index].det_name + " - " + df.loc[index].det_id
-df = df.drop(columns=["site_id", "det_id"])
-
-# Coalesce call ids into single comma-delimited field
-call_id_columns = ["call_id_1", "call_id_2"]
-df["call_id"] = df[call_id_columns].apply(
-    lambda row: ", ".join([v for v in row if v]), axis=1
+# deduplicate the ones not at GRTS center point
+dedup = (
+    df.loc[~df.at_grts_center]
+    .sort_values(
+        by=["point_id", "mic_ht", "night", "presence_only"],
+        ascending=[True, True, True, False],
+    )
+    .groupby(["point_id", "mic_ht", "night", "presence_only"])
+    .agg(
+        {
+            **{c: "max" for c in activity_columns + group_activity_columns},
+            **{
+                c: "first"
+                for c in set(df.columns).difference(
+                    activity_columns
+                    + group_activity_columns
+                    + [
+                        "point_id",
+                        "mic_ht",
+                        "night",
+                        "presence_only",
+                        "dataset",
+                        "name",
+                    ]
+                )
+            },
+            "dataset": "unique",
+            # NOTE: name is intentionally dropped and joined back later
+        }
+    )
+    .reset_index()
 )
-df = df.drop(columns=call_id_columns)
-
-#### Dataset-specific fixes
-# Fix missing first name
-df.loc[
-    (df.dataset == "bc04c64da5c042da81098c88902a502a") & (df.last_name == "Burger"),
-    "first_name",
-] = "Paul"
-
-df["contributor"] = (df.first_name + " " + df.last_name).str.strip()
-
-### Contributor name fixes
-df.loc[df.contributor == "T M", "contributor"] = "Tom Malloy"
-# Per direction from Ted, convert Bryce Maxell to Montana NHP
-df.loc[df.contributor == "Bryce Maxell", "contributor"] = "Montana NHP"
 
 
-# Convert night into a datetime obj (split off time component if present, else
-# causes errors)
-df["night"] = pd.to_datetime(df.night.apply(lambda d: d.split(" ")[0]))
-df["year"] = df.night.dt.year.astype("uint16")
-df["month"] = df.night.dt.month.astype("uint8")
-
-# Since leap years skew the time of year calculations, standardize everything onto a single non-leap year calendar (1900)
-df["tempdate"] = df.night.apply(
-    lambda dt: dt.replace(day=28, year=1900)
-    if dt.month == 2 and dt.day == 29
-    else dt.replace(year=1900)
+# also deduplicate based on det_name since these may be different original points
+dedup_grts_center = (
+    df.loc[df.at_grts_center]
+    .sort_values(
+        by=["point_id", "mic_ht", "night", "det_name", "presence_only"],
+        ascending=[True, True, True, True, False],
+    )
+    .groupby(["point_id", "det_name", "mic_ht", "night", "presence_only"])
+    .agg(
+        {
+            **{c: "max" for c in activity_columns + group_activity_columns},
+            **{
+                c: "first"
+                for c in set(df.columns).difference(
+                    activity_columns
+                    + group_activity_columns
+                    + [
+                        "point_id",
+                        "det_name",
+                        "mic_ht",
+                        "night",
+                        "presence_only",
+                        "dataset",
+                        "name",
+                    ]
+                )
+            },
+            "dataset": "unique",
+            # NOTE: name is intentionally dropped and joined back later
+        }
+    )
+    .reset_index()
 )
-df["week"] = df.tempdate.apply(lambda d: d.week).astype("uint8")
-df["dayofyear"] = df.tempdate.dt.dayofyear.astype("uint16")
 
-# drop unneeded columns
-df = df.drop(columns=["mic_ht_units", "first_name", "last_name", "tempdate"])
+df = gp.GeoDataFrame(
+    pd.concat([dedup, dedup_grts_center], ignore_index=True),
+    geometry="geometry",
+    crs=GEO_CRS,
+)
+
+print(
+    f"Removed {prev_count - len(df):,} likely duplicate records at the same location / height / night"
+)
 
 
-### Drop duplicates
+# Find all combinations of points that are within DUPLICATE_TOLERANCE of each other
+left, right = shapely.STRtree(proj_points.geometry.values).query(
+    proj_points.geometry.values, predicate="dwithin", distance=DUPLICATE_TOLERANCE
+)
+
+# NOTE: the above results return symmetric pairs and self-joins, which allows
+# the directed graph to work properly in this case
+g = DirectedGraph(left, right)
+groups, values = g.flat_components()
+df = df.join(
+    pd.Series(
+        (groups + 1).astype("uint32"),
+        name="site",
+        index=points.geometry.take(values),
+    ),
+    on="geometry",
+)
+
+
+### Deduplicate nearby points
+# These appear to be the result of sampling in a slightly different location
+# on different nights, but appear to represent the same general site / detector.
 # NOTE: these will likely have different dataset IDs, and we don't necessarily
 # care about slightly different values for the detector or contributor fields
-core_columns = (
-    location_fields + ["mic_ht", "night"] + ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS
+
+# for each group, pick a representative point that is is the closest to the
+# center of the group, and then reassign that point_id and geometry to all other
+# records in the same group
+tmp = proj_points.join(df.groupby("point_id").site.first(), on="point_id")
+center = gp.GeoDataFrame(
+    tmp.groupby("site").agg(
+        {"geometry": lambda x: shapely.centroid(shapely.multipoints(x))}
+    ),
+    geometry="geometry",
+    crs=tmp.crs,
 )
-df = df.drop_duplicates(subset=core_columns, keep="first")
-print(f"{len(df):,} records after dropping complete duplicates")
+tmp = tmp.join(center.geometry.rename("center"), on="site")
+tmp["dist"] = shapely.distance(tmp.geometry.values, tmp.center.values)
+tmp = tmp.sort_values(by=["site", "dist"], ascending=True)
+site_point = (
+    tmp[["point_id", "geometry", "site"]]
+    .groupby("site")[["point_id", "geometry"]]
+    .first()
+)
+
+df = df.join(
+    site_point.rename(
+        columns={"point_id": "site_point_id", "geometry": "site_geometry"}
+    ),
+    on="site",
+)
+ix = df.point_id != df.site_point_id
+df.loc[ix, "point_id"] = df.loc[ix].site_point_id.values
+df.loc[ix, "geometry"] = df.loc[ix].geometry.values
+df["at_grts_center"] = df.point_id.isin(grts_center_ids)
+df = df.drop(columns=["site_point_id", "site_geometry"])
 
 
-df.reset_index(drop=True).to_feather(derived_dir / "merged_raw.feather")
+prev_count = len(df)
 
 
-#### Get dataset names from Data Basin ##############################
-print("Getting dataset names from Data Basin...")
+# restructure list of dataset IDs so they can be aggregated again
+df["dataset"] = df.dataset.apply(",".join)
 
-# Read cache of dataset ID:Name
-dataset_names_file = derived_dir / "dataset_names.feather"
-if dataset_names_file.exists():
-    dataset_names = pd.read_feather(dataset_names_file).set_index("dataset")
-else:
-    dataset_names = pd.DataFrame(columns=["dataset", "dataset_name"]).set_index(
-        "dataset"
+
+# deduplicate the ones not at GRTS center point
+dedup = (
+    df.loc[~df.at_grts_center]
+    .sort_values(
+        by=["point_id", "mic_ht", "night", "presence_only"],
+        ascending=[True, True, True, False],
     )
-
-datasets = df.groupby("dataset").size().reset_index()[["dataset"]].set_index("dataset")
-missing_names = datasets.join(dataset_names)
-missing_names = missing_names.loc[missing_names.dataset_name.isnull()]
-missing_names.dataset_name = missing_names.apply(
-    lambda row: get_dataset_title(row.name), axis=1
+    .groupby(["point_id", "mic_ht", "night", "presence_only"])
+    .agg(
+        {
+            **{c: "max" for c in activity_columns + group_activity_columns},
+            **{
+                c: "first"
+                for c in set(df.columns).difference(
+                    activity_columns
+                    + group_activity_columns
+                    + [
+                        "point_id",
+                        "mic_ht",
+                        "night",
+                        "presence_only",
+                        "dataset",
+                        "name",
+                    ]
+                )
+            },
+            # "dataset": "unique",
+            "dataset": ",".join,
+        }
+    )
+    .reset_index()
 )
-dataset_names = pd.concat(
-    [dataset_names, missing_names], sort=False, ignore_index=False
-).reindex()
-dataset_names.reset_index().to_feather(dataset_names_file)
+
+
+# also deduplicate based on det_name since these may be different original points
+dedup_grts_center = (
+    df.loc[df.at_grts_center]
+    .sort_values(
+        by=["point_id", "mic_ht", "night", "det_name", "presence_only"],
+        ascending=[True, True, True, True, False],
+    )
+    .groupby(["point_id", "det_name", "mic_ht", "night", "presence_only"])
+    .agg(
+        {
+            **{c: "max" for c in activity_columns + group_activity_columns},
+            **{
+                c: "first"
+                for c in set(df.columns).difference(
+                    activity_columns
+                    + group_activity_columns
+                    + [
+                        "point_id",
+                        "det_name",
+                        "mic_ht",
+                        "night",
+                        "presence_only",
+                        "dataset",
+                        "name",
+                    ]
+                )
+            },
+            # "dataset": "unique",
+            "dataset": ",".join,
+        }
+    )
+    .reset_index()
+)
+
+df = gp.GeoDataFrame(
+    pd.concat([dedup, dedup_grts_center], ignore_index=True),
+    geometry="geometry",
+    crs=GEO_CRS,
+)
+
+print(
+    f"Removed {prev_count - len(df):,} likely duplicate records in the same location group (site) / height / night"
+)
+
+# convert back to unique list
+df["dataset"] = df.dataset.apply(lambda x: list(set(x.split(","))))
+
+
+### Save raw merged data
+df.to_feather(derived_dir / "merged_raw.feather")
+
+
+################################################################################
+# Old stuff below!
 
 
 #### Extract site and detector info ############################################
