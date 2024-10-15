@@ -61,6 +61,7 @@ venv.bak/
 node_modules/
 
 /data/source/
+/data/src/
 /data/derived/
 /data/boundaries
 
