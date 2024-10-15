@@ -24,9 +24,7 @@ data_dir.mkdir(exist_ok=True, parents=True)
 
 
 async def download():
-    async with httpx.AsyncClient(
-        timeout=httpx.Timeout(60.0, connect=60.0), http2=True
-    ) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=60.0), http2=True) as client:
         # use refresh token to get fresh access token and user_id
         print("Fetching user access token")
         info = await refresh_auth_token(client, NABAT_REFRESH_TOKEN)
@@ -51,8 +49,6 @@ async def download():
 
         # download stationary counts
         print("Downloading stationary acoustic counts")
-        # TODO: long-term, this may need to be split into multiple requests when
-        # this would yield many records
         records = await get_stationary_acoustic_counts(client, token, project_ids)
         records.to_feather(data_dir / "stationary_acoustic_counts.feather")
 

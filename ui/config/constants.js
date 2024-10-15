@@ -74,10 +74,11 @@ export const SPECIES = {
     sciName: 'Lasionycteris noctivagans',
     commonName: 'Silver-haired Bat',
   },
-  labl: {
-    sciName: 'Lasiurus blossevillii',
-    commonName: 'Western Red Bat',
-  },
+  // NOTE: LABL is outdated taxonomy, will be removed during processing
+  // labl: {
+  //   sciName: 'Lasiurus blossevillii',
+  //   commonName: 'Western Red Bat',
+  // },
   labo: {
     sciName: 'Lasiurus borealis',
     commonName: 'Eastern Red Bat',
@@ -89,6 +90,11 @@ export const SPECIES = {
   laeg: {
     sciName: 'Lasiurus ega',
     commonName: 'Southern Yellow Bat',
+  },
+  // NOTE: LAFR is replacement of LABL
+  lafr: {
+    sciName: 'Lasiurus frantzii',
+    commonName: 'Western Red Bat',
   },
   lain: {
     sciName: 'Lasiurus intermedius',
@@ -233,10 +239,10 @@ export const SPECIES_ID = {
   8: 'euun',
   9: 'haba',
   10: 'idph',
-  11: 'labl',
-  12: 'labo',
-  13: 'laci',
-  14: 'laeg',
+  11: 'labo',
+  12: 'laci',
+  13: 'laeg',
+  14: 'lafr',
   15: 'lain',
   16: 'lano',
   17: 'lase',

@@ -4,7 +4,10 @@ GEO_CRS = "EPSG:4326"
 PROJ_CRS = "EPSG:5070"
 
 DUPLICATE_TOLERANCE = 5  # meters
-
+GRTS_CENTROID_TOLERANCE = 10  # meters
+NABAT_BATAMP_TOLERANCE = (
+    100  # meters, per NABat data prep methods by USFS, any records within 100m of existing location use that location
+)
 
 SPECIES = {
     "anpa": {"SNAME": "Antrozous pallidus", "CNAME": "Pallid Bat"},
@@ -21,10 +24,13 @@ SPECIES = {
     "euun": {"SNAME": "Eumops underwoodi", "CNAME": "Underwood's Bonneted Bat"},
     "idph": {"SNAME": "Idionycteris phyllotis", "CNAME": "Allen's Big-eared Bat"},
     "lano": {"SNAME": "Lasionycteris noctivagans", "CNAME": "Silver-haired Bat"},
-    "labl": {"SNAME": "Lasiurus blossevillii", "CNAME": "Western Red Bat"},
+    # NOTE: LABL is outdated taxonomy, will be removed during processing
+    # "labl": {"SNAME": "Lasiurus blossevillii", "CNAME": "Western Red Bat"},
     "labo": {"SNAME": "Lasiurus borealis", "CNAME": "Eastern Red Bat"},
     "laci": {"SNAME": "Lasiurus cinereus", "CNAME": "Hoary Bat"},
     "laeg": {"SNAME": "Lasiurus ega", "CNAME": "Southern Yellow Bat"},
+    # NOTE: LAFR is replacement of LABL
+    "lafr": {"SNAME": "Lasiurus frantzii", "CNAME": "Western Red Bat"},
     "lain": {"SNAME": "Lasiurus intermedius", "CNAME": "Northern Yellow Bat"},
     "lase": {"SNAME": "Lasiurus seminolus", "CNAME": "Seminole Bat"},
     "laxa": {"SNAME": "Lasiurus xanthinus", "CNAME": "Western Yellow Bat"},
@@ -62,6 +68,7 @@ SPECIES = {
 # Species IDs for shorter reference in data
 # Must have a matching inverted map in JS tier
 # {spp: i for i, spp in enumerate(sorted(SPECIES.keys()))}
+# invert is {v:k for k,v in SPECIES_ID.items()}
 
 SPECIES_ID = {
     "anpa": 0,
@@ -75,10 +82,10 @@ SPECIES_ID = {
     "euun": 8,
     "haba": 9,
     "idph": 10,
-    "labl": 11,
-    "labo": 12,
-    "laci": 13,
-    "laeg": 14,
+    "labo": 11,
+    "laci": 12,
+    "laeg": 13,
+    "lafr": 14,
     "lain": 15,
     "lano": 16,
     "lase": 17,
@@ -115,19 +122,11 @@ SPECIES_ID = {
 # Activity colum
 ACTIVITY_COLUMNS = list(SPECIES.keys())
 
-# these are dropped right now
-GROUP_ACTIVITY_COLUMNS = [
-    "bat",
-    "hif",
-    "lof",
-    "q40k",
-    "q50k",
-    "q25k",
-    "lacitabr",
-    "mycamyyu",
-    "my50",
-    "my40",
-]
+# per direction from Ted on 7/24/2024, drop all other group fields except bat
+# BCW decision on 10/11/2024 to drop use of group activity due to merge with NABat
+# GROUP_ACTIVITY_COLUMNS = [
+#     "bat",
+# ]
 
 
 # metadata fields of detector - take the first value for each site / mic_ht
@@ -145,3 +144,10 @@ DETECTOR_FIELDS = [
     # source_dataset omitted since there may be multiple per detector
     # "contributor",  # omitted since there may be multiple
 ]
+
+
+COUNT_TYPE_DOMAIN = {
+    "a": "activity",
+    "p": "presence-only",
+    "b": "mix of activity & presence only",
+}

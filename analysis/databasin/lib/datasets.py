@@ -1,10 +1,11 @@
 from io import BytesIO
 
-import numpy as np
+import geopandas as gp
 import pandas as pd
 from pyarrow.csv import read_csv
+import shapely
 
-from analysis.constants import ACTIVITY_COLUMNS, GROUP_ACTIVITY_COLUMNS
+from analysis.constants import GEO_CRS, ACTIVITY_COLUMNS
 
 
 def get_dataset_name(client, id):
@@ -62,40 +63,26 @@ def download_dataset(client, id):
         )
     )
 
-    # TODO: taxonomy change: merge LABL & LAFR into LAFR, then drop LABL
-
-    # make sure to add "haba" and "lyse" columns while we are waiting for this to be added to the aggregate dataset
+    # make sure to add "haba" in case it is not already present
     # NOTE: these may get dropped after merge if all datasets are lacking these columns
-    for col in ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS:
+    # NOTE: "bat" is a special group activity column used only to set haba in HI
+    activity_cols = ACTIVITY_COLUMNS + ["bat"]
+    for col in activity_cols:
         if col not in df.columns:
-            df[col] = np.nan
-        df[col] = df[col].astype("Int32")
+            df[col] = pd.NA
+        df[col] = df[col].astype("UInt32")
 
     ### Cleanup and standardize dataset
     # Drop completely null records
-    df = df.dropna(axis=0, how="all", subset=ACTIVITY_COLUMNS + GROUP_ACTIVITY_COLUMNS)
+    df = df.dropna(axis=0, how="all", subset=activity_cols)
 
-    for col in ["lat", "lon"]:
-        df[col] = df[col].astype("float32")
+    df["geometry"] = shapely.points(df.lon.values, df.lat.values)
+    df = gp.GeoDataFrame(df, geometry="geometry", crs=GEO_CRS)
 
     # night is automatically parsed to datetime by pyarrow when possible, extract other fields
     if df.night.dtype == object:
-        df["night"] = pd.to_datetime(
-            df.night.astype(str).apply(lambda d: d.split(" ")[0])
-        )
+        df["night"] = pd.to_datetime(df.night.astype(str).apply(lambda d: d.split(" ")[0]))
     df["night"] = df.night.astype("datetime64[s]")
-
-    df["year"] = df.night.dt.year.astype("uint16")
-    df["month"] = df.night.dt.month.astype("uint8")
-
-    # Since leap years skew the time of year calculations, standardize everything onto a single non-leap year calendar (1900)
-    no_leap_year = df.night.apply(
-        lambda dt: dt.replace(day=28, year=1900)
-        if dt.month == 2 and dt.day == 29
-        else dt.replace(year=1900)
-    )
-    df["week"] = no_leap_year.apply(lambda d: d.week).astype("uint8")
-    df["dayofyear"] = no_leap_year.dt.dayofyear.astype("uint16")
 
     # Convert height units to meters
     ix = df.mic_ht_units == "feet"
@@ -132,6 +119,8 @@ def download_dataset(client, id):
             "mic_ht_units",
             "first_name",
             "last_name",
+            "lat",
+            "lon",
         ]
     )
 
@@ -149,7 +138,7 @@ def download_datasets(client, dataset_ids):
 
     Returns
     -------
-    DataFrame
+    GeoDataFrame
     """
     merged = None
     for id in dataset_ids:
@@ -160,19 +149,14 @@ def download_datasets(client, dataset_ids):
         if merged is None:
             merged = df
         else:
-            merged = pd.concat([merged, df], ignore_index=True, sort=True)
+            merged = pd.concat([merged, df], ignore_index=True)
 
     df = merged.reset_index(drop=True)
-
-    # drop columns with completely missing data.
-    df = df.dropna(axis=1, how="all")
 
     # fetch all source dataset names
     print("Getting source dataset names")
     dataset_names = pd.DataFrame({"id": df.dataset.unique()})
-    dataset_names["name"] = dataset_names.id.apply(
-        lambda id: get_dataset_name(client, id)
-    )
+    dataset_names["dataset_name"] = dataset_names.id.apply(lambda id: get_dataset_name(client, id))
 
     df = df.join(dataset_names.set_index("id"), on="dataset")
 

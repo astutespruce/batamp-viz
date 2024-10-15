@@ -1,10 +1,17 @@
-def clean(df):
+import shapely
+
+from analysis.constants import ACTIVITY_COLUMNS
+
+
+def clean_batamp(df, admin_df):
     """Clean combined activity and presence-only acoustic records downloaded
     from BatAMP (DataBasin).
 
     Parameters
     ----------
     df : GeoDataFrame
+    admin_df : GeoDataFrame
+        contains state boundaries
 
     Returns
     -------
@@ -27,13 +34,8 @@ def clean(df):
                 "da57f8f1763f4a7c8a35461421265666",
             ]
         ),
-        "presence_only",
-    ] = False
-
-    # create site / detector name
-    df["det_name"] = df.site_id
-    ix = df.det_id != ""
-    df.loc[ix, "det_name"] = df.loc[ix].det_name + " - " + df.loc[ix].det_id
+        "count_type",
+    ] = "a"
 
     # Cleanup call IDs for known issues
     for col in ["call_id_1", "call_id_2"]:
@@ -44,18 +46,12 @@ def clean(df):
             .str.replace("Experience", "experience")
             .str.replace("Previous", "Personal")
             .str.replace("Filters", "filters")
-            .str.replace(
-                "Other Custom Quantitative Method", "Other custom quantitative method"
-            )
-            .str.replace(
-                "Visual Comparison to Call Library", "Visual comparison to call library"
-            )
+            .str.replace("Other Custom Quantitative Method", "Other custom quantitative method")
+            .str.replace("Visual Comparison to Call Library", "Visual comparison to call library")
         )
 
     # Coalesce call ids into single comma-delimited field
-    df["call_id"] = df[["call_id_1", "call_id_2"]].apply(
-        lambda row: ", ".join([v for v in row if v]), axis=1
-    )
+    df["call_id"] = df[["call_id_1", "call_id_2"]].apply(lambda row: ", ".join([v for v in row if v]), axis=1)
 
     ### Contributor name fixes
     df["contributor"] = (
@@ -79,16 +75,16 @@ def clean(df):
         .replace("Bryce Maxell", "Montana NHP")
     )
 
-    df["det_mfg"] = df.det_mfg.replace("Sonobat", "SonoBat").replace(
-        "WILDLIFE ACOUSTICS", "Wildlife Acoustics"
-    )
+    df["det_mfg"] = df.det_mfg.replace("Sonobat", "SonoBat").replace("WILDLIFE ACOUSTICS", "Wildlife Acoustics")
 
+    # strip manufacturer because it is merged in from above
     df["det_model"] = (
         df.det_model.str.replace("SM4BAT-FS", "SM4Bat-FS", case=False, regex=False)
         .str.replace("SM4BAT-ZC", "SM4Bat-ZC", case=False, regex=False)
-        .replace("SM2BAT", "SM2Bat")
-        .replace("SM3BAT", "SM3Bat")
+        .str.replace("SM2BAT", "SM2Bat", case=False, regex=False)
+        .str.replace("SM3BAT", "SM3Bat", case=False, regex=False)
         .replace("SM2", "SM2Bat")
+        .replace("SM4", "SM4Bat")
         .replace("EMT2", "Echo Meter Touch 2")
         .replace("EMT2-Pro", "Echo Meter Touch 2 Pro")
         .replace("SonobatLive", "SonoBat Live")
@@ -96,9 +92,7 @@ def clean(df):
         .replace("Echometer Touch 1 (EMT1)", "Echometer Touch 1")
         .replace("Echometer Touch 2 (EMT2)", "Echometer Touch 2")
         .replace("MINI BAT", "Song Meter Mini Bat")
-        .str.replace(
-            "SONG Meter MINI BAT", "Song Meter Mini Bat", case=False, regex=False
-        )
+        .str.replace("SONG Meter MINI BAT", "Song Meter Mini Bat", case=False, regex=False)
         .replace("MINI", "Song Meter Mini Bat")
         .replace("MINIBAT", "Song Meter Mini Bat")
         .replace("SMMINI-BAT", "Song Meter Mini Bat")
@@ -110,6 +104,19 @@ def clean(df):
         .str.replace("SWIFT", "Swift", case=False, regex=False)
     )
 
+    # combine mfg and model
+    df["det_type"] = df[["det_mfg", "det_model"]].apply(
+        lambda row: f"{row.det_mfg} {row.det_model}" if row.det_mfg not in row.det_model else row.det_model,
+        axis=1,
+    )
+
+    # fix incorrect combinations
+    df["det_type"] = (
+        df.det_type.replace("Anabat SM2Bat", "Wildlife Acoustics SM2Bat")
+        .replace("SonoBat SM3Bat", "Wildlife Acoustics SM3Bat")
+        .replace("SonoBat Song Meter Mini Bat", "Wildlife Acoustics Song Meter Mini Bat")
+    )
+
     df["mic_type"] = (
         df.mic_type.replace("Hi Mic", "Hi-mic")
         .replace("Hi-Mic", "Hi-mic")
@@ -119,6 +126,54 @@ def clean(df):
         .replace("Wildlife Acoustics SMX-U1", "SMX-U1")
     )
 
-    df = df.drop(columns=["call_id_1", "call_id_2", "site_id", "det_id"])
+    # add other date-related columns
+    df["year"] = df.night.dt.year.astype("uint16")
+    df["month"] = df.night.dt.month.astype("uint8")
+
+    # Since leap years skew the time of year calculations, standardize everything onto a single non-leap year calendar (1900)
+    no_leap_year = df.night.apply(
+        lambda dt: dt.replace(day=28, year=1900) if dt.month == 2 and dt.day == 29 else dt.replace(year=1900)
+    )
+    df["week"] = no_leap_year.apply(lambda d: d.week).astype("uint8")
+    df["dayofyear"] = no_leap_year.dt.dayofyear.astype("uint16")
+
+    ### Taxonomy cleanup
+    # taxonomy change: merge LABL & LAFR into LAFR, then drop LABL
+    if "lafr" in df.columns:
+        df["lafr"] = df[["labl", "lafr"]].max(axis=1)
+    else:
+        df["lafr"] = df.labl.values
+
+    # mark any bat detections in Hawaii as HABA (only species present)
+    ix = df.index.isin(
+        shapely.STRtree(df.geometry.values).query(
+            admin_df.loc[admin_df.admin1_name == "Hawaii"].geometry.values[0],
+            predicate="intersects",
+        )
+    )
+    df.loc[ix, "haba"] = df.loc[ix, "bat"]
+
+    df = df[
+        [
+            "dataset",
+            "dataset_name",
+            "contributor",
+            "site_id",
+            "night",
+            "year",
+            "month",
+            "week",
+            "dayofyear",
+            "mic_ht",
+            "mic_type",
+            "refl_type",
+            "wthr_prof",
+            "call_id",
+            "det_type",
+            "count_type",
+            "geometry",
+        ]
+        + ACTIVITY_COLUMNS
+    ]
 
     return df
