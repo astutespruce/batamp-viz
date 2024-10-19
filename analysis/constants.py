@@ -5,9 +5,8 @@ PROJ_CRS = "EPSG:5070"
 
 DUPLICATE_TOLERANCE = 5  # meters
 GRTS_CENTROID_TOLERANCE = 10  # meters
-NABAT_BATAMP_TOLERANCE = (
-    100  # meters, per NABat data prep methods by USFS, any records within 100m of existing location use that location
-)
+# meters, per NABat data prep methods by USFS, any records within 100m of existing location use that location
+NABAT_TOLERANCE = 100
 
 SPECIES = {
     "anpa": {"SNAME": "Antrozous pallidus", "CNAME": "Pallid Bat"},
@@ -149,5 +148,5 @@ DETECTOR_FIELDS = [
 COUNT_TYPE_DOMAIN = {
     "a": "activity",
     "p": "presence-only",
-    "b": "mix of activity & presence only",
+    "m": "mix of activity & presence only",
 }

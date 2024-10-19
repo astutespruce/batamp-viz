@@ -26,6 +26,9 @@ def clean_nabat(df):
     if (df.species_code == "labl").any():
         raise ValueError("Found LABL present in NABat data; this species needs to be re-aliased to LAFR")
 
+    # round mic_ht to 2 decimals
+    df["mic_ht"] = df.mic_ht.round(2)
+
     # there are occasionally duplicates by species / night / height / event geometry;
     # these appear to have been uploaded multiple times
     df = (
@@ -77,6 +80,21 @@ def clean_nabat(df):
         .reset_index()
     )
     df = gp.GeoDataFrame(df, geometry="geometry", crs=GEO_CRS)
+
+    ### clean site name
+    ix = df.site_id.str.startswith("_")
+    df.loc[ix, "site_id"] = "CONUS" + df.loc[ix].site_id
+    # fixes are based on varying name at a given location
+    df["site_id"] = (
+        df.site_id.str.replace("_", " ", regex=False)
+        .replace("HBNWR Lanpher", "HBNWR Lanphere")
+        .replace("Callda", "Calida")
+        .replace("PinePoint", "Pine Point")
+        .replace("HighMountain", "High Mountain")
+        .replace("Twin Lake", "Twin Lakes")
+        .replace("DeerLake", "Deer Lake")
+        .replace("Albee Albee", "Humboldt Redwoods Albee")
+    )
 
     ### Standardize fields to align with BatAMP values
     # align software to call_id values

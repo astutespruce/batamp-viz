@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 import shapely
 
 from analysis.constants import ACTIVITY_COLUMNS
@@ -36,6 +38,36 @@ def clean_batamp(df, admin_df):
         ),
         "count_type",
     ] = "a"
+
+    # Cleanup site id
+    ix = df.site_id.str.startswith("_")
+    df.loc[ix, "site_id"] = "CONUS" + df.loc[ix].site_id
+    df["site_id"] = (
+        df.site_id.str.replace("_", " ", regex=False)
+        .replace("Six Rivers NF", "Six Rivers National Forest")
+        .replace("Red Hills One", "Red Hills 1")
+        .replace("Shasta Trinity National Forest", "Shasta-Trinity National Forest")
+        .replace("Taku", "Taku River")
+        .replace("Switzer", "Switzer Creek")
+        .replace("Montana", "Montana Creek")
+        .replace("Windfall", "Windfall Lake")
+        .replace("Peterson", "Peterson Creek")
+        .replace("Madsen", "Madsen Apartments")
+        .replace("Eagle Trail", "Eagle River Trail")
+        .replace("Baranof", "Baranof Warm Springs")
+        .replace("Cowee", "Cowee Meadow")
+        .replace("Fort Churchill State Pk.", "Fort Churchill State Park")
+        .replace("KealaKekua", "Kealakekua")
+        .replace("WSMR", "White Sands Missile Range")
+        .replace("Chequamegon Nicolet National Forest", "Chequamegon-Nicolet National Forest")
+        .replace("Minnetonka", "Minnetonka Cave")
+        .replace("LOSARR", "Los Arroyos del Oeste")
+        .replace("Darcus", "Vaseux Lakeshore")
+        .replace("VaseuxLakeshore", "Vaseux Lakeshore")
+    )
+    # strip year from Stantec offshore data
+    ix = df.site_id.str.startswith("Stantec Offshore")
+    df.loc[ix, "site_id"] = "Stantec Offshore"
 
     # Cleanup call IDs for known issues
     for col in ["call_id_1", "call_id_2"]:
@@ -153,6 +185,41 @@ def clean_batamp(df, admin_df):
     )
     df.loc[ix, "haba"] = df.loc[ix, "bat"]
 
+    # round mic_ht to 2 decimals
+    df["mic_ht"] = df.mic_ht.round(2)
+
+    ### Fix mic_ht issues
+    # fix variable mic_ht for MT NHP; it varies between 3 and 4 for 2013 and
+    # 2014 but is 3 for all subsequent years
+    df.loc[df.contributor == "Montana NHP", "mic_ht"] = np.float32(3)
+
+    # fix mic_ht that is the result of auto-increment copy / paste in Excel
+    # TEMP: uncomment the following to review potential issues manually
+    # s = pd.DataFrame(df.groupby("dataset").mic_ht.unique().apply(lambda x: sorted(x.tolist())))
+    # s["num"] = s.mic_ht.apply(len)
+    # s["min_ht"] = s.mic_ht.apply(min)
+    # s["max_ht"] = s.mic_ht.apply(max)
+    # s = s[s.num > 2]
+    # s.to_csv("/tmp/check.csv")
+
+    df.loc[df.dataset == "457eba95878349f9bfdfc1385184f194", "mic_ht"] = np.float32(2.5)
+    df.loc[
+        (df.dataset == "4826c07604084155a80b607d97077160") & (df.site_id == "White Mountain National Forest"), "mic_ht"
+    ] = np.float32(3.0)
+    df.loc[df.dataset == "d4cce5c5faed441baf99ec27f45b05c9", "mic_ht"] = np.float32(3.0)
+    df.loc[df.dataset == "5f7f5ed62bbe477cb7ecac585441f96e", "mic_ht"] = np.float32(2.0)
+    df.loc[(df.dataset == "8b73492b228e4cd89acc856dea5d2e5e") & (df.site_id == "Robertson"), "mic_ht"] = np.float32(2.0)
+    df.loc[
+        (df.dataset == "dc5d4686e8824594899a593deeb24467") & (df.site_id == "Pinion Range Aspen Exclosure"), "mic_ht"
+    ] = np.float32(3.5)
+    df.loc[
+        (df.dataset == "4826c07604084155a80b607d97077160") & (df.site_id == "White Mountain National Forest"), "mic_ht"
+    ] = np.float32(3.0)
+    df.loc[(df.dataset == "bb31cf5cfed7486bb1fb855bf8d4c29f") & (df.det_id == "5622_24S07_two"), "mic_ht"] = np.float32(
+        1.8
+    )
+
+    # select out the columns used in this pipeline
     df = df[
         [
             "dataset",

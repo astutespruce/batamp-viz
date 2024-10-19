@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import warnings
 
 import pandas as pd
 import geopandas as gp
@@ -16,13 +17,15 @@ from analysis.constants import (
     PROJ_CRS,
     DUPLICATE_TOLERANCE,
     GRTS_CENTROID_TOLERANCE,
-    NABAT_BATAMP_TOLERANCE,
+    NABAT_TOLERANCE,
 )
 from analysis.lib.graph import DirectedGraph
 from analysis.databasin.lib.clean import clean_batamp
 from analysis.nabat.lib.clean import clean_nabat
 from analysis.util import camelcase
 
+
+pd.set_option("future.no_silent_downcasting", True)
 
 data_dir = Path("data")
 src_dir = data_dir / "source"
@@ -108,7 +111,7 @@ nabat["dataset"] = nabat.dataset.astype(str)
 for col in ACTIVITY_COLUMNS:
     if col not in nabat.columns:
         nabat[col] = np.nan
-    nabat[col] = nabat[col].astype("UInt32")
+    nabat[col] = nabat[col].astype("Int32")
 
 # fill missing columns specific to BatAMP
 for col in ["wthr_prof", "refl_type"]:
@@ -126,6 +129,7 @@ df = pd.concat([batamp, nabat], ignore_index=True).sort_values(
     by=["geometry", "mic_ht", "night", "source", "count_type"],
     ascending=[True, True, True, False, True],
 )
+
 # save record ID to be able to remove individual records
 df["record_id"] = df.index.values.astype("uint")
 
@@ -133,9 +137,18 @@ df["record_id"] = df.index.values.astype("uint")
 # drop any activity columns that are completely null
 df = df.dropna(axis=1, how="all")
 activity_columns = [c for c in ACTIVITY_COLUMNS if c in df.columns]
-# use signed nullable int type for activity columns because we use count = -1 during dedup
+
+# count species present and surveyed
+df["spp_present"] = (df[activity_columns] > 0).sum(axis=1).astype("uint8")
+df["spp_surveyed"] = (df[activity_columns] >= 0).sum(axis=1).astype("uint8")
+df["spp_detections"] = df[activity_columns].sum(axis=1).astype("uint32")
+
+# drop records that did not survey any species; these are not useful
+df = df.loc[df.spp_surveyed > 0].reset_index(drop=True)
+
+# IMPORTANT: fill null counts with -1 for deduplication, then reset to null ater
 for col in activity_columns:
-    df[col] = df[col].astype("Int32")
+    df[col] = df[col].astype("Int32").fillna(-1)
 
 # save lookup of dataset names to join back later
 dataset_names = df[["dataset", "dataset_name"]].groupby("dataset").dataset_name.first()
@@ -144,8 +157,12 @@ dataset_names = df[["dataset", "dataset_name"]].groupby("dataset").dataset_name.
 # NOTE: NABAt and BatAMP will have unique value ranges
 df = df.drop(columns=["dataset_name"])
 
-### assign a point ID for easier joins
+### Extract unique points and associated attributes
 points = gp.GeoDataFrame(geometry=df.geometry.unique(), crs=df.crs)
+# convert to CONUS NAD83 Albers for spatial analysis
+points["pt_proj"] = points.geometry.to_crs(PROJ_CRS)
+
+# assign a point ID for easier joins
 # use 5 decimal places (~1.11 mm at equator) longitude / latitude, padded to 8 chars, no sign
 points["point_id"] = pd.Series(
     np.abs((shapely.get_x(points.geometry.values) * 1e5).round()).astype("uint").astype("str")
@@ -153,23 +170,266 @@ points["point_id"] = pd.Series(
     np.abs((shapely.get_y(points.geometry.values) * 1e5).round()).astype("uint").astype("str")
 ).str.pad(width=8, side="left", fillchar="0")
 
-# convert to CONUS NAD83 Albers for spatial analysis
-points["pt_proj"] = points.geometry.to_crs(PROJ_CRS)
-df = df.join(points.set_index("geometry")[["point_id", "pt_proj"]], on="geometry")
 
-
-### Mark points that are near the center of their GRTS cells
-# Some unique real-world coordinates are fuzzed to be near the center of GRTS cells;
-# do not deduplicate these against each other
+# mark points that are near the center of their GRTS cells
+# NOTE: some unique real-world coordinates are fuzzed to be near the center of
+# GRTS cells; do not deduplicate these against each other
 # NOTE: 10m is arbitrary but seems reasonable to capture whether or not points are at the center
 left, right = shapely.STRtree(grts.center.to_crs(PROJ_CRS).values).query(
     points.pt_proj.values, predicate="dwithin", distance=GRTS_CENTROID_TOLERANCE
 )
 grts_center_ids = points.point_id.take(np.unique(left))
-df["at_grts_center"] = df.point_id.isin(grts_center_ids)
+points["at_grts_center"] = points.point_id.isin(grts_center_ids)
+
+# find spatial clusters of points
+left, right = shapely.STRtree(points.pt_proj.values).query(
+    points.pt_proj.geometry.values, predicate="dwithin", distance=DUPLICATE_TOLERANCE
+)
+# NOTE: the above results return symmetric pairs and self-joins, which allows
+# the directed graph to work properly in this case; we then drop any connections
+# between points that are at GRTS cell center to prvent them from clustering together
+# (assume original points are best way to preserve what were separate detectors)
+pairs = pd.DataFrame(
+    {
+        "left": left,
+        "left_grts_center": points.at_grts_center.values.take(left),
+        "right": right,
+        "right_grts_center": points.at_grts_center.values.take(right),
+    }
+)
+pairs = pairs.loc[(pairs.left == pairs.right) | (~(pairs.left_grts_center | pairs.right_grts_center))]
+
+g = DirectedGraph(pairs.left.values, pairs.right.values)
+groups, indexes = g.flat_components()
+clusters = pd.Series(groups, name="cluster_id", index=points.index.values.take(indexes))
+points = points.join(clusters)
 
 
-### assign a unique detector position ID, based on point_id, mic_ht, and a
+# join back to records
+df = df.join(points.set_index("geometry")[["point_id", "pt_proj", "at_grts_center", "cluster_id"]], on="geometry")
+
+# fix missing site_id based on location (match other records at same point)
+df.loc[df.point_id == "1044130403221820", "site_id"] = "CCLHTG"
+
+
+################################################################################
+### fix mic_ht errors
+################################################################################
+# NOTE: this includes fixes to points that were clustered together below, based
+# on their original point_id
+
+vetted = [
+    # FITR uses 2 detector models at different heights
+    "1396800005952000",
+    # Coconino National Forest uses 2 detectors at different heights
+    "1120749203486416",
+    # Neighborhood appears to use 2 different detectors / mic heights
+    "0823408003478801",
+    # eldorado appears to use 2 different mic heights
+    "1202800003849000",
+    # Pinion Range appears to use 2 different mic heights
+    "1159820504053542",
+]
+
+# Foorp1 varies slightly in NABat (likely data entry issue); standardize and update BatAMP nearby point to match
+df.loc[df.point_id.isin(["1321038905628338", "1321039005628338"]), "mic_ht"] = np.float32(2.5)
+# Make Uinta-Wasatch-Cache NF match NABat
+df.loc[(df.source == "batamp") & (df.point_id == "1116926304162809") & (df.mic_ht > 3), "mic_ht"] = np.float32(3.0)
+# Make Uinta-Wasatch-Cache National Forest match NABat
+df.loc[(df.source == "batamp") & (df.point_id == "1116149704167415") & (df.mic_ht > 3), "mic_ht"] = np.float32(3.70)
+# Make Green Mountain National Forest match NABat
+df.loc[(df.source == "batamp") & (df.point_id == "0729673604399232"), "mic_ht"] = np.float32(4.0)
+# Make Sierra National Forest match NABAt
+df.loc[(df.source == "batamp") & (df.point_id == "1193302203746870"), "mic_ht"] = np.float32(5.0)
+# Make Klamath National Forest match NABat
+df.loc[(df.source == "batamp") & (df.point_id.isin(["1234671204180024", "1234708904174448"])), "mic_ht"] = np.float32(
+    3.05
+)
+# Make Shawnee National Forest match NABat
+df.loc[(df.source == "batamp") & (df.point_id == "0888810703748946"), "mic_ht"] = np.float32(3.0)
+# Make Green Mountain National Forest match NABat
+df.loc[(df.source == "batamp") & (df.point_id == "0730318504391756"), "mic_ht"] = np.float32(4.0)
+# Make San Bernardino National Forest match NABat
+df.loc[(df.source == "batamp") & (df.point_id == "1169480003399020"), "mic_ht"] = np.float32(3.40)
+df.loc[(df.source == "batamp") & (df.point_id == "1169490003399610"), "mic_ht"] = np.float32(3.38)
+# Make Green Mountain National Forest match NABat
+df.loc[(df.source == "batamp") & (df.point_id == "0729673304399232"), "mic_ht"] = np.float32(4.0)
+# Match NABat
+df.loc[(df.source == "batamp") & df.point_id.isin(["1240120804080816", "1240535804083373"]), "mic_ht"] = np.float32(3.0)
+
+
+# find any instances of points where mic_ht varies by location / night
+s = pd.DataFrame(
+    df.loc[~df.point_id.isin(vetted)].groupby(["point_id", "night"]).mic_ht.unique().apply(lambda x: sorted(x.tolist()))
+)
+s["num"] = s.mic_ht.apply(len)
+s = s.loc[(s.num > 1)].sort_values("num")
+s["increment"] = s.mic_ht.apply(lambda x: (np.array(x)[1:] - np.array(x)[:-1]).min())
+# any with a large increment are likely intentional
+s = s.loc[s.increment < 2]
+ids = s.reset_index().point_id.unique()
+
+# use nabat height anywhere that it is available for a given point
+tmp = pd.DataFrame(
+    df.loc[(df.source == "nabat") & df.point_id.isin(ids)]
+    .groupby(["point_id", "night"])
+    .mic_ht.unique()
+    .apply(lambda x: sorted(x.tolist()))
+    .sort_values()
+)
+tmp["num"] = tmp.mic_ht.apply(len)
+# any with multiple heights in NABat are going to require special handling
+tmp = tmp.loc[tmp.mic_ht.apply(len) == 1].copy()
+tmp["nabat_ht"] = tmp.mic_ht.apply(lambda x: x[0])
+s = s.join(tmp.nabat_ht)
+
+fixes = s.loc[(s.num == 2) & (s.nabat_ht.notnull())].nabat_ht
+df = df.set_index(["point_id", "night"]).join(fixes)
+ix = (df.source == "batamp") & (df.nabat_ht.notnull())
+df.loc[ix, "mic_ht"] = df.loc[ix].nabat_ht.values.astype("float32")
+df = df.drop(columns=["nabat_ht"]).reset_index()
+
+s = s.loc[~s.index.isin(fixes.index)]
+
+# # DEBUG: these were manually identified and reviewed by using the following
+# s.to_csv("/tmp/check.csv")
+
+if len(s):
+    warnings.warn("WARNING: found unhandled variable height for some locations")
+
+
+################################################################################
+### Assign unique position and observation IDs
+################################################################################
+
+df = df.sort_values(
+    ["cluster_id", "source", "night", "spp_present", "spp_surveyed", "count_type", "spp_detections"],
+    ascending=[True, False, True, False, False, True, False],
+)
+
+# reassign all clusters to the first night's location, preferring NABat
+cluster_rep_point = df.groupby("cluster_id").agg({"point_id": "first", "geometry": "first", "pt_proj": "first"})
+
+for col in ["point_id", "geometry", "pt_proj"]:
+    df[col] = df.cluster_id.map(cluster_rep_point[col])
+
+df = df.drop(columns=["cluster_id"])
+
+# assign a observation ID to make it easier to reassign records
+df["obs_id"] = df.point_id + "@" + df.mic_ht.astype("str") + "|" + df.night.astype("str")
+
+### Find the nearest NABat point within 100m of BatAMP point and matching night and height
+# exclude any that have already been matched to NABat or at GRTS center
+nabat_pts = (
+    df.loc[(df.source == "nabat") & (~df.at_grts_center)]
+    .groupby("obs_id")
+    .agg({c: "first" for c in ["point_id", "mic_ht", "night", "pt_proj"]})
+    .reset_index()
+)
+batamp_pts = (
+    df.loc[(df.source == "batamp") & (~df.at_grts_center) & ~df.obs_id.isin(nabat_pts.obs_id.unique())]
+    .groupby("obs_id")
+    .agg({c: "first" for c in ["point_id", "mic_ht", "night", "pt_proj"]})
+    .reset_index()
+)
+
+left, right = shapely.STRtree(nabat_pts.pt_proj.values).query(
+    batamp_pts.pt_proj.values, predicate="dwithin", distance=100
+)
+pairs = pd.DataFrame(
+    {
+        "batamp_obs_id": batamp_pts.obs_id.values.take(left),
+        "batamp_pt_id": batamp_pts.point_id.values.take(left),
+        "batamp_pt": batamp_pts.pt_proj.values.take(left),
+        "batamp_ht": batamp_pts.mic_ht.values.take(left),
+        "batamp_night": batamp_pts.night.values.take(left),
+        "nabat_obs_id": nabat_pts.obs_id.values.take(right),
+        "nabat_point_id": nabat_pts.point_id.values.take(right),
+        "nabat_pt": nabat_pts.pt_proj.values.take(right),
+        "nabat_ht": nabat_pts.mic_ht.values.take(right),
+        "nabat_night": nabat_pts.night.values.take(right),
+    }
+)
+
+pairs = pairs.loc[
+    (pairs.batamp_night == pairs.nabat_night) & ((pairs.batamp_ht - pairs.nabat_ht).abs() <= 1)
+].reset_index(drop=True)
+pairs["dist"] = shapely.distance(pairs.batamp_pt.values, pairs.nabat_pt.values)
+pairs["ht_diff"] = (pairs.batamp_ht - pairs.nabat_ht).abs()
+
+if (pairs.dist == 0).any():
+    warnings.warn(
+        "WARNING: found unexpected varying height for points that were clustered together; these need manual review"
+    )
+
+pairs = pairs.loc[pairs.dist > 0].sort_values(["batamp_pt_id", "ht_diff", "dist"])
+
+
+if (pairs.ht_diff > 0).any():
+    warnings.warn(
+        "WARNING: found similar but non-identical heights for BatAMP points near NABat points; these need manual review"
+    )
+
+# for those with exactly same height, update the BatAMP coordinate to match NABat
+loc_fixes = pairs.loc[pairs.ht_diff == 0].groupby("batamp_obs_id")[["nabat_obs_id", "nabat_point_id"]].first()
+ix = df.obs_id.isin(loc_fixes.index.values)
+df.loc[ix, "point_id"] = df.loc[ix].obs_id.map(loc_fixes.nabat_point_id)
+df.loc[ix, "obs_id"] = df.loc[ix].obs_id.map(loc_fixes.nabat_obs_id)
+
+
+### drop all duplicates at (cleaned) points where activity values are the same
+# NOTE: this intentionally allows what could be separate original points (fuzzed to GRTS center)
+# to be deduplicated; thre is no way to tell them apart (not unique by site_id as of 10/17/2024)
+prev_count = len(df)
+df = df.drop_duplicates(subset=["source", "point_id", "night", "mic_ht"] + activity_columns)
+print(f"Dropped {prev_count - len(df):,} duplicate records with same source, location, night, activity values")
+
+### for a given point / height, allow NABat to claim it if it has all the nights
+# present in BatAMP (regardless of activity values); otherwise allow BatAMP to claim it
+src_pt_nights = (
+    df.groupby(["source", "point_id", "mic_ht"]).night.unique().apply(lambda x: set(sorted(x.tolist()))).reset_index()
+)
+src_pt_nights = src_pt_nights.pivot(index=["point_id", "mic_ht"], columns=["source"], values=["night"])
+src_pt_nights.columns = ["batamp", "nabat"]
+for col in src_pt_nights.columns:
+    src_pt_nights[col] = src_pt_nights[col].apply(lambda x: x if not pd.isnull(x) else set())
+src_pt_nights["batamp_nights"] = src_pt_nights.batamp.apply(lambda x: len(x))
+src_pt_nights["nabat_nights"] = src_pt_nights.nabat.apply(lambda x: len(x))
+src_pt_nights["nabat_missing_nights"] = src_pt_nights.apply(lambda row: row.batamp.difference(row.nabat), axis=1).apply(
+    len
+)
+src_pt_nights["batamp_missing_nights"] = src_pt_nights.apply(
+    lambda row: row.nabat.difference(row.batamp), axis=1
+).apply(len)
+# use NABat for this point if it has all the nights from BatAMP
+src_pt_nights["use_nabat"] = (src_pt_nights.nabat_missing_nights == 0) & (src_pt_nights.nabat_nights > 0)
+# otherwise use BatAMP
+src_pt_nights["use_batamp"] = (
+    (~src_pt_nights.use_nabat) & (src_pt_nights.batamp_missing_nights == 0) & (src_pt_nights.batamp_nights > 0)
+)
+
+# FIXME: need to handle use nabat or use batamp above
+df = df.set_index(["point_id", "mic_ht"]).join(src_pt_nights.use_nabat).reset_index()
+df["use_nabat"] = df.use_nabat.fillna(False)
+print(
+    f"dropping {src_pt_nights.use_nabat.sum():,} sites ({((df.source=='batamp') & df.use_nabat).sum():,} records) from BatAMP that are fully represented within NABat"
+)
+df = df.loc[~((df.source == "batamp") & (df.use_nabat))].drop(columns=["use_nabat"]).reset_index(drop=True)
+
+
+# TODO: aggregate multiple records by source to take highest activity values
+
+
+tmp = df.groupby(["point_id", "night", "mic_ht"] + activity_columns).size().sort_values()
+
+
+# assign a mic height class for purposes of deduplicating the same / close together
+# detectors at a given location
+bins = [-1, 0, 5, 10, 20, 30, df.mic_ht.max() + 1]
+df["mic_ht_class"] = np.asarray(pd.cut(df.mic_ht, bins, right=False, labels=np.arange(-1, len(bins) - 2)))
+
+
+# assign a unique detector position ID, based on point_id, mic_ht, and a
 # unique observation ID, based on that plus night.
 # For those at GRTS center, this also brings in site_id to make them unique
 # between datasets coalesced to the GRTS center
@@ -203,8 +463,6 @@ tmp = (
     .set_index("obs_id")
     .join(activity_records, rsuffix="_activity")
 )
-# fill NA values to enable comparison
-tmp[activity_columns + ref_cols] = tmp[activity_columns + ref_cols].fillna(-1)
 
 # mark any where the presence counts are less than or the same as the activity columns
 tmp["dup"] = tmp.apply(
@@ -215,9 +473,45 @@ dup_ids = tmp.loc[tmp.dup].record_id.unique()
 df = df.loc[~df.record_id.isin(dup_ids)].copy()
 print(f"Dropped {len(dup_ids):,} presence-only records that are superseded by activity records")
 
+### Coalesce multiple records at the same point into their max activity types
+# NOTE: we are not merging sources or count types together in this step
+df = gp.GeoDataFrame(
+    df.groupby(["source", "obs_id", "count_type"])
+    .agg(
+        {
+            "record_id": "count",
+            **{c: "max" for c in activity_columns},
+            **{
+                c: "first"
+                for c in df.columns
+                if c
+                not in set(
+                    [
+                        "source",
+                        "obs_id",
+                        "count_type",
+                        "record_id",
+                    ]
+                    + activity_columns
+                )
+            },
+        }
+    )
+    .rename(columns={"record_id": "num_orig_records"})
+    .reset_index(),
+    crs=df.crs,
+)
 
-# FIXME: stopped here
 
+# Assign new record_id
+# IMPORTANT: don't use this to try and extract data using the original record_id
+df["record_id"] = df.index.values.astype("uint")
+
+
+######################################################## FIXME: dedup each dataset individually
+
+
+################################################################ END FIXME: ####
 
 ### Find any BatAMP records within NABAT_BATAMP_TOLERANCE of NABat points;
 # these are potential duplicates
@@ -313,13 +607,13 @@ pairs = pairs.loc[(pairs.nabat_night == pairs.batamp_night) & (pairs.nabat_mic_h
 # FIXME: strip this out, don't do it.
 ### Copy group activity from BatAMP record to matching NABat records to preserve the counts
 # (these are not shown at individual detectors, only overall stats)
-batamp_group_cols = [f"batamp_{col}" for col in group_activity_columns]
-tmp = pairs.loc[pairs.dup, ["nabat_record_id"] + batamp_group_cols].set_index("nabat_record_id")
-df = df.join(tmp, on="record_id")
-ix = df[batamp_group_cols].notnull().all(axis=1)
-df.loc[ix, group_activity_columns] = df.loc[ix, batamp_group_cols].values
+# batamp_group_cols = [f"batamp_{col}" for col in group_activity_columns]
+# tmp = pairs.loc[pairs.dup, ["nabat_record_id"] + batamp_group_cols].set_index("nabat_record_id")
+# df = df.join(tmp, on="record_id")
+# ix = df[batamp_group_cols].notnull().all(axis=1)
+# df.loc[ix, group_activity_columns] = df.loc[ix, batamp_group_cols].values
 
-df = df.drop(columns=batamp_group_cols)
+# df = df.drop(columns=batamp_group_cols)
 
 # drop BatAMP records superseded by NABat
 drop_ids = pairs.loc[pairs.dup].batamp_record_id.values
@@ -372,11 +666,8 @@ df = gp.GeoDataFrame(
     grouped.agg(
         {
             **{c: "unique" for c in meta_cols},
-            **{c: "max" for c in activity_columns + group_activity_columns},
-            **{
-                c: "first"
-                for c in set(df.columns).difference(["obs_id"] + activity_columns + group_activity_columns + meta_cols)
-            },
+            **{c: "max" for c in activity_columns},
+            **{c: "first" for c in set(df.columns).difference(["obs_id"] + activity_columns + meta_cols)},
         }
     ).reset_index(),
     geometry="geometry",
@@ -502,12 +793,11 @@ dedup = (
     .groupby(["point_id", "mic_ht", "night", "presence_only"])
     .agg(
         {
-            **{c: "max" for c in activity_columns + group_activity_columns},
+            **{c: "max" for c in activity_columns},
             **{
                 c: "first"
                 for c in set(df.columns).difference(
                     activity_columns
-                    + group_activity_columns
                     + [
                         "point_id",
                         "mic_ht",
