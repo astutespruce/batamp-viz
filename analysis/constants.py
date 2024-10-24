@@ -128,25 +128,4 @@ ACTIVITY_COLUMNS = list(SPECIES.keys())
 # ]
 
 
-# metadata fields of detector - take the first value for each site / mic_ht
-DETECTOR_FIELDS = [
-    "det_mfg",
-    "det_model",
-    "mic_type",
-    "refl_type",
-    # "call_id_1",
-    # "call_id_2",
-    "call_id",
-    "det_name",
-    # "orig_site_id",
-    # "orig_det_id",
-    # source_dataset omitted since there may be multiple per detector
-    # "contributor",  # omitted since there may be multiple
-]
-
-
-COUNT_TYPE_DOMAIN = {
-    "a": "activity",
-    "p": "presence-only",
-    "m": "mix of activity & presence only",
-}
+COUNT_TYPE_DOMAIN = {"a": "activity", "p": "presence-only"}
