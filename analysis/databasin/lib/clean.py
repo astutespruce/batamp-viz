@@ -195,7 +195,7 @@ def clean_batamp(df, admin_df):
     # mark any bat detections in Hawaii as HABA (only species present)
     ix = df.index.isin(
         shapely.STRtree(df.geometry.values).query(
-            admin_df.loc[admin_df.admin1_name == "Hawaii"].geometry.values[0],
+            admin_df.loc[admin_df.admin1_name.str.contains("Hawaii")].geometry.values[0],
             predicate="intersects",
         )
     )

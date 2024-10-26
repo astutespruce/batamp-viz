@@ -17,6 +17,7 @@ requires-python = ">=3.12"
 dependencies = [
     "geopandas",
     "httpx[http2]",
+    "h3ronpy",
     "numba",
     "pandas",
     "pyarrow",
