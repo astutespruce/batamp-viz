@@ -280,7 +280,6 @@ export const SPECIES_ID = {
 export const METRIC_LABELS = {
   detections: 'detections',
   sppDetections: 'species detections',
-  allDetections: 'bat detections',
   detectionNights: 'nights detected',
   detectorNights: 'nights monitored',
 

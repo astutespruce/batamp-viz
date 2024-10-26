@@ -46,7 +46,6 @@ IndexPage.propTypes = {
       admin1: PropTypes.number.isRequired,
       detectorNights: PropTypes.number.isRequired,
       detectionNights: PropTypes.number.isRequired,
-      allDetections: PropTypes.number.isRequired,
       sppDetections: PropTypes.number.isRequired,
       years: PropTypes.number.isRequired,
       contributors: PropTypes.number.isRequired,
@@ -56,7 +55,6 @@ IndexPage.propTypes = {
         PropTypes.shape({
           node: PropTypes.shape({
             contributor: PropTypes.string.isRequired,
-            allDetections: PropTypes.number.isRequired,
             sppDetections: PropTypes.number.isRequired,
             detectorNights: PropTypes.number.isRequired,
             species: PropTypes.number,
@@ -84,7 +82,6 @@ export const pageQuery = graphql`
       detectionNights
       detectorNights
       years
-      allDetections
       sppDetections
       detectors
       species
@@ -93,7 +90,6 @@ export const pageQuery = graphql`
       edges {
         node {
           contributor
-          allDetections
           sppDetections
           detectorNights
           detectors

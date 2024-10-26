@@ -8,24 +8,12 @@ import { formatNumber } from 'util/format'
 import Contributor from './Contributor'
 import { METRIC_LABELS } from '../../../../config/constants'
 
-const metrics = [
-  'sppDetections',
-  'allDetections',
-  'detectorNights',
-  'detectors',
-  'species',
-]
+const metrics = ['sppDetections', 'detectorNights', 'detectors', 'species']
 
 const sortOptions = metrics.map((m) => METRIC_LABELS[m] || m)
 
 const Contributors = ({ contributors, totals }) => {
-  const {
-    species: totalSpp,
-    allDetections,
-    sppDetections,
-    detectors,
-    detectorNights,
-  } = totals
+  const { species: totalSpp, sppDetections, detectors, detectorNights } = totals
 
   const [sortIdx, setSortIdx] = useState(0)
 
@@ -54,11 +42,9 @@ const Contributors = ({ contributors, totals }) => {
         This application leverages the combined efforts of{' '}
         <b>{contributors.length}</b> contributors and would not be possible
         without their hard work. Together, these contributors have collected
-        over <b>{formatNumber(allDetections, 0)}</b> bat detections on{' '}
-        <b>{formatNumber(detectorNights, 0)}</b> nights using{' '}
-        <b>{formatNumber(detectors, 0)}</b> detectors, and they have collected{' '}
-        <b>{formatNumber(sppDetections, 0)}</b> detections of at least{' '}
-        <b>{totalSpp}</b> species.
+        over <b>{formatNumber(sppDetections, 0)}</b> detections of at least{' '}
+        <b>{totalSpp}</b> species on <b>{formatNumber(detectorNights, 0)}</b>{' '}
+        nights using <b>{formatNumber(detectors, 0)}</b> detectors.
       </Paragraph>
 
       <Flex
@@ -102,14 +88,12 @@ Contributors.propTypes = {
     PropTypes.shape({
       contributor: PropTypes.string.isRequired,
       detectorNights: PropTypes.number.isRequired,
-      allDetections: PropTypes.number.isRequired,
       sppDetections: PropTypes.number.isRequired,
       detectors: PropTypes.number.isRequired,
       species: PropTypes.number,
     })
   ).isRequired,
   totals: PropTypes.shape({
-    allDetections: PropTypes.number.isRequired,
     sppDetections: PropTypes.number.isRequired,
     detectorNights: PropTypes.number.isRequired,
     detectors: PropTypes.number.isRequired,

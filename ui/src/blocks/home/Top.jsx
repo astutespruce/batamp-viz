@@ -11,7 +11,6 @@ import { formatNumber } from 'util/format'
 const Top = ({
   detectors,
   contributors,
-  allDetections,
   sppDetections,
   detectorNights,
   species,
@@ -109,9 +108,6 @@ const Top = ({
                 fontSize: 3,
               }}
             >
-              <li>
-                <b>{formatNumber(allDetections, 0)}</b> total bat detections
-              </li>
               <li>
                 <b>{formatNumber(sppDetections, 0)}</b> detections of{' '}
                 <b>{species}</b> species
@@ -249,7 +245,6 @@ const Top = ({
 Top.propTypes = {
   admin1: PropTypes.number.isRequired,
   detectors: PropTypes.number.isRequired,
-  allDetections: PropTypes.number.isRequired,
   sppDetections: PropTypes.number.isRequired,
   detectorNights: PropTypes.number.isRequired,
   species: PropTypes.number.isRequired,

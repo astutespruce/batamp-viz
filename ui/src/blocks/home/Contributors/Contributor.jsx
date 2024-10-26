@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Box, Flex, Grid, Text } from 'theme-ui'
+import { Box, Flex, Text } from 'theme-ui'
 
 import { Donut } from 'components/Chart'
 import { formatNumber } from 'util/format'
@@ -12,13 +12,11 @@ const activeLabelCSS = {
 
 const donutLabels = {
   sppDetections: 'detections',
-  allDetections: 'detections',
   detectorNights: 'nights',
 }
 
 const Contributor = ({
   contributor,
-  allDetections,
   sppDetections,
   detectorNights,
   detectors,
@@ -53,16 +51,10 @@ const Contributor = ({
           <Text
             sx={{
               display: 'inline',
-              ...(metric === 'allDetections' || metric === 'sppDetections'
-                ? activeLabelCSS
-                : {}),
+              ...(metric === 'sppDetections' ? activeLabelCSS : {}),
             }}
           >
-            {formatNumber(
-              metric === 'allDetections' ? allDetections : sppDetections,
-              0
-            )}{' '}
-            detections
+            {formatNumber(sppDetections, 0)} detections
           </Text>
           <br />
           on{' '}
@@ -114,7 +106,6 @@ const Contributor = ({
 Contributor.propTypes = {
   contributor: PropTypes.string.isRequired,
   detectorNights: PropTypes.number.isRequired,
-  allDetections: PropTypes.number.isRequired,
   sppDetections: PropTypes.number.isRequired,
   detectors: PropTypes.number.isRequired,
   species: PropTypes.number.isRequired,
