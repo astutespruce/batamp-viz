@@ -119,6 +119,8 @@ def clean_batamp(df, admin_df):
         .replace("peggy Plass", "Peggy Plass")
         .replace("Nana chroninger", "Nana Chroninger")
         .replace("Jamie Bettaso", "James Bettaso")
+        .replace("Miguel Ordenana", "Miguel Ordeñana")
+        .replace("Alemta Helmig", "Almeta Helmig")
         # Per direction from Ted, convert Bryce Maxell to Montana NHP
         .replace("Bryce Maxell", "Montana NHP")
     )

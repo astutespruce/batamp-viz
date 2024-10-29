@@ -1,19 +1,30 @@
 import React, { memo, useState } from 'react'
-import PropTypes from 'prop-types'
 import { Box, Flex, Grid, Heading, Paragraph } from 'theme-ui'
+import * as aq from 'arquero'
 
 import { ExpandableParagraph } from 'components/Text'
 import { SortBar } from 'components/List'
+import { summaryStats, METRIC_LABELS } from 'config'
 import { formatNumber } from 'util/format'
 import Contributor from './Contributor'
-import { METRIC_LABELS } from '../../../../config/constants'
 
 const metrics = ['sppDetections', 'detectorNights', 'detectors', 'species']
 
 const sortOptions = metrics.map((m) => METRIC_LABELS[m] || m)
 
-const Contributors = ({ contributors, totals }) => {
-  const { species: totalSpp, sppDetections, detectors, detectorNights } = totals
+const Contributors = () => {
+  const {
+    species: totalSpp,
+    sppDetections,
+    detectors,
+    detectorNights,
+    contributors,
+    contributorsTable: rawContributorsTable,
+  } = summaryStats
+
+  let contributorsTable = aq.table(rawContributorsTable)
+  window.aq = aq
+  window.contributorsTable = contributorsTable
 
   const [sortIdx, setSortIdx] = useState(0)
 
@@ -23,26 +34,25 @@ const Contributors = ({ contributors, totals }) => {
 
   const metric = metrics[sortIdx]
 
-  contributors.sort((a, b) => (a[metric] < b[metric] ? 1 : -1))
+  contributorsTable = contributorsTable.orderby(aq.desc(metric))
 
-  const total = totals[metric]
+  const total = summaryStats[metric]
 
-  const topN = contributors
+  const topN = contributorsTable
     .slice(0, 6)
-    .map((d) => ({ percent: (100 * d[metric]) / total, ...d }))
+    .derive({ percent: aq.escape((d) => (100 * d[metric]) / total) })
+    .objects()
 
-  const remainder = contributors
-    .slice(6, contributors.length)
-    .map(({ contributor }) => contributor)
+  const remainder = contributorsTable.slice(6).array('contributor')
 
   return (
     <Box sx={{ py: '3rem' }}>
       <Heading as="h2">Made possible by contributors like you</Heading>
       <Paragraph sx={{ color: 'grey.8' }}>
-        This application leverages the combined efforts of{' '}
-        <b>{contributors.length}</b> contributors and would not be possible
-        without their hard work. Together, these contributors have collected
-        over <b>{formatNumber(sppDetections, 0)}</b> detections of at least{' '}
+        This application leverages the combined efforts of <b>{contributors}</b>{' '}
+        contributors and would not be possible without their hard work.
+        Together, these contributors have collected over{' '}
+        <b>{formatNumber(sppDetections, 0)}</b> detections of at least{' '}
         <b>{totalSpp}</b> species on <b>{formatNumber(detectorNights, 0)}</b>{' '}
         nights using <b>{formatNumber(detectors, 0)}</b> detectors.
       </Paragraph>
@@ -76,29 +86,11 @@ const Contributors = ({ contributors, totals }) => {
           sx={{ mt: '1rem', '& p': { fontSize: 2 } }}
           snippet={`And ${remainder.slice(0, 32).join(', ')}...`}
         >
-          And {remainder.join(', ')}.
+          and {remainder.join(', ')}.
         </ExpandableParagraph>
       )}
     </Box>
   )
-}
-
-Contributors.propTypes = {
-  contributors: PropTypes.arrayOf(
-    PropTypes.shape({
-      contributor: PropTypes.string.isRequired,
-      detectorNights: PropTypes.number.isRequired,
-      sppDetections: PropTypes.number.isRequired,
-      detectors: PropTypes.number.isRequired,
-      species: PropTypes.number,
-    })
-  ).isRequired,
-  totals: PropTypes.shape({
-    sppDetections: PropTypes.number.isRequired,
-    detectorNights: PropTypes.number.isRequired,
-    detectors: PropTypes.number.isRequired,
-    species: PropTypes.number.isRequired,
-  }).isRequired,
 }
 
 // Only render once

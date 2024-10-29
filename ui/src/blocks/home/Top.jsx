@@ -1,22 +1,13 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { GatsbyImage, getImage } from 'gatsby-plugin-image'
 import { graphql, useStaticQuery } from 'gatsby'
 import { AngleDoubleRight, ExclamationTriangle } from '@emotion-icons/fa-solid'
 import { Box, Grid, Heading, Paragraph, Text } from 'theme-ui'
 
 import { Link, OutboundLink } from 'components/Link'
-import { formatNumber } from 'util/format'
+import { summaryStats } from 'config'
 
-const Top = ({
-  detectors,
-  contributors,
-  sppDetections,
-  detectorNights,
-  species,
-  years,
-  admin1,
-}) => {
+const Top = () => {
   const images = useStaticQuery(graphql`
     query TopSectionQuery {
       speciesPhoto: file(relativePath: { eq: "28724644287_6710a192ed_o.jpg" }) {
@@ -55,76 +46,28 @@ const Top = ({
 
   return (
     <Box sx={{ py: '3rem' }}>
-      <Grid columns={[0, '2.5fr 1fr']} gap={4}>
-        <Box>
-          <Paragraph>
-            Throughout North America, bats are the primary predators of
-            nocturnal flying insects, providing millions of dollars in pest
-            control services annually. Bats occur in nearly every habitat on the
-            continent, from high elevation alpine forests to deserts and
-            neighborhoods within our largest cities.
-            <br />
-            <br />
-            Because bats fly in the dark of night, it is challenging to
-            understand their behaviors and monitor their population status.
-            <br />
-            <br />
-            To get around this challenge, biologists use bat detectors to better
-            understand bat ecology. These devices record the echolocation calls
-            of nearby bats, and combined with specialized software and expert
-            knowledge, biologists can often identify bat species from these
-            detections. Biologists deploy these detectors for one or more nights
-            at locations across the continent throughout the year, and may
-            monitor presence or activity of various bat species each night.
-          </Paragraph>
-        </Box>
-
-        <Box>
-          <Box
-            sx={{
-              mb: '3rem',
-              px: '1rem',
-              py: '1.5rem',
-              bg: 'highlight.1',
-              borderRadius: '1rem',
-            }}
-          >
-            <Heading
-              as="h3"
-              sx={{
-                mb: '0.5rem',
-                pb: '0.5rem',
-                borderBottom: '1px solid #FFF',
-                textAlign: 'center',
-              }}
-            >
-              Progress so far:
-            </Heading>
-            <Box
-              as="ul"
-              sx={{
-                mb: 0,
-                color: 'grey.9',
-                fontSize: 3,
-              }}
-            >
-              <li>
-                <b>{formatNumber(sppDetections, 0)}</b> detections of{' '}
-                <b>{species}</b> species
-              </li>
-              <li>
-                <b>{formatNumber(detectorNights, 0)}</b> nights monitored during{' '}
-                <b>{years}</b> years
-              </li>
-              <li>
-                <b>{formatNumber(detectors, 0)}</b> detectors operated by{' '}
-                <b>{contributors}</b> contributors across <b>{admin1}</b> states
-                and provinces
-              </li>
-            </Box>
-          </Box>
-        </Box>
-      </Grid>
+      <Box>
+        <Paragraph>
+          Throughout North America, bats are the primary predators of nocturnal
+          flying insects, providing millions of dollars in pest control services
+          annually. Bats occur in nearly every habitat on the continent, from
+          high elevation alpine forests to deserts and neighborhoods within our
+          largest cities.
+          <br />
+          <br />
+          Because bats fly in the dark of night, it is challenging to understand
+          their behaviors and monitor their population status.
+          <br />
+          <br />
+          To get around this challenge, biologists use bat detectors to better
+          understand bat ecology. These devices record the echolocation calls of
+          nearby bats, and combined with specialized software and expert
+          knowledge, biologists can often identify bat species from these
+          detections. Biologists deploy these detectors for one or more nights
+          at locations across the continent throughout the year, and may monitor
+          presence or activity of various bat species each night.
+        </Paragraph>
+      </Box>
 
       <Heading as="h2" sx={{ mt: '4rem' }}>
         Bat Acoustic Monitoring Portal
@@ -161,9 +104,9 @@ const Top = ({
       </Heading>
       <Paragraph>
         This application enables you to explore bat monitoring data for{' '}
-        {species} species across North America, allowing you to explore seasonal
-        trends in species detections and explore bat activity for a particular
-        location.
+        {summaryStats.species} species across North America, allowing you to
+        explore seasonal trends in species detections and explore bat activity
+        for a particular location.
       </Paragraph>
 
       <Heading as="h3" sx={{ mt: '2rem' }}>
@@ -240,16 +183,6 @@ const Top = ({
       </Text>
     </Box>
   )
-}
-
-Top.propTypes = {
-  admin1: PropTypes.number.isRequired,
-  detectors: PropTypes.number.isRequired,
-  sppDetections: PropTypes.number.isRequired,
-  detectorNights: PropTypes.number.isRequired,
-  species: PropTypes.number.isRequired,
-  years: PropTypes.number.isRequired,
-  contributors: PropTypes.number.isRequired,
 }
 
 export default Top

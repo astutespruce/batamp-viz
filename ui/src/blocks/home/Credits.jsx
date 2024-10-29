@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Flex, Grid, Image, Paragraph } from 'theme-ui'
+import { Box, Grid, Image, Paragraph } from 'theme-ui'
 
 import { OutboundLink } from 'components/Link'
 import CBILogo from 'images/cbi_logo.png'

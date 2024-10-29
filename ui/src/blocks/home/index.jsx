@@ -1,5 +1,6 @@
-import TopSection from './Top'
 import ContributorsSection from './Contributors'
 import CreditsSection from './Credits'
+import SummaryStats from './SummaryStats'
+import TopSection from './Top'
 
-export { TopSection, ContributorsSection, CreditsSection }
+export { ContributorsSection, CreditsSection, SummaryStats, TopSection }

@@ -74,7 +74,7 @@ const Contributor = ({
               ...(metric === 'detectors' ? activeLabelCSS : {}),
             }}
           >
-            {detectors} detectors
+            {formatNumber(detectors, 0)} detectors
           </Text>
           .
           <br />

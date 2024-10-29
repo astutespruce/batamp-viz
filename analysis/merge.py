@@ -15,6 +15,7 @@ from analysis.constants import ACTIVITY_COLUMNS, NABAT_TOLERANCE, SPECIES_ID
 from analysis.lib.height import fix_mic_height
 from analysis.lib.points import extract_point_ids
 from analysis.lib.tiles import create_tileset, join_tilesets
+from analysis.lib.util import camelcase
 from analysis.databasin.lib.clean import clean_batamp
 from analysis.nabat.lib.clean import clean_nabat
 
@@ -691,7 +692,7 @@ spp_stats = (
     .rename(columns={"index": "species"})
 )
 
-spp_stats["species"] = spp_stats.species.map(SPECIES_ID)
+# spp_stats["species"] = spp_stats.species.map(SPECIES_ID)
 
 # table = pa.Table.from_pandas(spp_stats).replace_schema_metadata()
 # write_feather(table, static_data_dir / "species.feather", compression="uncompressed")
@@ -715,17 +716,12 @@ summary = {
     # detection_nights are nights where at least one species was detected
     "detectionNights": (df.spp_detections > 0).sum().item(),
     "years": df.year.nunique(),
-    # store CSV encoded contributor and species stats
-    "contributorStats": (",".join(contributor_stats.columns))
-    + "\n"
-    + ("\n".join(contributor_stats.astype(str).apply(",".join, axis=1).tolist())),
-    "sppStats": (",".join(spp_stats.columns))
-    + "\n"
-    + ("\n".join(spp_stats.astype(str).apply(",".join, axis=1).tolist())),
+    "contributorsTable": camelcase(contributor_stats).to_dict(orient="list"),
+    "speciesTable": camelcase(spp_stats).to_dict(orient="list"),
 }
 
 with open(json_dir / "summary.json", "w") as outfile:
-    outfile.write(json.dumps(summary))
+    outfile.write(json.dumps(summary, ensure_ascii=False))
 
 
 ################################################################################
