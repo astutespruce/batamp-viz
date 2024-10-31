@@ -1,9 +1,8 @@
-import React, { useReducer, memo } from 'react'
+import React, { useState, memo } from 'react'
 import PropTypes from 'prop-types'
-
 import { Box, Flex } from 'theme-ui'
+import * as aq from 'arquero'
 
-import { useIndex } from 'components/Search'
 import { SortBar, SearchBar } from 'components/List'
 import { useThumbnails as useMapThumbnails } from 'components/Species/MapThumbnail'
 import { useThumbnails } from 'components/Species/Thumbnail'
@@ -11,88 +10,56 @@ import ListItem from './ListItem'
 
 const sortOptions = [
   {
+    key: 'commonName',
     label: 'name',
-    sortFunc: (a, b) => (a.commonName > b.commonName ? 1 : -1),
   },
   {
+    key: 'sciName',
     label: 'scientific name',
-    sortFunc: (a, b) => (a.sciName > b.sciName ? 1 : -1),
   },
   {
+    key: 'detections',
     label: 'detections',
-    sortFunc: (a, b) => b.detections - a.detections,
   },
   {
+    key: 'detectionNights',
     label: 'nights detected',
-    sortFunc: (a, b) => b.detectionNights - a.detectionNights,
   },
   {
+    key: 'detectors',
     label: 'detectors',
-    sortFunc: (a, b) => b.detectors - a.detectors,
   },
   {
+    key: 'contributors',
     label: 'contributors',
-    sortFunc: (a, b) => b.contributors - a.contributors,
   },
 ]
 
-const SpeciesList = ({ species }) => {
-  const queryIndex = useIndex()
-
-  const initialState = {
-    species: species.sort(sortOptions[0].sortFunc),
+const SpeciesList = ({ speciesTable }) => {
+  const [{ query, sortIdx }, setState] = useState(() => ({
     query: '',
     sortIdx: 0,
-  }
-
-  const speciesReducer = (state, { type, payload }) => {
-    switch (type) {
-      case 'query': {
-        if (payload === state.query) return state
-
-        let newSpecies = species
-        if (payload) {
-          const filteredIDs = new Set(
-            queryIndex(payload).map(({ species: spp }) => spp)
-          )
-          newSpecies = species.filter(({ species: spp }) =>
-            filteredIDs.has(spp)
-          )
-        }
-
-        return {
-          ...state,
-          query: payload,
-          species: newSpecies.sort(sortOptions[state.sortIdx].sortFunc),
-        }
-      }
-      case 'sort': {
-        if (payload === state.sortIdx) return state
-
-        return {
-          ...state,
-          sortIdx: payload,
-          species: state.species.sort(sortOptions[payload].sortFunc),
-        }
-      }
-      default: {
-        throw new Error(`action type not handled: ${type}`)
-      }
-    }
-  }
-
-  const [state, dispatch] = useReducer(speciesReducer, initialState)
+  }))
 
   const handleQueryChange = (value) => {
-    dispatch({ type: 'query', payload: value })
+    setState((prevState) => ({ ...prevState, query: value }))
   }
 
   const handleSortChange = (idx) => {
-    dispatch({ type: 'sort', payload: idx })
+    setState((prevState) => ({ ...prevState, sortIdx: idx }))
   }
 
-  const items = state.species || []
-  const metric = sortOptions[state.sortIdx].label
+  const { key: sortKey, label: metric } = sortOptions[sortIdx]
+  const items = (
+    query
+      ? speciesTable.filter(
+          aq.escape((d) => d.searchKey.search(query.toLowerCase()) !== -1)
+        )
+      : speciesTable
+  )
+    // sort name fields ascending, rest descending
+    .orderby(metric.search('name') !== -1 ? sortKey : aq.desc(sortKey))
+    .objects()
 
   const thumbnails = useThumbnails()
   const maps = useMapThumbnails()
@@ -112,7 +79,7 @@ const SpeciesList = ({ species }) => {
         </Box>
         <Box>
           <SortBar
-            index={state.sortIdx || 0}
+            index={sortIdx}
             options={sortOptions.map(({ label }) => label)}
             onChange={handleSortChange}
           />
@@ -121,7 +88,7 @@ const SpeciesList = ({ species }) => {
 
       <Box sx={{ my: '0.5rem' }}>
         <SearchBar
-          value={state.query || ''}
+          value={query}
           placeholder="Enter a species name"
           onChange={handleQueryChange}
         />
@@ -149,16 +116,7 @@ const SpeciesList = ({ species }) => {
 }
 
 SpeciesList.propTypes = {
-  species: PropTypes.arrayOf(
-    PropTypes.shape({
-      species: PropTypes.string.isRequired,
-      detections: PropTypes.number.isRequired,
-      detectionNights: PropTypes.number.isRequired,
-      contributors: PropTypes.number.isRequired,
-      commonName: PropTypes.string.isRequired,
-      sciName: PropTypes.string.isRequired,
-    })
-  ).isRequired,
+  speciesTable: PropTypes.object.isRequired,
 }
 
 // only render once on construction

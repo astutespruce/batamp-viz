@@ -11,6 +11,7 @@ const SummaryStats = () => {
     sppDetections,
     detectorNights,
     species,
+    speciesSurveyed,
     years,
     admin1,
   } = summaryStats
@@ -46,7 +47,7 @@ const SummaryStats = () => {
               </Text>
               <Text sx={{ display: 'inline' }}>detections</Text>
             </Flex>
-            of <b>{species}</b> species
+            of <b>{species}</b> species out of <b>{speciesSurveyed}</b> surveyed
           </Box>
           <Box>
             <Flex sx={{ alignItems: 'baseline', gap: '0.4rem' }}>
@@ -55,7 +56,7 @@ const SummaryStats = () => {
               </Text>
               <Text sx={{ display: 'inline' }}>nights</Text>
             </Flex>
-            monitored during <b>{years}</b> years
+            monitored during <b>{years.length}</b> years
           </Box>
           <Box>
             <Flex sx={{ alignItems: 'baseline', gap: '0.4rem' }}>
@@ -65,7 +66,7 @@ const SummaryStats = () => {
               <Text sx={{ display: 'inline' }}>detectors</Text>
             </Flex>
             operated by <b>{contributors}</b> contributors across{' '}
-            <b>{admin1}</b> states and provinces
+            <b>{admin1.length}</b> states and provinces
           </Box>
         </Grid>
       </Container>

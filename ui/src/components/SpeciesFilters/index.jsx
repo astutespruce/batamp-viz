@@ -7,7 +7,7 @@ import { OutboundLink } from 'components/Link'
 import { ExpandableParagraph } from 'components/Text'
 import FiltersList from 'components/FiltersList'
 import SmallThumbnail from 'components/Species/SmallThumbnail'
-import { SPECIES, PROFILE_ROOT_URL } from '../../../config/constants'
+import { SPECIES, PROFILE_ROOT_URL } from 'config'
 
 const resolveProfileId = (sciName) => sciName.toLowerCase().replace(' ', '-')
 

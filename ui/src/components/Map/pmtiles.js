@@ -1,6 +1,6 @@
 /**
- * Derived from: https://github.com/am2222/mapbox-pmtiles/blob/v1.0.38/src/index.ts
- * Original source code above (v1.0.38)is MIT License, Copyright 2024 Majid Hojati
+ * Derived from: https://github.com/am2222/mapbox-pmtiles/blob/v1.0.53/src/index.ts
+ * Original source code above (v1.0.53)is MIT License, Copyright 2024 Majid Hojati
  *
  * Modified here to convert from typescript to Javascript, simplify, and use
  * local version of mapbox-gl for correct handling of access token
@@ -97,6 +97,9 @@ class ErrorEvent extends Event {
   }
 }
 
+// NOTE: only specific class members carried across from mapbox-pmtiles; others
+// were not needed (inherited from mapbox impl) or are handled / hardcoded below
+// during initialization.
 export class PMTilesSource extends VectorTileSourceImpl {
   static SOURCE_TYPE = SOURCE_TYPE
 
@@ -114,7 +117,7 @@ export class PMTilesSource extends VectorTileSourceImpl {
 
   _protocol
 
-  _instance // PMTiles isntance
+  _instance // PMTiles instance
 
   _tileJSONRequest
 
@@ -173,11 +176,11 @@ export class PMTilesSource extends VectorTileSourceImpl {
 
     this._protocol = new PMTilesProtocol()
     this.tiles = [`pmtiles://${url}/{z}/{x}/{y}`]
-    const p = new PMTiles(url)
+    const pmtilesInstance = new PMTiles(url)
 
     // this is so we share one instance across the JS code and the map renderer
-    this._protocol.add(p)
-    this._instance = p
+    this._protocol.add(pmtilesInstance)
+    this._instance = pmtilesInstance
   }
 
   /**
@@ -194,16 +197,25 @@ export class PMTilesSource extends VectorTileSourceImpl {
     return !this.tileBounds || this.tileBounds.contains(tileID.canonical)
   }
 
-  load(callback) {
+  fixTile(tile) {
+    if (!tile.destroy) {
+      tile.destroy = () => {}
+    }
+  }
+
+  async load(callback) {
     this._loaded = false
     this.fire(new Event('dataloading', { dataType: 'source' }))
 
     // We need to get both header and metadata
-    this._tileJSONRequest = Promise.all([
+    return Promise.all([
       this._instance.getHeader(),
       this._instance.getMetadata(),
     ])
       .then(([header, tileJSON]) => {
+        // first we set some of the header properties to the source using tileJSON
+        extend(this, tileJSON)
+
         this.header = header
         const { tileType, minZoom, maxZoom, minLon, minLat, maxLon, maxLat } =
           header
@@ -236,13 +248,16 @@ export class PMTilesSource extends VectorTileSourceImpl {
           )
         }
 
-        this._tileJSONRequest = undefined
+        // fix for the corrupted tileJson
+        this.minzoom = Number.parseInt(this.minzoom.toString(), 10) || 0
+        this.maxzoom = Number.parseInt(this.maxzoom.toString(), 10) || 0
+
         this._loaded = true
 
-        extend(this, tileJSON)
         // we set this.type after extend to avoid overwriting
         this.tileType = tileType
 
+        // IMPORTANT: specifically not handling other types present in mapbox-pmtiles
         if (this.tileType === TileType.Mvt) {
           this.loadTile = this.loadVectorTile
           this.type = 'vector'
@@ -280,9 +295,14 @@ export class PMTilesSource extends VectorTileSourceImpl {
         return callback(err)
       }
 
-      if (data && data.resourceTiming) tile.resourceTiming = data.resourceTiming
+      if (data && data.resourceTiming) {
+        tile.resourceTiming = data.resourceTiming
+      }
 
-      if (this.map?._refreshExpiredTiles && data) tile.setExpiryData(data)
+      if (this.map?._refreshExpiredTiles && data) {
+        tile.setExpiryData(data)
+      }
+
       tile.loadVectorData(data, this.map?.painter)
 
       callback(null)
@@ -296,6 +316,7 @@ export class PMTilesSource extends VectorTileSourceImpl {
     const url = this.map?._requestManager.normalizeTileURL(
       tile.tileID.canonical.url(this.tiles, this.scheme)
     )
+
     const request = this.map?._requestManager.transformRequest(url, 'Tile')
 
     const params = {
@@ -327,11 +348,16 @@ export class PMTilesSource extends VectorTileSourceImpl {
         rawData: data,
       }
       // // the worker will skip the network request if the data is already there
-      if (this.map._refreshExpiredTiles)
+      if (this.map._refreshExpiredTiles) {
         tile.setExpiryData({ cacheControl, expires })
-      if (tile.actor)
+      }
+
+      if (tile.actor) {
         tile.actor.send('loadTile', params, done.bind(this), undefined, true)
+      }
     }
+
+    this.fixTile(tile)
 
     if (!tile.actor || tile.state === 'expired') {
       tile.actor = this._tileWorkers[url] =

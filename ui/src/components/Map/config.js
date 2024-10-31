@@ -2,6 +2,7 @@ import { interpolate, interpolateRgb } from 'd3-interpolate'
 
 import { formatNumber } from 'util/format'
 import { siteMetadata } from '../../../gatsby-config'
+import { getHighlightExpr } from './util'
 
 export const MINRADIUS = 4
 export const MAXRADIUS = 18
@@ -19,94 +20,226 @@ export const config = {
 }
 
 export const sources = {
-  detectors: {
-    type: 'geojson',
-    data: null,
-    cluster: true,
-    clusterMaxZoom: 10, // show clusters at lowest zoom since there may be multiple detectors at a site
-    clusterRadius: 12,
-    clusterProperties: {
-      total: ['+', ['get', 'total']],
-      max: ['max', ['get', 'total']],
-    },
+  species: {
+    type: 'pmtiles',
+    url: '/tiles/species_ranges.pmtiles',
+    minzoom: 0,
+    maxzoom: 6,
+  },
+  sites: {
+    type: 'pmtiles',
+    url: '/tiles/sites.pmtiles',
+    minzoom: 0,
+    maxzoom: 12,
+  },
+  h3: {
+    type: 'pmtiles',
+    url: '/tiles/h3.pmtiles',
+    minzoom: 0,
+    maxzoom: 12,
+  },
+}
+
+const hexFillStub = {
+  source: 'h3',
+  type: 'fill',
+  // filter: defined by specific data available,
+  paint: {
+    'fill-color': getHighlightExpr('#AAAAAA', '#ee7a14'),
+    // 'fill-color': [
+    //   'case',
+    //   ['boolean', ['feature-state', 'highlight'], false],
+    //   'red',
+    //   'blue',
+    // ],
+    'fill-opacity': 0.75,
+  },
+}
+
+const hexOutlineStub = {
+  source: 'h3',
+  type: 'line',
+  // filter: defined by specific data available,
+  paint: {
+    'line-color': getHighlightExpr('#333333', '#ee7a14'),
+    'line-width': getHighlightExpr(0.1, 2),
   },
 }
 
 export const layers = [
   {
-    id: 'detectors-clusters',
-    type: 'circle',
-    source: 'detectors',
-    filter: ['has', 'point_count'], // point_count field added by mapbox GL
-    paint: {
-      'circle-opacity': [
-        'case',
-        ['boolean', ['feature-state', 'highlight-cluster'], false],
-        1,
-        0.75,
-      ],
-      'circle-stroke-width': [
-        'case',
-        ['boolean', ['feature-state', 'highlight-cluster'], false],
-        2,
-        1,
-      ],
-      'circle-stroke-color': [
-        'case',
-        ['boolean', ['feature-state', 'highlight-cluster'], false],
-        '#ee7a14', // highlight.5
-        '#FFF',
-      ],
-      // other props specified dynamically
-    },
+    id: 'h3l4-fill',
+    'source-layer': 'h3l4',
+    minzoom: 0,
+    maxzoom: 4.5,
+    ...hexFillStub,
   },
   {
-    id: 'detectors-points', // unclustered points
+    id: 'h3l4-outline',
+    'source-layer': 'h3l4',
+    minzoom: 0,
+    maxzoom: 4.5,
+    ...hexOutlineStub,
+  },
+  {
+    id: 'h3l5-fill',
+    'source-layer': 'h3l5',
+    minzoom: 4.5,
+    maxzoom: 6.5,
+    ...hexFillStub,
+  },
+  {
+    id: 'h3l5-outline',
+    'source-layer': 'h3l5',
+    minzoom: 4.5,
+    maxzoom: 6.5,
+    ...hexOutlineStub,
+  },
+  {
+    id: 'h3l6-fill',
+    'source-layer': 'h3l6',
+    minzoom: 6.5,
+    maxzoom: 8,
+    ...hexFillStub,
+  },
+  {
+    id: 'h3l6-outline',
+    'source-layer': 'h3l6',
+    minzoom: 6.5,
+    maxzoom: 8,
+    ...hexOutlineStub,
+  },
+  {
+    id: 'h3l7-fill',
+    'source-layer': 'h3l7',
+    minzoom: 8,
+    maxzoom: 9.5,
+    ...hexFillStub,
+  },
+  {
+    id: 'h3l7-outline',
+    'source-layer': 'h3l7',
+    minzoom: 8,
+    maxzoom: 9.5,
+    ...hexOutlineStub,
+  },
+  {
+    id: 'h3l8-fill',
+    'source-layer': 'h3l8',
+    minzoom: 9.5,
+    maxzoom: 21,
+    ...hexFillStub,
+  },
+  {
+    id: 'h3l8-outline',
+    'source-layer': 'h3l8',
+    minzoom: 9.5,
+    maxzoom: 21,
+    ...hexOutlineStub,
+  },
+  // TODO: other hex levels
+  // TODO: sites
+  {
+    id: 'sites',
+    source: 'sites',
+    'source-layer': 'sites',
+    minzoom: 9.5,
+    maxzoom: 21,
     type: 'circle',
-    source: 'detectors',
-    filter: ['!has', 'point_count'],
+    // filter: TODO: filter to match dimension / species filters
     paint: {
-      'circle-opacity': [
-        'case',
-        [
-          'any',
-          ['boolean', ['feature-state', 'highlight'], false],
-          ['boolean', ['feature-state', 'selected'], false],
-        ],
-        1,
-        0.75,
-      ],
-      'circle-stroke-width': [
-        'case',
-        [
-          'any',
-          ['boolean', ['feature-state', 'highlight'], false],
-          ['boolean', ['feature-state', 'selected'], false],
-        ],
-        2,
-        1,
-      ],
-      'circle-stroke-color': [
-        'case',
-        [
-          'any',
-          ['boolean', ['feature-state', 'highlight'], false],
-          ['boolean', ['feature-state', 'selected'], false],
-        ],
-        '#ee7a14', // highlight.5
-        '#FFF',
-      ],
-      // other props specified dynamically
+      // TODO: use binary color for detections / non detections?
+      // TODO: make dependent on zoom level
+      'circle-radius': getHighlightExpr(4, 10),
+      'circle-opacity': getHighlightExpr(0.75, 1),
+      'circle-stroke-width': getHighlightExpr(1, 2),
+      'circle-stroke-color': getHighlightExpr('#FFF', '#ee7a14'),
     },
   },
 ]
 
-export const speciesSource = {
-  type: 'pmtiles',
-  url: '/tiles/species_ranges.pmtiles',
-  minzoom: 0,
-  maxzoom: 6,
-}
+// export const sources = {
+//   detectors: {
+//     type: 'geojson',
+//     data: null,
+//     cluster: true,
+//     clusterMaxZoom: 10, // show clusters at lowest zoom since there may be multiple detectors at a site
+//     clusterRadius: 12,
+//     clusterProperties: {
+//       total: ['+', ['get', 'total']],
+//       max: ['max', ['get', 'total']],
+//     },
+//   },
+// }
+
+// export const layers = [
+//   {
+//     id: 'detectors-clusters',
+//     type: 'circle',
+//     source: 'detectors',
+//     filter: ['has', 'point_count'], // point_count field added by mapbox GL
+//     paint: {
+//       'circle-opacity': [
+//         'case',
+//         ['boolean', ['feature-state', 'highlight-cluster'], false],
+//         1,
+//         0.75,
+//       ],
+//       'circle-stroke-width': [
+//         'case',
+//         ['boolean', ['feature-state', 'highlight-cluster'], false],
+//         2,
+//         1,
+//       ],
+//       'circle-stroke-color': [
+//         'case',
+//         ['boolean', ['feature-state', 'highlight-cluster'], false],
+//         '#ee7a14', // highlight.5
+//         '#FFF',
+//       ],
+//       // other props specified dynamically
+//     },
+//   },
+//   {
+//     id: 'detectors-points', // unclustered points
+//     type: 'circle',
+//     source: 'detectors',
+//     filter: ['!has', 'point_count'],
+//     paint: {
+//       'circle-opacity': [
+//         'case',
+//         [
+//           'any',
+//           ['boolean', ['feature-state', 'highlight'], false],
+//           ['boolean', ['feature-state', 'selected'], false],
+//         ],
+//         1,
+//         0.75,
+//       ],
+//       'circle-stroke-width': [
+//         'case',
+//         [
+//           'any',
+//           ['boolean', ['feature-state', 'highlight'], false],
+//           ['boolean', ['feature-state', 'selected'], false],
+//         ],
+//         2,
+//         1,
+//       ],
+//       'circle-stroke-color': [
+//         'case',
+//         [
+//           'any',
+//           ['boolean', ['feature-state', 'highlight'], false],
+//           ['boolean', ['feature-state', 'selected'], false],
+//         ],
+//         '#ee7a14', // highlight.5
+//         '#FFF',
+//       ],
+//       // other props specified dynamically
+//     },
+//   },
+// ]
 
 export const speciesLayers = [
   {

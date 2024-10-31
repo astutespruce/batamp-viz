@@ -4,8 +4,8 @@ import { Box, Flex, Grid, Text } from 'theme-ui'
 import { GatsbyImage } from 'gatsby-plugin-image'
 
 import { OutboundLink, Link } from 'components/Link'
+import { SPECIES } from 'config'
 import { formatNumber, quantityLabel } from 'util/format'
-import { SPECIES } from '../../../config/constants'
 
 const ListItem = ({
   item: {

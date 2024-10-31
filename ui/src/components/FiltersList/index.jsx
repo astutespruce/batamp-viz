@@ -6,18 +6,17 @@ import { TimesCircle } from '@emotion-icons/fa-solid'
 import { useCrossfilter } from 'components/Crossfilter'
 import { formatNumber } from 'util/format'
 import Filter from './Filter'
-import { METRIC_LABELS } from '../../../config/constants'
 
 const FiltersList = ({ filters }) => {
-  const { resetFilters, state } = useCrossfilter()
-
-  const handleReset = () => {
-    resetFilters(new Set(filters.map(({ field }) => field)))
-  }
-
-  const { valueField, total, filteredTotal, hasVisibleFilters } = state
-
-  const metricLabel = METRIC_LABELS[valueField]
+  const {
+    resetFilters,
+    state: {
+      metric: { label: metricLabel },
+      total,
+      filteredTotal,
+      hasFilters,
+    },
+  } = useCrossfilter()
 
   return (
     <Flex
@@ -52,7 +51,7 @@ const FiltersList = ({ filters }) => {
         ))}
       </Box>
 
-      {hasVisibleFilters && (
+      {hasFilters && (
         <Flex
           sx={{
             justifyContent: 'center',
@@ -71,7 +70,7 @@ const FiltersList = ({ filters }) => {
               bg: 'highlight.5',
               cursor: 'pointer',
             }}
-            onClick={handleReset}
+            onClick={resetFilters}
           >
             <Flex sx={{ alignItems: 'center', gap: '0.25rem' }}>
               <TimesCircle size="1em" />

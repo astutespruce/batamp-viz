@@ -171,6 +171,21 @@ export const groupBy = (data, groupField) =>
   }, {})
 
 /**
+ * Index an array on index field, and return an object with
+ * values of index field as keys.
+ * @param {Array} data
+ * @param {String} indexField
+ * @param {function} getValue - if present, values are passed into
+ * this function for further processing to extract values of interest
+ */
+export const indexBy = (data, indexField, getValue = null) =>
+  data.reduce(
+    (prev, { [indexField]: id, ...rest }) =>
+      Object.assign(prev, { [id]: getValue ? getValue(rest) : rest }),
+    {}
+  )
+
+/**
  * Joins right to left, if values are available for left.
  * Join is a left join, values are only copied from right a match is found.
  * Will join all fields from left and from right

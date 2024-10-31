@@ -1,3 +1,5 @@
+import { op } from 'arquero'
+
 import summaryStats from '../data/summary.json'
 
 export { summaryStats }
@@ -119,6 +121,7 @@ export const SPECIES = {
   leni: {
     sciName: 'Leptonycteris nivalis',
     commonName: 'Greater Long-nosed Bat',
+    imageCredits: 'J. Scott Altenbach (BCI)',
   },
   leye: {
     sciName: 'Leptonycteris yerbabuenae',
@@ -281,12 +284,64 @@ export const SPECIES_ID = {
 }
 
 // TODO: handle plural vs singular
+// FIXME: remove
 export const METRIC_LABELS = {
   detections: 'detections',
   sppDetections: 'species detections',
   detectionNights: 'nights detected',
   detectorNights: 'nights monitored',
-
   id: 'detectors',
   species: 'species detected',
 }
+
+export const METRICS = {
+  detections: {
+    label: 'detections',
+  },
+  sppDetections: {
+    label: 'species detections',
+  },
+  detectionNights: {
+    label: 'nights detected',
+  },
+  detectorNights: {
+    label: 'nights monitored',
+  },
+  id: {
+    label: 'detectors',
+  },
+  // // used on occurrence page
+  // species: {
+  //   label: 'species detected',
+  //   // count unique species
+  //   aggFunc: op.distinct('species'),
+  //   // for dimensions and totals, only aggregate records where species is detected
+  //   prefilter: (d) => d.detected,
+  // },
+}
+
+export const HEX_LEVELS = {
+  // TODO: tune zoom levels
+  4: {
+    minZoom: 0,
+    maxZoom: 6,
+  },
+  5: {
+    minZoom: 7,
+    maxZoom: 8,
+  },
+  6: {
+    minZoom: 8,
+    maxZoom: 9,
+  },
+  7: {
+    minZoom: 10,
+    maxZoom: 11,
+  },
+  8: {
+    minZoom: 12,
+    maxZoom: 21,
+  },
+}
+
+export const H3_COLS = Object.keys(HEX_LEVELS).map((level) => `h3l${level}`)

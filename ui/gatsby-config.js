@@ -78,22 +78,5 @@ module.exports = {
         },
       },
     },
-    {
-      resolve: `@gatsby-contrib/gatsby-plugin-elasticlunr-search`,
-      options: {
-        // Fields to index
-        fields: [`path`, `commonName`, `sciName`, `species`],
-        resolvers: {
-          speciesJson: {
-            commonName: ({ commonName }) => commonName,
-            sciName: ({ sciName }) => sciName,
-            species: ({ species }) => species,
-            path: ({ species }) => `/species/${species}`,
-          },
-        },
-        // only include species
-        filter: (node) => node.species,
-      },
-    },
   ],
 }

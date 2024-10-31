@@ -399,7 +399,7 @@ df.loc[ix, activity_columns] = df.loc[ix, activity_columns].clip(0, 1, axis=1)
 
 
 # FIXME: remove
-# df.to_feather("/tmp/checkpoint2.feather")
+df.to_feather("/tmp/checkpoint2.feather")
 
 ################################################################################
 ### Extract point geometries and do spatial joins
@@ -432,24 +432,43 @@ sites["admin1_name"] = sites.admin1_name.fillna("Offshore").astype("category")
 
 ### join to H3 hexagons levels 4-8 and create hexagon tiles
 # TODO: tune zoom levels per H3 level
+hex_levels = [
+    {"level": 4, "minzoom": 0, "maxzoom": 5},
+    {"level": 5, "minzoom": 4, "maxzoom": 7},
+    {"level": 6, "minzoom": 6, "maxzoom": 8},
+    {"level": 7, "minzoom": 8, "maxzoom": 10},
+    {"level": 8, "minzoom": 9, "maxzoom": 12},
+]
+
+
+H3_COLS = [f"h3l{entry['level']}" for entry in hex_levels]
 x = sites.geometry.x
 y = sites.geometry.y
 tilesets = []
-for level in range(4, 9):
+for entry, col in zip(hex_levels, H3_COLS):
+    level = entry["level"]
     print(f"Assigning to H3 level {level} and creating tiles")
-    col = f"h3l{level}"
-    sites[col] = coordinates_to_cells(y, x, level)
-    sites[col] = sites[col].astype("category")
-    ids = sites[col].unique()
-    hexes = gp.GeoDataFrame({"id": ids}, geometry=shapely.from_wkb(cells_to_wkb_polygons(ids)), crs="EPSG:4326")
+    hex_id = coordinates_to_cells(y, x, level)
+    ids, index_values = np.unique(hex_id, return_inverse=True)
+    # use smaller index values to avoid BigInt issues in UI (can currently fit all values into uint16)
+    index_values = (index_values + 1).astype("uint16")
+    sites[col] = pd.Series(index_values, dtype="category")
+    hexes = gp.GeoDataFrame(
+        {"id": np.arange(1, len(ids) + 1, dtype="uint16")},
+        geometry=shapely.from_wkb(cells_to_wkb_polygons(ids)),
+        crs="EPSG:4326",
+    )
     outfilename = tmp_dir / f"{col}.pmtiles"
-    create_tileset(hexes, outfilename, layer=col, minzoom=0, maxzoom=12)
+    tilesets.append(outfilename)
+    create_tileset(hexes, outfilename, layer=col, minzoom=entry["minzoom"], maxzoom=entry["maxzoom"])
 
 # create joined tiles and remove intermediates
 join_tilesets(tilesets, tile_dir / "h3.pmtiles")
 for tileset in tilesets:
     tileset.unlink()
 
+
+raise FOO
 
 ################################################################################
 ### Extract detector-level info
@@ -527,24 +546,35 @@ stacked = (
     .dropna()
     .rename("detections")
     .reset_index()
-    .rename(columns={"level_1": "spp"})
+    .rename(columns={"level_1": "species"})
 )
-stacked["spp"] = stacked.spp.map(SPECIES_ID)
-det_spps = (
-    stacked[stacked.detections > 0].groupby("det_id").spp.unique().apply(sorted).apply("".join).rename("det_spps")
+stacked["species"] = stacked.spp.map(SPECIES_ID)
+det_spp_detected = (
+    stacked[stacked.detections > 0]
+    .groupby("det_id")
+    .species.unique()
+    .apply(sorted)
+    .apply("".join)
+    .rename("spp_detected")
 )
-nondet_spps = (
-    stacked[stacked.detections == 0].groupby("det_id").spp.unique().apply(sorted).apply("".join).rename("nondet_spps")
+det_spp_notdetected = (
+    stacked[stacked.detections == 0]
+    .groupby("det_id")
+    .species.unique()
+    .apply(sorted)
+    .apply("".join)
+    .rename("spp_not_detected")
 )
 # combine detected and nondetected species into pipe delimited string
 detectors["species"] = detectors.det_id.map(
-    pd.DataFrame(det_spps).join(nondet_spps, how="outer").fillna("").apply("|".join, axis=1)
+    pd.DataFrame(det_spp_detected).join(det_spp_notdetected, how="outer").fillna("").apply("|".join, axis=1)
 )
 
 
 # pack into categorical types
 for col in [
     "source",
+    "site_id",
     "mic_ht",
     "det_type",
     "mic_type",
@@ -565,22 +595,44 @@ for col in [
 
 
 # join site info
-detectors = detectors.join(
-    sites.set_index("id")[["admin1_name", "h3l4", "h3l5", "h3l6", "h3l7", "h3l8"]], on="site_id"
-).drop(columns=["det_id"])
+detectors = detectors.join(sites.set_index("id")[["admin1_name"] + H3_COLS], on="site_id").drop(columns=["det_id"])
 
-table = pa.Table.from_pandas(detectors).replace_schema_metadata()
+table = pa.Table.from_pandas(camelcase(detectors)).replace_schema_metadata()
 write_feather(table, static_data_dir / "detectors.feather", compression="uncompressed")
 
 ################################################################################
-### Extract time-series data
+### Bin species occurrence data for species occurrences page
 ################################################################################
 
-# TODO: clip all presence records to a max of 1 activity
+spp_occurrence = (
+    df.groupby(["det_id", "year", "month"])[activity_columns]
+    .max()
+    .stack(future_stack=True)
+    .dropna()
+    .rename("detected")
+    .reset_index()
+    .rename(columns={"level_3": "species"})
+)
+spp_occurrence["detected"] = spp_occurrence.detected.clip(0, 1).astype(bool)
+spp_occurrence["species"] = spp_occurrence.species.map(SPECIES_ID)
+for col in ["det_id", "year", "month", "species"]:
+    spp_occurrence[col] = spp_occurrence[col].astype("category")
+
+table = pa.Table.from_pandas(camelcase(spp_occurrence)).replace_schema_metadata()
+write_feather(table, static_data_dir / "spp_occurrence.feather", compression="uncompressed")
+
+
+################################################################################
+### Extract time-series data: TODO:
+################################################################################
 
 
 # TODO: aggregate to year / month values
 ts = df[["det_id", "point_id"]]
+
+# discard pandas metadata
+# table = pa.Table.from_pandas(contributor_stats).replace_schema_metadata()
+# write_feather(table, static_data_dir / "speciesTS.feather", compression="uncompressed")
 
 
 ################################################################################
@@ -615,12 +667,6 @@ contributor_stats = (
     .reset_index()
 )
 
-# for col in ["spp_detections", "detector_nights", "detectors", "species"]:
-#     contributor_stats[col] = contributor_stats[col].astype("category")
-
-# discard pandas metadata
-# table = pa.Table.from_pandas(contributor_stats).replace_schema_metadata()
-# write_feather(table, static_data_dir / "contributors.feather", compression="uncompressed")
 
 ################################################################################
 ### Calculate species statistics
@@ -630,11 +676,11 @@ contributor_stats = (
 presence_ix = df.count_type == "p"
 spp_detections = df[activity_columns].sum().astype("uint").rename("detections")
 # presence only detections are the same as detection nights
-spp_po_detections = df.loc[presence_ix, activity_columns].sum().astype("uint").rename("po_detections")
+spp_po_detections = df.loc[presence_ix, activity_columns].sum().astype("uint").rename("presence_only_detections")
 
 # Count total nights of detections and nondetections - ONLY for species columns
 spp_detector_nights = (df[activity_columns] >= 0).sum().rename("detector_nights")
-spp_po_detector_nights = (df.loc[presence_ix, activity_columns] >= 0).sum().rename("po_detector_nights")
+spp_po_detector_nights = (df.loc[presence_ix, activity_columns] >= 0).sum().rename("presence_only_detector_nights")
 
 # Count of non-zero nights by species
 spp_detection_nights = (df[activity_columns] > 0).sum().rename("detection_nights")
@@ -674,7 +720,7 @@ spp_po_detectors = (
     .rename(columns={"level_1": "species"})
     .groupby("species")
     .det_id.nunique()
-    .rename("po_detectors")
+    .rename("presecence_only_detectors")
 )
 
 spp_stats = (
@@ -692,18 +738,14 @@ spp_stats = (
     .rename(columns={"index": "species"})
 )
 
-# spp_stats["species"] = spp_stats.species.map(SPECIES_ID)
-
-# table = pa.Table.from_pandas(spp_stats).replace_schema_metadata()
-# write_feather(table, static_data_dir / "species.feather", compression="uncompressed")
-
 ################################################################################
 ### Calculate high-level summary statistics
 ################################################################################
 
 summary = {
-    "admin1": sites.admin1_name.nunique(),
-    "species": len(activity_columns),
+    "admin1": sorted(sites.admin1_name.unique().astype(str).tolist()),
+    "species": (df[activity_columns] > 0).max().sum().item(),
+    "speciesSurveyed": len(activity_columns),
     "contributors": len(contributor_stats),
     "detectors": len(detectors),
     "activityDetectors": (detectors.count_type == "a").sum().item(),
@@ -715,7 +757,7 @@ summary = {
     "presenceDetectorNights": (df.count_type == "p").sum().item(),
     # detection_nights are nights where at least one species was detected
     "detectionNights": (df.spp_detections > 0).sum().item(),
-    "years": df.year.nunique(),
+    "years": sorted([x.item() for x in df.year.unique()]),
     "contributorsTable": camelcase(contributor_stats).to_dict(orient="list"),
     "speciesTable": camelcase(spp_stats).to_dict(orient="list"),
 }

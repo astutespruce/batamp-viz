@@ -23,8 +23,6 @@ const Contributors = () => {
   } = summaryStats
 
   let contributorsTable = aq.table(rawContributorsTable)
-  window.aq = aq
-  window.contributorsTable = contributorsTable
 
   const [sortIdx, setSortIdx] = useState(0)
 

@@ -1,18 +1,35 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Box, Text } from 'theme-ui'
 
 import { Link } from 'components/Link'
-import { SearchField, useIndex } from 'components/Search'
+import { SearchField } from 'components/Search'
+import { SPECIES } from 'config'
 
 const Search = () => {
-  const queryIndex = useIndex()
+  const index = useMemo(
+    () =>
+      Object.entries(SPECIES).map(([id, { sciName, commonName }]) => ({
+        id,
+        sciName,
+        commonName,
+        path: `/species/${id}`,
+        searchKey: `${id} ${commonName.toLowerCase()} ${sciName.toLowerCase()}`,
+      })),
+    []
+  )
+
   const [query, setQuery] = useState('')
 
   const handleChange = (value) => {
     setQuery(value)
   }
 
-  const results = query ? queryIndex(query) : []
+  const results =
+    query && query.length >= 3
+      ? index.filter(
+          ({ searchKey }) => searchKey.search(query.toLowerCase()) !== -1
+        )
+      : []
 
   return (
     <Box
@@ -40,34 +57,7 @@ const Search = () => {
             borderBottom: '4px solid #fff',
           }}
         >
-          {results && results.length > 0 ? (
-            results.map(({ id, path, commonName, sciName }) => (
-              <Link
-                key={id}
-                to={path}
-                sx={{
-                  display: 'block',
-                  p: '0.25em 1em',
-                  m: '0',
-                  lineHeight: 1.3,
-                  '&:not(:first-of-type)': {
-                    borderTop: '1px solid',
-                    borderTopColor: 'grey.2',
-                  },
-                  '&:hover': {
-                    bg: 'grey.1',
-                  },
-                }}
-              >
-                <Text sx={{ color: 'link', fontSize: '1.1rem' }}>
-                  {commonName}
-                </Text>
-                <Text sx={{ fontSize: '0.9rem', color: 'grey.6' }}>
-                  ({sciName})
-                </Text>
-              </Link>
-            ))
-          ) : (
+          {query && query.length < 3 ? (
             <Text
               sx={{
                 padding: '0.25em 1em',
@@ -77,9 +67,52 @@ const Search = () => {
                 fontSize: '0.8em',
               }}
             >
-              No pages match your query...
+              keep typing...
             </Text>
-          )}
+          ) : null}
+
+          {results && results.length > 0
+            ? results.map(({ id, path, commonName, sciName }) => (
+                <Link
+                  key={id}
+                  to={path}
+                  sx={{
+                    display: 'block',
+                    p: '0.25em 1em',
+                    m: '0',
+                    lineHeight: 1.3,
+                    '&:not(:first-of-type)': {
+                      borderTop: '1px solid',
+                      borderTopColor: 'grey.2',
+                    },
+                    '&:hover': {
+                      bg: 'grey.1',
+                    },
+                  }}
+                >
+                  <Text sx={{ color: 'link', fontSize: '1.1rem' }}>
+                    {commonName}
+                  </Text>
+                  <Text sx={{ fontSize: '0.9rem', color: 'grey.6' }}>
+                    ({sciName})
+                  </Text>
+                </Link>
+              ))
+            : null}
+
+          {query && query.length >= 3 && results.length === 0 ? (
+            <Text
+              sx={{
+                padding: '0.25em 1em',
+                margin: 0,
+                color: 'grey.4',
+                textAlign: 'center',
+                fontSize: '0.8em',
+              }}
+            >
+              No species match your query...
+            </Text>
+          ) : null}
         </Box>
       ) : null}
     </Box>

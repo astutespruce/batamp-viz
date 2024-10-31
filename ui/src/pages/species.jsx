@@ -1,19 +1,29 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
+import * as aq from 'arquero'
 import { Container, Heading } from 'theme-ui'
 
 import { Layout, SEO } from 'components/Layout'
 import { SubpageHeaderImage as HeaderImage } from 'components/Image'
 import { SpeciesList } from 'components/Species'
-import { extractNodes } from 'util/data'
-import { SPECIES } from '../../config/constants'
+import { summaryStats, SPECIES } from 'config'
 
-const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
-  const species = extractNodes(allSpeciesJson).map((d) => ({
-    ...d,
-    ...SPECIES[d.species],
-  }))
+const SpeciesPage = ({ data: { headerImage } }) => {
+  const speciesTable = aq.table(summaryStats.speciesTable).join(
+    aq.from(
+      Object.entries(SPECIES).map(
+        ([species, { sciName, commonName, ...rest }]) => ({
+          species,
+          sciName,
+          commonName,
+          searchKey: `${species} ${commonName.toLowerCase()} ${sciName.toLowerCase()}`,
+          ...rest,
+        })
+      )
+    ),
+    'species'
+  )
 
   return (
     <Layout>
@@ -31,7 +41,7 @@ const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
         <Heading as="h1" sx={{ fontSize: '3rem', mb: '3rem', lineHeight: 1.2 }}>
           Explore Data for North American Bat Species
         </Heading>
-        <SpeciesList species={species} />
+        <SpeciesList speciesTable={speciesTable} />
       </Container>
     </Layout>
   )
@@ -40,23 +50,6 @@ const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
 SpeciesPage.propTypes = {
   data: PropTypes.shape({
     headerImage: PropTypes.object.isRequired,
-    allSpeciesJson: PropTypes.shape({
-      edges: PropTypes.arrayOf(
-        PropTypes.shape({
-          node: PropTypes.shape({
-            species: PropTypes.string.isRequired,
-            detectors: PropTypes.number.isRequired,
-            presenceOnlyDetectors: PropTypes.number,
-            detections: PropTypes.number.isRequired,
-            presenceOnlyDetections: PropTypes.number,
-            detectionNights: PropTypes.number.isRequired,
-            detectorNights: PropTypes.number.isRequired,
-            presenceOnlyDetectorNights: PropTypes.number,
-            contributors: PropTypes.number.isRequired,
-          }).isRequired,
-        })
-      ).isRequired,
-    }).isRequired,
   }).isRequired,
 }
 
@@ -69,22 +62,6 @@ export const pageQuery = graphql`
           formats: [AUTO]
           placeholder: BLURRED
         )
-      }
-    }
-
-    allSpeciesJson {
-      edges {
-        node {
-          species
-          detectors
-          presenceOnlyDetectors: poDetectors
-          detections
-          presenceOnlyDetections: poDetections
-          detectionNights
-          detectorNights
-          presenceOnlyDetectorNights: poDetectorNights
-          contributors
-        }
       }
     }
   }

@@ -12,9 +12,9 @@ import {
 import Sidebar from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
 import SpeciesFilters from 'components/SpeciesFilters'
-import { join, groupBy } from 'util/data'
+import { MONTHS, MONTH_LABELS, SPECIES } from 'config'
 import { useDetectors, useSpeciesTS } from 'data'
-import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
+import { join, groupBy } from 'util/data'
 
 const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
   const [selected, setSelected] = useState({ features: [], feature: null })

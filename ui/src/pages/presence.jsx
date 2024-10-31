@@ -1,141 +1,168 @@
 import React, { useMemo, useState } from 'react'
-import { Box, Flex } from 'theme-ui'
+import { Box, Flex, Spinner, Text } from 'theme-ui'
+import { useQuery } from '@tanstack/react-query'
+import { escape, op } from 'arquero'
 
 import FiltersList from 'components/FiltersList'
-import { ClientOnly, Layout, SEO } from 'components/Layout'
+import { ClientOnly, Layout, PageErrorMessage, SEO } from 'components/Layout'
 import { ExpandableParagraph } from 'components/Text'
-import {
-  Provider as CrossfilterProvider,
-  FilteredMap as Map,
-} from 'components/Crossfilter'
+import { Provider as CrossfilterProvider } from 'components/Crossfilter'
+import Map from 'components/Map'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
-import { useDetectors, useSpeciesTS } from 'data'
-import { join } from 'util/data'
-import { MONTHS, MONTH_LABELS, SPECIES } from '../../config/constants'
+import { useDetectors, useSpeciesTS, fetchFeather } from 'data'
+import { indexBy, join } from 'util/data'
+import { MONTHS, MONTH_LABELS, SPECIES, SPECIES_ID, H3_COLS } from 'config'
+import { filters } from 'filters/occurrence'
+
+const occurrenceMetric = {
+  key: 'species',
+  label: 'species detected',
+  // count unique species
+  aggFunc: op.distinct('species'),
+  // for dimensions and totals, only aggregate records where species is detected
+  dimensionPrefilter: (d) => d.detected,
+}
+
+const loadData = async () => {
+  const [detectorsTable, occurrenceTable] = await Promise.all([
+    fetchFeather('/data/detectors.feather'),
+    fetchFeather('/data/spp_occurrence.feather'),
+  ])
+
+  return {
+    detectorsIndex: indexBy(detectorsTable.objects(), 'id'),
+    occurrenceTable: occurrenceTable
+      .derive({ species: escape((d) => SPECIES_ID[d.species]) })
+      .join(detectorsTable.select(['id', 'siteId', 'admin1Name', ...H3_COLS]), [
+        'detId',
+        'id',
+      ]),
+  }
+}
 
 const PresencePage = () => {
+  const {
+    isLoading,
+    error,
+    data: { detectorsIndex, occurrenceTable } = {},
+  } = useQuery({
+    queryKey: ['data'],
+    queryFn: loadData,
+
+    // FIXME:
+    retry: false,
+    staleTime: 1, // use then reload to force refresh of underlying data during dev
+    // retry: true,
+    // stateTime: 60,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  })
+
   const [selected, setSelected] = useState({ features: [], feature: null })
 
-  const detectors = useDetectors()
-  const allSpeciesTS = useSpeciesTS()
+  // const detectors = useDetectors()
+  // const allSpeciesTS = useSpeciesTS()
 
   // use state initialization to ensure that we only process data when page mounts
   // and not subsequent rerenders when a detector is selected
-  const { data, detectorLocations, detectorTS, filters, visibleFilters } =
-    useMemo(() => {
-      // drop unneeded fields
-      const ts = allSpeciesTS.map(
-        ({ id, species, year, month, detectionNights, detections }) => ({
-          id,
-          species,
-          year,
-          month,
-          detectionNights,
-          detections,
-        })
-      )
+  // const { data, detectorLocations, detectorTS, filters, visibleFilters } =
+  //   useMemo(() => {
+  //     // drop unneeded fields
+  //     const ts = allSpeciesTS.map(
+  //       ({ id, species, year, month, detectionNights, detections }) => ({
+  //         id,
+  //         species,
+  //         year,
+  //         month,
+  //         detectionNights,
+  //         detections,
+  //       })
+  //     )
 
-      const locations = detectors.map(({ id, lat, lon, admin1Name }) => ({
-        id,
-        lat,
-        lon,
-        admin1Name,
-      }))
+  //     const locations = detectors.map(({ id, lat, lon, admin1Name }) => ({
+  //       id,
+  //       lat,
+  //       lon,
+  //       admin1Name,
+  //     }))
 
-      const initData = join(ts, locations, 'id')
+  //     const initData = join(ts, locations, 'id')
 
-      // data for filter values
-      const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
-        species,
-        ...v,
-      }))
+  //     // data for filter values
+  //     const allSpecies = Object.entries(SPECIES).map(([species, v]) => ({
+  //       species,
+  //       ...v,
+  //     }))
 
-      const years = Array.from(new Set(initData.map(({ year }) => year))).sort()
+  //     const years = Array.from(new Set(initData.map(({ year }) => year))).sort()
 
-      const initFilters = [
-        {
-          field: 'lat',
-          internal: true,
-        },
-        {
-          field: 'lon',
-          internal: true,
-        },
-        {
-          field: 'species',
-          title: 'Species Detected',
-          isOpen: false,
-          hideEmpty: true,
-          sort: true,
-          values: allSpecies.map(({ species: spp }) => spp),
-          labels: allSpecies.map(
-            ({ commonName, sciName }) => `${commonName} (${sciName})`
-          ),
-        },
-        {
-          field: 'month',
-          title: 'Seasonality',
-          isOpen: false,
-          vertical: true,
-          values: MONTHS,
-          labels: MONTH_LABELS.map((m) => m.slice(0, 3)),
-        },
-        {
-          field: 'year',
-          title: 'Year',
-          isOpen: false,
-          vertical: true,
-          values: years,
-          labels:
-            years.length > 6
-              ? years.map((y) => `'${y.toString().slice(2)}`)
-              : years,
-        },
-        {
-          field: 'admin1Name',
-          title: 'State / Province',
-          isOpen: false,
-          sort: true,
-          hideEmpty: true,
-          values: Array.from(new Set(initData.map((d) => d.admin1Name))).sort(),
-        },
-      ]
+  //     // TODO:
+  //     const initFilters = []
 
-      return {
-        data: initData,
-        detectorLocations: locations,
-        detectorTS: ts,
-        filters: initFilters,
-        visibleFilters: initFilters.filter(({ internal }) => !internal),
-      }
-    }, [])
+  //     return {
+  //       data: initData,
+  //       detectorLocations: locations,
+  //       detectorTS: ts,
+  //       filters: initFilters,
+  //       visibleFilters: initFilters.filter(({ internal }) => !internal),
+  //     }
+  //   }, [])
 
-  const handleSelectFeatures = (ids) => {
-    const features = detectors
-      .filter(({ id }) => ids.has(id))
-      .map((d) => ({
-        ...d,
-        ts: detectorTS.filter(({ id }) => id === d.id),
-      }))
+  // const handleSelectFeatures = (ids) => {
+  //   const features = detectors
+  //     .filter(({ id }) => ids.has(id))
+  //     .map((d) => ({
+  //       ...d,
+  //       ts: detectorTS.filter(({ id }) => id === d.id),
+  //     }))
 
-    console.log('selected features', features)
+  //   console.log('selected features', features)
 
-    setSelected({
-      features,
-      feature: features.length ? features[0].id : null,
-    })
+  //   setSelected({
+  //     features,
+  //     feature: features.length ? features[0].id : null,
+  //   })
+  // }
+
+  // const handleSetFeature = (feature) => {
+  //   setSelected({
+  //     features: selected.features,
+  //     feature,
+  //   })
+  // }
+
+  // const handleDetailsClose = () => {
+  //   setSelected({ features: [], feature: null })
+  // }
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <Flex
+          sx={{
+            height: '100%',
+            width: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1rem',
+          }}
+        >
+          <Spinner size="3rem" />
+          <Text sx={{ fontSize: 4 }}>Loading...</Text>
+        </Flex>
+      </Layout>
+    )
   }
 
-  const handleSetFeature = (feature) => {
-    setSelected({
-      features: selected.features,
-      feature,
-    })
-  }
+  if (error) {
+    console.error(error)
 
-  const handleDetailsClose = () => {
-    setSelected({ features: [], feature: null })
+    return (
+      <Layout>
+        <PageErrorMessage />
+      </Layout>
+    )
   }
 
   return (
@@ -143,16 +170,18 @@ const PresencePage = () => {
       <ClientOnly>
         <Flex sx={{ height: '100%', width: '100%' }}>
           <CrossfilterProvider
-            data={data}
+            table={occurrenceTable}
             filters={filters}
-            options={{ valueField: 'species' }}
+            metric={occurrenceMetric}
+            // valueField="species"
+            // options={{ valueField: 'species' }}
           >
             <Sidebar allowScroll={false}>
               {selected.features.length > 0 ? (
                 <DetectorDetails
                   detectors={selected.features}
-                  onSetDetector={handleSetFeature}
-                  onClose={handleDetailsClose}
+                  // onSetDetector={handleSetFeature}
+                  // onClose={handleDetailsClose}
                 />
               ) : (
                 <>
@@ -186,7 +215,7 @@ const PresencePage = () => {
                     </ExpandableParagraph>
                   </Box>
 
-                  <FiltersList filters={visibleFilters} />
+                  <FiltersList filters={filters} />
                 </>
               )}
             </Sidebar>
@@ -195,9 +224,9 @@ const PresencePage = () => {
               sx={{ position: 'relative', flex: '1 0 auto', height: '100%' }}
             >
               <Map
-                detectors={detectorLocations}
+                // detectors={detectorLocations}
                 selectedFeature={selected.feature}
-                onSelectFeatures={handleSelectFeatures}
+                // onSelectFeatures={handleSelectFeatures}
               />
             </Box>
           </CrossfilterProvider>

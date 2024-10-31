@@ -13,6 +13,7 @@ const activeLabelCSS = {
 const donutLabels = {
   sppDetections: 'detections',
   detectorNights: 'nights',
+  speciesSurveyed: 'species',
 }
 
 const Contributor = ({

@@ -104,9 +104,9 @@ const Top = () => {
       </Heading>
       <Paragraph>
         This application enables you to explore bat monitoring data for{' '}
-        {summaryStats.species} species across North America, allowing you to
-        explore seasonal trends in species detections and explore bat activity
-        for a particular location.
+        {summaryStats.speciesSurveyed} species across North America, allowing
+        you to explore seasonal trends in species detections and explore bat
+        activity for a particular location.
       </Paragraph>
 
       <Heading as="h3" sx={{ mt: '2rem' }}>
