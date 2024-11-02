@@ -37,76 +37,60 @@ export const createDimensions = (filters) => {
   const dimensions = {}
   filters.forEach((filter) => {
     dimensions[filter.field] = filter
+    if (filter.isArray) {
+      throw new Error('isArray not yet supported')
+    }
   })
 
   return dimensions
 }
 
 /**
- * Calculate a total based on aggFunc for each value present in values for dimension;
- * ignores count for any value that is not in values.
+ * Apply aggFuncs to each group
+ * TODO: this does not handle isArray type dimensions!
  * @param {Object} table - arquero table
- * @param {Object} dimension - object with dimension properties
+ * @param {String} groupByField - field to group table by
  * @param {Function} aggFunc - aggregation function passed to rolloup to calculate total
  * @returns Number
  */
-export const getDimensionTotal = (table, dimension, aggFunc) => {
-  const { field, isArray } = dimension
-
-  let grouped = table.groupby(field).rollup({ total: aggFunc })
-
-  if (isArray) {
-    // split by commas into separate rows, then regroup
-    grouped = grouped.unroll(field).groupby(field).rollup({ total: aggFunc })
-  }
-
+export const aggregateByGroup = (table, groupByField, aggFuncs) => {
+  const outFields = Object.keys(aggFuncs)
   return Object.fromEntries(
-    grouped
-      .derive({ entries: escape((d) => [d[field], d.total]) })
+    table
+      .groupby(groupByField)
+      .rollup(aggFuncs)
+      .derive({ row: op.row_object(...outFields) })
+      .derive({
+        entries: escape((d) => [d[groupByField], d.row]),
+      })
       .array('entries')
   )
 }
 
 /**
- * Calculate a total based on aggFunc each dimension
+ * Aggregate each dimension according to aggFuncs
  * @param {Object} table - arquero table
  * @param {Object} dimensions - object of dimension objects by ID
- * @param {Function} aggFunc - aggregation function passed to rolloup to calculate total
+ * @param {Function} aggFuncs - object of aggregation functions passed to table rollup
  */
-export const aggregateByDimension = (table, dimensions, aggFunc) =>
+export const aggregateByDimension = (table, dimensions, aggFuncs) =>
   Object.fromEntries(
-    Object.values(dimensions).map((dimension) => [
-      dimension.field,
-      getDimensionTotal(table, dimension, aggFunc),
-    ])
-  )
-
-export const aggregateByHex = (prefilteredTable, table, aggFunc) =>
-  // TODO: this is specific to species occurrence; generalize!
-  Object.fromEntries(
-    H3_COLS.map((col) => [
-      col,
-      Object.fromEntries(
-        prefilteredTable
-          .groupby(col)
-          .rollup({ total: aggFunc })
-          // need right join in order to fill surveyed non-detections with 0
-          // can omit the rollup function
-          .join_right(table.groupby(col).rollup(), col)
-          .derive({ entries: escape((d) => [d[col], d.total || 0]) })
-          .array('entries')
-      ),
+    Object.values(dimensions).map(({ field }) => [
+      field,
+      aggregateByGroup(table, field, aggFuncs),
     ])
   )
 
 /**
- * Calculate the total against the entire table (not grouped by dimenion values)
+ * Aggregate each dimension according to aggFuncs
  * @param {Object} table - arquero table
- * @param {Function} aggFunc - aggregation function passed to rolloup to calculate total
- * @returns Number
+ * @param {Object} dimensions - object of dimension objects by ID
+ * @param {Function} aggFuncs - object of aggregation functions passed to table rollup
  */
-export const getTotal = (table, aggFunc) =>
-  table.rollup({ total: aggFunc }).array('total')[0]
+// export const aggregateByH3 = (table, aggFuncs) =>
+//   Object.fromEntries(
+//     H3_COLS.map((col) => [col, aggregateByGroup(table, col, aggFuncs)])
+//   )
 
 /**
  * Calculate list of unique values for field within table
@@ -118,20 +102,63 @@ export const getDistinctValues = (table, field) =>
   table.rollup({ values: op.array_agg_distinct(field) }).array('values')[0]
 
 /**
+ * Extract valueField from stats objects based on full set of ids present in
+ * h3Ids and siteIds, backfilled with 0 where the location is not in the stats
+ */
+export const getTotals = ({
+  topLevelStats,
+  dimensionStats,
+  h3Stats,
+  siteStats,
+  h3Ids,
+  siteIds,
+  valueField,
+}) => ({
+  total: topLevelStats[valueField] || 0,
+  dimensionTotals: Object.fromEntries(
+    Object.entries(dimensionStats).map(([dimensionKey, dimensionValues]) => [
+      dimensionKey,
+      Object.fromEntries(
+        Object.entries(dimensionValues).map(
+          ([dimensionValue, { [valueField]: metricTotal }]) => [
+            dimensionValue,
+            metricTotal,
+          ]
+        )
+      ),
+    ])
+  ),
+  h3Totals: Object.fromEntries(
+    H3_COLS.map((col) => [
+      col,
+      Object.fromEntries(
+        h3Ids[col].map((id) => [
+          id,
+          h3Stats[col][id] ? h3Stats[col][id][valueField] : 0,
+        ])
+      ),
+    ])
+  ),
+  siteTotals: Object.fromEntries(
+    siteIds.map((id) => [id, siteStats[id] ? siteStats[id][valueField] : 0])
+  ),
+})
+
+/**
  * Apply filters to table and calculate the total for each filtered dimension
  * based on all other filters (but not its own) and total for each unfiltered
  * dimension.
- * @param {Object} fullTable - unfiltered arquero table
- * @param {Object} dimensions - object of dimension objects
- * @param {Object} rawFilters - object of filter values
- * @param {Object} metric
- * @returns Object with filtered table, preFilteredTable, and dimension totals
+ * @returns Object with filtered table, preFilteredTable, and dimension stats according to aggFuncs
  */
-export const applyFilters = (fullTable, dimensions, rawFilters, metric) => {
-  let table = fullTable
-  const dimensionTotals = {}
-
-  const { aggFunc, dimensionPrefilter } = metric
+export const applyFilters = ({
+  table: rawTable,
+  dimensions,
+  filters: rawFilters,
+  aggFuncs,
+  preFilter,
+}) => {
+  let table = rawTable
+  const dimensionStats = {}
 
   // do a first pass and apply all filters into derived columns so that these
   // can be used later in a filter expression
@@ -160,16 +187,15 @@ export const applyFilters = (fullTable, dimensions, rawFilters, metric) => {
       .filter((otherField) => otherField !== field)
       .map((otherField) => `${otherField}_filter`)
 
+    // filter in rows where all filter values are present
     const filteredTable = table.filter(
       escape((d) => fields.filter((f) => d[f]).length === fields.length)
     )
 
-    dimensionTotals[field] = getDimensionTotal(
-      dimensionPrefilter
-        ? filteredTable.filter(dimensionPrefilter)
-        : filteredTable,
-      dimensions[field],
-      aggFunc
+    dimensionStats[field] = aggregateByGroup(
+      preFilter ? filteredTable.filter(preFilter) : filteredTable,
+      field,
+      aggFuncs
     )
   })
 
@@ -182,26 +208,24 @@ export const applyFilters = (fullTable, dimensions, rawFilters, metric) => {
     )
   }
 
-  const prefilteredTable = dimensionPrefilter
-    ? table.filter(dimensionPrefilter)
-    : table
+  const prefilteredTable = preFilter ? table.filter(preFilter) : table
 
   // update dimension totals for every dimension that is not filtered
   Object.values(dimensions)
     .filter(({ field }) => !(rawFilters[field] && rawFilters[field].size > 0))
     .forEach((dimension) => {
       const { field } = dimension
-      dimensionTotals[field] = getDimensionTotal(
+      dimensionStats[field] = aggregateByGroup(
         prefilteredTable,
-        dimension,
-        aggFunc
+        field,
+        aggFuncs
       )
     })
 
   return {
     table,
     prefilteredTable,
-    dimensionTotals,
+    dimensionStats,
   }
 }
 

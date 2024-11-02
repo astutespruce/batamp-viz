@@ -11,10 +11,9 @@ const FiltersList = ({ filters }) => {
   const {
     resetFilters,
     state: {
-      metric: { label: metricLabel },
-      total,
-      filteredTotal,
       hasFilters,
+      metric: { label: metricLabel, total },
+      total: filteredTotal,
     },
   } = useCrossfilter()
 

@@ -9,17 +9,20 @@ import React, {
 } from 'react'
 import PropTypes from 'prop-types'
 
+import { H3_COLS, METRIC_LABELS } from 'config'
 import { isDebug } from 'util/dom'
 
 // import { Crossfilter } from './Crossfilter'
 import {
   aggregateByDimension,
-  aggregateByHex,
+  // aggregateByH3,
   applyFilters,
   createDimensions,
-  getFilteredTotal,
-  getTotal,
+  // getFilteredTotal,
+  // getTotal,
   getDistinctValues,
+  aggregateByGroup,
+  getTotals,
 } from './util'
 
 /**
@@ -32,7 +35,10 @@ const DispatchContext = createContext()
 export const Provider = ({
   table,
   filters: filterConfig,
-  metric: initMetric,
+  // metric: initMetric,
+  valueField: initValueField,
+  aggFuncs,
+  preFilter,
   children,
 }) => {
   const dimensions = useMemo(
@@ -51,31 +57,77 @@ export const Provider = ({
       console.time('initialize state')
     }
 
-    const { aggFunc, dimensionPrefilter } = initMetric
-    const prefilteredTable = dimensionPrefilter
-      ? table.filter(dimensionPrefilter)
-      : table
+    const prefilteredTable = preFilter ? table.filter(preFilter) : table
 
-    const total = getTotal(prefilteredTable, aggFunc)
+    if (isDebug) {
+      console.time('aggregate stats')
+    }
+
+    // aggregate by aggFuncs at all levels; these all use preFilter when provided
+    const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
+    const dimensionStats = aggregateByDimension(
+      prefilteredTable,
+      dimensions,
+      aggFuncs
+    )
+    const h3Stats = Object.fromEntries(
+      H3_COLS.map((col) => [
+        col,
+        aggregateByGroup(prefilteredTable, col, aggFuncs),
+      ])
+    )
+    const siteStats = aggregateByGroup(prefilteredTable, 'siteId', aggFuncs)
+
+    if (isDebug) {
+      console.timeEnd('aggregate stats')
+      console.time('aggregate locations')
+    }
+
+    // aggregate location IDs that were surveyed
+    const h3Ids = Object.fromEntries(
+      H3_COLS.map((col) => [col, getDistinctValues(table, col)])
+    )
+    const siteIds = getDistinctValues(table, 'siteId')
+
+    if (isDebug) {
+      console.timeEnd('aggregate locations')
+    }
+
+    const { total, dimensionTotals, h3Totals, siteTotals } = getTotals({
+      topLevelStats,
+      dimensionStats,
+      h3Stats,
+      siteStats,
+      h3Ids,
+      siteIds,
+      valueField: initValueField,
+    })
 
     const initialState = {
-      metric: initMetric,
+      // metric changes when valueField changes
+      metric: {
+        field: initValueField,
+        label: METRIC_LABELS[initValueField],
+        total,
+      },
 
+      // following values are updated when filters change
       filters: {},
       hasFilters: false,
-      total,
-      dimensionTotals: aggregateByDimension(
-        prefilteredTable,
-        dimensions,
-        aggFunc
-      ),
-      h3Totals: aggregateByHex(prefilteredTable, table, aggFunc),
-      siteIds: getDistinctValues(table, 'siteId'),
       filteredTable: table,
-      filteredTotal: total,
-
-      // FIXME: remove; superseded by hasFilters
-      // hasVisibleFilters: false,
+      // prefiltered stats
+      topLevelStats,
+      dimensionStats,
+      h3Stats,
+      siteStats,
+      // surveyed locations
+      h3Ids,
+      siteIds,
+      // totals backfilled with 0's, update when filters or valueField changes
+      total,
+      dimensionTotals,
+      h3Totals,
+      siteTotals,
     }
 
     if (isDebug) {
@@ -102,7 +154,6 @@ export const Provider = ({
         }
 
         const {
-          metric,
           // discard prev filter
           filters: { [filterField]: prevFilter, ...prevFilters },
         } = prevState
@@ -120,26 +171,60 @@ export const Provider = ({
         const {
           table: filteredTable,
           prefilteredTable,
-          dimensionTotals,
-        } = applyFilters(table, dimensions, newFilters, metric)
+          dimensionStats,
+        } = applyFilters({
+          table,
+          dimensions,
+          filters: newFilters,
+          aggFuncs,
+          preFilter,
+        })
+        const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
+        const h3Stats = Object.fromEntries(
+          H3_COLS.map((col) => [
+            col,
+            aggregateByGroup(prefilteredTable, col, aggFuncs),
+          ])
+        )
+        const siteStats = aggregateByGroup(prefilteredTable, 'siteId', aggFuncs)
 
-        const hasFilters =
-          Object.values(newFilters).filter(
-            (filter) => filter && filter.size > 0
-          ).length > 0
-
-        const { aggFunc } = metric
+        const h3Ids = Object.fromEntries(
+          H3_COLS.map((col) => [col, getDistinctValues(filteredTable, col)])
+        )
+        const siteIds = getDistinctValues(filteredTable, 'siteId')
+        const { total, dimensionTotals, h3Totals, siteTotals } = getTotals({
+          topLevelStats,
+          dimensionStats,
+          h3Stats,
+          siteStats,
+          h3Ids,
+          siteIds,
+          valueField: initValueField,
+        })
 
         const newState = {
           ...prevState,
 
           filters: newFilters,
-          hasFilters,
-          dimensionTotals,
-          h3Totals: aggregateByHex(prefilteredTable, table, aggFunc),
-          siteIds: getDistinctValues(filteredTable, 'siteId'),
+          hasFilters:
+            Object.values(newFilters).filter(
+              (filter) => filter && filter.size > 0
+            ).length > 0,
+
           filteredTable,
-          filteredTotal: getTotal(prefilteredTable, aggFunc),
+          // prefiltered stats
+          topLevelStats,
+          dimensionStats,
+          h3Stats,
+          siteStats,
+          // surveyed locations
+          h3Ids,
+          siteIds,
+          // totals backfilled with 0's, update when filters or valueField changes
+          total,
+          dimensionTotals,
+          h3Totals,
+          siteTotals,
         }
 
         if (isDebug) {
@@ -155,52 +240,6 @@ export const Provider = ({
     []
   )
 
-  // TODO: reimplement as filter against visible hexes or sites
-  // const setBounds = useCallback(
-  //   (bounds) => {
-  //     if (!(dimensions.lat && dimensions.lon)) {
-  //       console.warn(
-  //         'Filter requested on spatial dimensions that do not exist.  Must be configured as lat, lon when Crossfilter is constructed.'
-  //       )
-  //     }
-
-  //     setState((prevState) => {
-  //       if (isDebug) {
-  //         console.log('setBounds', bounds)
-  //         console.log('Prev state', prevState)
-  //       }
-
-  //       const { lat, lon } = dimensions
-
-  //       if (bounds === null) {
-  //         lat.filterAll()
-  //         lon.filterAll()
-  //       } else {
-  //         const [xmin, ymin, xmax, ymax] = bounds
-  //         lon.filterRange([xmin, xmax])
-  //         lat.filterRange([ymin, ymax])
-  //       }
-
-  //       const { valueField } = prevState
-
-  //       const newState = {
-  //         ...prevState,
-  //         data: crossfilter.allFiltered(),
-  //         dimensionTotals: aggregateByDimension(dimensions, valueField),
-  //         filteredTotal: getFilteredTotal(crossfilter, valueField),
-  //       }
-
-  //       if (isDebug) {
-  //         console.log('Next state', newState)
-  //       }
-
-  //       return newState
-  //     })
-  //   },
-  //   [table]
-  // )
-  const setBounds = useCallback(() => {}, [])
-
   const resetFilters = useCallback(
     () => {
       setState((prevState) => {
@@ -209,31 +248,59 @@ export const Provider = ({
           console.time('reset filters')
         }
 
-        // TODO: possible optimization: can restore initial state if metric === initMetric
         const {
-          metric: { aggFunc, dimensionPrefilter },
+          metric: { field: valueField },
         } = prevState
 
-        const prefilteredTable = dimensionPrefilter
-          ? table.filter(dimensionPrefilter)
-          : table
+        const prefilteredTable = preFilter ? table.filter(preFilter) : table
 
-        const total = getTotal(prefilteredTable, aggFunc)
+        // aggregate by aggFuncs at all levels; these all use preFilter when provided
+        const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
+        const dimensionStats = aggregateByDimension(
+          prefilteredTable,
+          dimensions,
+          aggFuncs
+        )
+        const h3Stats = Object.fromEntries(
+          H3_COLS.map((col) => [
+            col,
+            aggregateByGroup(prefilteredTable, col, aggFuncs),
+          ])
+        )
+        const siteStats = aggregateByGroup(prefilteredTable, 'siteId', aggFuncs)
+
+        // aggregate location IDs that were surveyed
+        const h3Ids = Object.fromEntries(
+          H3_COLS.map((col) => [col, getDistinctValues(table, col)])
+        )
+        const siteIds = getDistinctValues(table, 'siteId')
+
+        const { total, dimensionTotals, h3Totals, siteTotals } = getTotals({
+          topLevelStats,
+          dimensionStats,
+          h3Stats,
+          siteStats,
+          h3Ids,
+          siteIds,
+          valueField,
+        })
 
         const newState = {
           ...prevState,
+
           filters: {},
           hasFilters: false,
-          total,
-          dimensionTotals: aggregateByDimension(
-            prefilteredTable,
-            dimensions,
-            aggFunc
-          ),
-          h3Totals: aggregateByHex(prefilteredTable, table, aggFunc),
-          siteIds: getDistinctValues(table, 'siteId'),
           filteredTable: table,
-          filteredTotal: total,
+          topLevelStats,
+          dimensionStats,
+          h3Stats,
+          siteStats,
+          h3Ids,
+          siteIds,
+          total,
+          dimensionTotals,
+          h3Totals,
+          siteTotals,
         }
 
         if (isDebug) {
@@ -251,27 +318,28 @@ export const Provider = ({
 
   const setValueField = useCallback(
     (newValueField) => {
-      setState((prevState) => {
-        if (isDebug) {
-          console.log('setValueField', newValueField)
-          console.log('Prev state', prevState)
-        }
+      throw new Error('setValueField not implemented!')
+      // setState((prevState) => {
+      //   if (isDebug) {
+      //     console.log('setValueField', newValueField)
+      //     console.log('Prev state', prevState)
+      //   }
 
-        const newState = {
-          ...prevState,
-          valueField: newValueField,
-          dimensionTotals: aggregateByDimension(dimensions, newValueField),
-          filteredTotal: getFilteredTotal(crossfilter, newValueField),
-          // total: getRawTotal(crossfilter, valueField),
-          total: getTotal(table, newValueField),
-        }
+      //   const newState = {
+      //     ...prevState,
+      //     valueField: newValueField,
+      //     dimensionTotals: aggregateByDimension(dimensions, newValueField),
+      //     filteredTotal: getFilteredTotal(crossfilter, newValueField),
+      //     // total: getRawTotal(crossfilter, valueField),
+      //     total: getTotal(table, newValueField),
+      //   }
 
-        if (isDebug) {
-          console.log('Next state', newState)
-        }
+      //   if (isDebug) {
+      //     console.log('Next state', newState)
+      //   }
 
-        return newState
-      })
+      //   return newState
+      // })
     },
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
     []
@@ -280,11 +348,10 @@ export const Provider = ({
   const dispatchFunctions = useMemo(
     () => ({
       setFilter,
-      setBounds,
       resetFilters,
       setValueField,
     }),
-    [setFilter, setBounds, resetFilters, setValueField]
+    [setFilter, resetFilters, setValueField]
   )
 
   // We use nested context providers below to split up the parts of the context that are changing frequently (the state)
@@ -299,19 +366,22 @@ export const Provider = ({
 Provider.propTypes = {
   table: PropTypes.object.isRequired,
   filters: PropTypes.array.isRequired,
-  metric: PropTypes.shape({
-    label: PropTypes.string.isRequired,
-    // used in table.rollup() to calculate total
-    aggFunc: PropTypes.oneOfType([PropTypes.func, PropTypes.object]).isRequired,
-    // used to pre-filter table before calculating dimension totals
-    dimensionPrefilter: PropTypes.func,
-  }).isRequired,
+  valueField: PropTypes.string.isRequired,
+  aggFuncs: PropTypes.objectOf(
+    PropTypes.oneOfType([PropTypes.func, PropTypes.object])
+  ).isRequired,
+  // used to pre-filter table before calculating dimension totals
+  preFilter: PropTypes.func,
   // valueField: PropTypes.string.isRequired,
   children: PropTypes.oneOfType([
     PropTypes.node,
     PropTypes.element,
     PropTypes.array,
   ]).isRequired,
+}
+
+Provider.defaultProps = {
+  preFilter: null,
 }
 
 export const useCrossfilter = () => ({

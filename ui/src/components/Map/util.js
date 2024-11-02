@@ -170,25 +170,3 @@ export const maxProperty = (features, property, fallback = null) => {
 
   return fallback
 }
-
-export const getHighlightExpr = (defaultExpr, highlightExpr) => [
-  'case',
-  [
-    'any',
-    ['boolean', ['feature-state', 'highlight'], false],
-    ['boolean', ['feature-state', 'selected'], false],
-  ],
-  highlightExpr,
-  defaultExpr,
-]
-
-export const setHexHighlight = (map, feature, highlight) => {
-  if (feature === null) {
-    return
-  }
-
-  console.log('set feature state', feature, 'highlight', highlight)
-  map.setFeatureState(feature, {
-    highlight,
-  })
-}

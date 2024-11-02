@@ -15,7 +15,7 @@ from analysis.constants import ACTIVITY_COLUMNS, NABAT_TOLERANCE, SPECIES_ID
 from analysis.lib.height import fix_mic_height
 from analysis.lib.points import extract_point_ids
 from analysis.lib.tiles import create_tileset, join_tilesets
-from analysis.lib.util import camelcase
+from analysis.lib.util import camelcase, get_min_uint_dtype
 from analysis.databasin.lib.clean import clean_batamp
 from analysis.nabat.lib.clean import clean_nabat
 
@@ -32,6 +32,8 @@ tile_dir = Path("ui/static/tiles")
 tile_dir.mkdir(exist_ok=True)
 static_data_dir = Path("ui/static/data")
 static_data_dir.mkdir(exist_ok=True)
+static_spp_data_dir = static_data_dir / "species"
+static_spp_data_dir.mkdir(exist_ok=True)
 tmp_dir = Path("/tmp")
 
 
@@ -431,7 +433,6 @@ sites["admin1_name"] = sites.admin1_name.fillna("Offshore").astype("category")
 
 
 ### join to H3 hexagons levels 4-8 and create hexagon tiles
-# TODO: tune zoom levels per H3 level
 hex_levels = [
     {"level": 4, "minzoom": 0, "maxzoom": 5},
     {"level": 5, "minzoom": 4, "maxzoom": 7},
@@ -467,8 +468,6 @@ join_tilesets(tilesets, tile_dir / "h3.pmtiles")
 for tileset in tilesets:
     tileset.unlink()
 
-
-raise FOO
 
 ################################################################################
 ### Extract detector-level info
@@ -600,39 +599,51 @@ detectors = detectors.join(sites.set_index("id")[["admin1_name"] + H3_COLS], on=
 table = pa.Table.from_pandas(camelcase(detectors)).replace_schema_metadata()
 write_feather(table, static_data_dir / "detectors.feather", compression="uncompressed")
 
+
 ################################################################################
-### Bin species occurrence data for species occurrences page
+### Bin species detections and detection nights by detector, year, and month
 ################################################################################
 
+for species in activity_columns:
+    subset = df.loc[df[species].notnull()]
+    spp_detections = subset.groupby(["det_id", "year", "month"])[species].sum().rename("detections")
+    spp_detection_nights = (
+        subset.loc[df[species] > 0].groupby(["det_id", "year", "month"]).night.nunique().rename("detection_nights")
+    )
+    spp_stats = pd.DataFrame(spp_detections).join(spp_detection_nights).reset_index()
+    spp_stats["detection_nights"] = spp_stats.detection_nights.fillna(0).astype("uint8")
+
+    for col in ["det_id", "year", "month", "detection_nights"]:
+        spp_stats[col] = spp_stats[col].astype("category")
+
+    spp_stats["detections"] = spp_stats.detections.astype(get_min_uint_dtype(spp_stats.detections.max())).astype(
+        "category"
+    )
+
+    table = pa.Table.from_pandas(camelcase(spp_stats)).replace_schema_metadata()
+    write_feather(table, static_spp_data_dir / f"{species}.feather", compression="uncompressed")
+
+
+################################################################################
+### Bin species occurrences by detector, year, and month
+################################################################################
 spp_occurrence = (
     df.groupby(["det_id", "year", "month"])[activity_columns]
-    .max()
+    .sum()
     .stack(future_stack=True)
     .dropna()
     .rename("detected")
     .reset_index()
     .rename(columns={"level_3": "species"})
 )
-spp_occurrence["detected"] = spp_occurrence.detected.clip(0, 1).astype(bool)
 spp_occurrence["species"] = spp_occurrence.species.map(SPECIES_ID)
+spp_occurrence["detected"] = spp_occurrence.detected.clip(0, 1).astype(bool)
+
 for col in ["det_id", "year", "month", "species"]:
     spp_occurrence[col] = spp_occurrence[col].astype("category")
 
 table = pa.Table.from_pandas(camelcase(spp_occurrence)).replace_schema_metadata()
 write_feather(table, static_data_dir / "spp_occurrence.feather", compression="uncompressed")
-
-
-################################################################################
-### Extract time-series data: TODO:
-################################################################################
-
-
-# TODO: aggregate to year / month values
-ts = df[["det_id", "point_id"]]
-
-# discard pandas metadata
-# table = pa.Table.from_pandas(contributor_stats).replace_schema_metadata()
-# write_feather(table, static_data_dir / "speciesTS.feather", compression="uncompressed")
 
 
 ################################################################################

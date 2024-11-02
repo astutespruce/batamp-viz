@@ -291,7 +291,7 @@ export const METRIC_LABELS = {
   detectionNights: 'nights detected',
   detectorNights: 'nights monitored',
   id: 'detectors',
-  species: 'species detected',
+  speciesCount: 'species detected',
 }
 
 export const METRICS = {
