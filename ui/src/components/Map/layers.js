@@ -1,17 +1,48 @@
+import { interpolateYlGnBu } from 'd3-scale-chromatic'
+
 import { getHighlightExpr } from './style'
+
+export const defaultHexFillColor = '#AAAAAA'
+
+// use 20% stops for interpolated colors
+export const hexColors = [...Array(6).keys()]
+  .map((d) => d / 5)
+  .map(interpolateYlGnBu)
+
+export const hexColorGradient = () => {
+  const stops = hexColors
+    .map((color, i) => `${color} ${(i / (hexColors.length - 1)) * 100}%`)
+    .join(', ')
+  return `linear-gradient(90deg, ${stops})`
+}
+
+export const getHexColorExpr = (scale) => {
+  const colorExpr = []
+  hexColors.forEach((color, i) => {
+    colorExpr.push(
+      (scale[1] - scale[0]) * (i / (hexColors.length - 1)) + scale[0]
+    )
+    colorExpr.push(color)
+  })
+
+  return [
+    'case',
+    [
+      'any',
+      ['==', ['feature-state', 'total'], 0],
+      ['==', ['feature-state', 'total'], null],
+    ],
+    defaultHexFillColor,
+    ['interpolate', ['linear'], ['feature-state', 'total'], ...colorExpr],
+  ]
+}
 
 const hexFillStub = {
   source: 'h3',
   type: 'fill',
   // filter: defined by specific data available,
   paint: {
-    'fill-color': getHighlightExpr('#AAAAAA', '#ee7a14'),
-    // 'fill-color': [
-    //   'case',
-    //   ['boolean', ['feature-state', 'highlight'], false],
-    //   'red',
-    //   'blue',
-    // ],
+    'fill-color': defaultHexFillColor,
     'fill-opacity': 0.75,
   },
 }

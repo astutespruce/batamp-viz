@@ -629,7 +629,7 @@ for species in activity_columns:
 ################################################################################
 spp_occurrence = (
     df.groupby(["det_id", "year", "month"])[activity_columns]
-    .sum()
+    .max()
     .stack(future_stack=True)
     .dropna()
     .rename("detected")

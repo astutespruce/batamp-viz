@@ -1,16 +1,20 @@
 /* eslint-disable max-len,no-underscore-dangle,camelcase */
 import React, { useRef, useState, useCallback, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { Box } from 'theme-ui'
-import { dequal } from 'dequal'
 
 import { useCrossfilter } from 'components/Crossfilter'
-import { METRIC_LABELS, SPECIES, H3_COLS } from 'config'
-import { formatNumber, quantityLabel } from 'util/format'
-import { niceNumber, difference, clone } from 'util/data'
-import { useIsEqualEffect } from 'util/hooks'
+import { H3_COLS } from 'config'
 
-import { layers, Map, mapboxgl, setFeatureHighlight } from 'components/Map'
+import {
+  layers,
+  hexColors,
+  hexColorGradient,
+  getHexColorExpr,
+  defaultHexFillColor,
+  Map,
+  mapboxgl,
+  setFeatureHighlight,
+} from 'components/Map'
 
 // TODO: props
 const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
@@ -33,13 +37,24 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
   const {
     state: {
       metric: { label: metricLabel },
-      //   valueField,
       hasFilters,
       h3Totals,
       h3Ids,
       siteIds,
     },
   } = useCrossfilter()
+
+  const h3TotalsRef = useRef(h3Totals)
+
+  const getH3ColorExpr = (totals) => {
+    const values = Object.values(totals)
+    const maxValue = Math.max(...values)
+    if (values.length === 0 || maxValue === 0) {
+      return defaultHexFillColor
+    }
+
+    return getHexColorExpr([0, maxValue])
+  }
 
   const handleCreateMap = useCallback((map) => {
     mapRef.current = map
@@ -59,14 +74,14 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
     })
 
     // add layers
-    layers.forEach((layer) => {
-      if (!layer.id.startsWith('species')) {
+    layers
+      .filter(({ id }) => !id.startsWith('species'))
+      .forEach((layer) => {
         map.addLayer(layer)
-      }
-    })
+      })
 
     H3_COLS.forEach((col) => {
-      Object.entries(h3Totals[col]).forEach(([hexId, total]) => {
+      Object.entries(h3Totals[col]).forEach(([hexId, total = 0]) => {
         map.setFeatureState(
           { source: 'h3', sourceLayer: col, id: parseInt(hexId, 10) },
           {
@@ -78,10 +93,21 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
 
       const fillLayerId = `${col}-fill`
 
+      map.once('idle', () => {
+        map.setPaintProperty(
+          fillLayerId,
+          'fill-color',
+          getH3ColorExpr(h3Totals[col])
+        )
+      })
+
       map.on('mousemove', fillLayerId, ({ features: [feature], lngLat }) => {
         if (map.getZoom() < 3) {
           return
         }
+
+        /* eslint-disable-next-line no-param-reassign */
+        map.getCanvas().style.cursor = 'pointer'
 
         const { source, sourceLayer, id: featureId } = feature
         const hoverFeature = {
@@ -90,14 +116,12 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
           id: featureId,
         }
 
-        /* eslint-disable-next-line no-param-reassign */
-        map.getCanvas().style.cursor = 'pointer'
+        const {
+          current: { [col]: { [featureId]: total = 0 } = { [featureId]: 0 } },
+        } = h3TotalsRef
 
         // tooltip position follows mouse cursor
-        tooltip
-          .setLngLat(lngLat)
-          .setHTML(`${h3Totals[col][featureId]} ${metricLabel}`)
-          .addTo(map)
+        tooltip.setLngLat(lngLat).setHTML(`${total} ${metricLabel}`).addTo(map)
 
         if (hoverFeature !== hoverFeatureRef.current) {
           // unhighlight previous
@@ -127,6 +151,8 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
 
     if (!(map && isLoaded)) return
 
+    h3TotalsRef.current = h3Totals
+
     // update filter on layers
     if (hasFilters) {
       H3_COLS.forEach((col) => {
@@ -149,8 +175,23 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
       map.setFilter('sites', null)
     }
 
-    // TODO: update rendering
-  }, [isLoaded, hasFilters, h3Ids, siteIds])
+    // TODO: set feature state to totals and update rendering
+
+    H3_COLS.forEach((col) => {
+      Object.entries(h3Totals[col]).forEach(([hexId, total = 0]) => {
+        map.setFeatureState(
+          { source: 'h3', sourceLayer: col, id: parseInt(hexId, 10) },
+          { total }
+        )
+      })
+
+      map.setPaintProperty(
+        `${col}-fill`,
+        'fill-color',
+        getH3ColorExpr(h3Totals[col])
+      )
+    })
+  }, [isLoaded, hasFilters, h3Totals, h3Ids, siteIds])
 
   //   const updateLegend = (detectorLegend = []) => {
   //     const entries = detectorLegend.slice()

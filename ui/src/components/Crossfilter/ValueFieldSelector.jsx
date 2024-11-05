@@ -3,9 +3,8 @@ import PropTypes from 'prop-types'
 import { Box, Flex } from 'theme-ui'
 
 import { ToggleButton } from 'components/Button'
-
+import { METRIC_LABELS } from 'config'
 import { useCrossfilter } from './Context'
-import { METRIC_LABELS } from '../../../config/constants'
 
 const ValueFieldSelector = ({ fields }) => {
   const {

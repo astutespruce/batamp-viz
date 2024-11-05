@@ -65,17 +65,20 @@ export const Provider = ({
 
     // aggregate by aggFuncs at all levels; these all use preFilter when provided
     const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
+
     const dimensionStats = aggregateByDimension(
       prefilteredTable,
       dimensions,
       aggFuncs
     )
+
     const h3Stats = Object.fromEntries(
       H3_COLS.map((col) => [
         col,
         aggregateByGroup(prefilteredTable, col, aggFuncs),
       ])
     )
+
     const siteStats = aggregateByGroup(prefilteredTable, 'siteId', aggFuncs)
 
     if (isDebug) {
@@ -87,6 +90,7 @@ export const Provider = ({
     const h3Ids = Object.fromEntries(
       H3_COLS.map((col) => [col, getDistinctValues(table, col)])
     )
+
     const siteIds = getDistinctValues(table, 'siteId')
 
     if (isDebug) {
@@ -179,6 +183,11 @@ export const Provider = ({
           aggFuncs,
           preFilter,
         })
+
+        if (isDebug) {
+          window.filteredTable = filteredTable
+        }
+
         const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
         const h3Stats = Object.fromEntries(
           H3_COLS.map((col) => [
