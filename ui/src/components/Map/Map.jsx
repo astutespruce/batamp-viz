@@ -9,7 +9,7 @@ import StyleSelector from './StyleSelector'
 
 const { center, zoom, styles } = config
 
-const Map = ({ onCreateMap, children }) => {
+const Map = ({ onCreateMap, onBasemapChange, children }) => {
   const mapNode = useRef(null)
   const baseStyleRef = useRef(null)
   const [map, setMap] = useState(null)
@@ -93,11 +93,24 @@ const Map = ({ onCreateMap, children }) => {
       userLayers.forEach((layer) => {
         map.addLayer(layer)
       })
+
+      // call callback so that feature state can be set again
+      onBasemapChange()
     })
   }
 
   return (
-    <Box sx={{ position: 'relative', flex: '1 0 auto', height: '100%' }}>
+    <Box
+      sx={{
+        position: 'relative',
+        flex: '1 0 auto',
+        height: '100%',
+        '& .mapboxgl-popup-content': {
+          lineHeight: 1.2,
+          fontSize: 1,
+        },
+      }}
+    >
       <div ref={mapNode} style={{ width: '100%', height: '100%' }} />
 
       {map && (
@@ -113,6 +126,7 @@ const Map = ({ onCreateMap, children }) => {
 Map.propTypes = {
   children: PropTypes.oneOfType([PropTypes.node, PropTypes.element]),
   onCreateMap: PropTypes.func.isRequired,
+  onBasemapChange: PropTypes.func.isRequired,
 }
 
 Map.defaultProps = {

@@ -434,6 +434,7 @@ sites["admin1_name"] = sites.admin1_name.fillna("Offshore").astype("category")
 
 ### join to H3 hexagons levels 4-8 and create hexagon tiles
 hex_levels = [
+    {"level": 3, "minzoom": 0, "maxzoom": 4},
     {"level": 4, "minzoom": 0, "maxzoom": 5},
     {"level": 5, "minzoom": 4, "maxzoom": 7},
     {"level": 6, "minzoom": 6, "maxzoom": 8},
@@ -547,7 +548,7 @@ stacked = (
     .reset_index()
     .rename(columns={"level_1": "species"})
 )
-stacked["species"] = stacked.spp.map(SPECIES_ID)
+stacked["species"] = stacked.species.map(SPECIES_ID)
 det_spp_detected = (
     stacked[stacked.detections > 0]
     .groupby("det_id")
@@ -775,69 +776,3 @@ summary = {
 
 with open(json_dir / "summary.json", "w") as outfile:
     outfile.write(json.dumps(summary, ensure_ascii=False))
-
-
-################################################################################
-# FIXME: Old stuff below!
-################################################################################
-
-# ### Calculate detector - species stats per year, month
-
-# # transpose species columns to rows
-# # NOTE: we are filling nodata as -1 so we can filter these out from true 0's below
-# print("creating detector time series for species detail pages...")
-# stacked = df[["detector"] + ACTIVITY_COLUMNS + time_fields].fillna(-1).set_index(["detector"] + time_fields).stack()
-
-# # Only keep records where species was detected
-# det = stacked[stacked > 0].reset_index()
-# det.columns = ["detector"] + time_fields + ["species", "detections"]
-# det_ts = det.groupby(["detector", "species"] + time_fields).agg(["count", "sum"])
-# det_ts.columns = ["detection_nights", "detections"]
-
-# # Calculate where species COULD have been detected but wasn't
-# # aka: true zeros (nondetections)
-# totdet = stacked[stacked >= 0].reset_index()
-# totdet.columns = ["detector"] + time_fields + ["species", "detections"]
-# totdet_ts = totdet.groupby(["detector", "species"] + time_fields).count()
-# totdet_ts.columns = ["detector_nights"]
-
-# det_ts = totdet_ts.join(det_ts).reset_index()
-# det_ts.detector_nights = det_ts.detector_nights.astype("uint")
-# det_ts.detections = det_ts.detections.fillna(0).astype("uint")
-# det_ts.detection_nights = det_ts.detection_nights.fillna(0).astype("uint")
-
-# # Convert year to index for smaller CSV
-# years = det_ts.groupby("year").size().reset_index().reset_index().set_index("year")["index"]
-# det_ts["year"] = det_ts.year.map(years.to_dict())
-
-# det_ts.columns = camelcase(det_ts.columns)
-
-# cols = [
-#     "detector",
-#     "year",
-#     "month",
-#     "detectorNights",
-#     "detectionNights",
-#     "detections",
-# ]
-
-# encoded = []
-# for species in sorted(det_ts.species.unique()):
-#     data = (
-#         det_ts.loc[det_ts.species == species, cols]
-#         .to_csv(index=False, header=False)
-#         .replace("\n", "|")
-#         .replace(",0", ",")
-#     )
-#     encoded.append({"species": species, "ts": data})
-
-# with open(json_dir / "speciesTS.json", "w") as out:
-#     out.write(
-#         json.dumps(
-#             {
-#                 "years": years.index.values.tolist(),
-#                 "columns": ",".join(cols),
-#                 "tsData": encoded,
-#             }
-#         )
-#     )

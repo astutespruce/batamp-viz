@@ -7,16 +7,15 @@ import { H3_COLS } from 'config'
 
 import {
   layers,
-  hexColors,
-  hexColorGradient,
   getHexColorExpr,
   defaultHexFillColor,
   Map,
   mapboxgl,
   setFeatureHighlight,
+  Legend,
 } from 'components/Map'
 
-// TODO: props
+// TODO: props: use or remove
 const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
   const mapRef = useRef(null)
 
@@ -25,35 +24,53 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
   // TODO:
   //   const selectedFeatureRef = useRef(selectedFeature)
 
-  // FIXME:
-  // const valueFieldRef = useRef(valueField)
-  //   const hasFilterRef = useRef(hasFilters)
-  // const detectorsRef = useRef(detectors)
-
-  // const [legendEntries, setLegendEntries] = useState(
-  //   species ? legends.species() : []
-  // )
-
   const {
     state: {
       metric: { label: metricLabel },
       hasFilters,
+      filters,
       h3Totals,
       h3Ids,
       siteIds,
+      siteTotals,
     },
   } = useCrossfilter()
 
-  const h3TotalsRef = useRef(h3Totals)
+  const curStateRef = useRef({
+    h3Totals,
+    h3Max: Object.fromEntries(
+      H3_COLS.map((col) => [
+        col,
+        Math.max(0, Math.max(...Object.values(h3Totals[col]))),
+      ])
+    ),
+    siteTotals,
+    siteMax: Math.max(0, Math.max(...Object.values(siteTotals))),
+    hasSpeciesFilter: filters && filters.species && filters.species.size > 0,
+  })
 
-  const getH3ColorExpr = (totals) => {
-    const values = Object.values(totals)
-    const maxValue = Math.max(...values)
-    if (values.length === 0 || maxValue === 0) {
-      return defaultHexFillColor
-    }
+  const [legendEntries, setLegendEntries] = useState(() =>
+    layers
+      .filter(({ id }) => id === 'h3l3-fill')[0]
+      .getLegend(metricLabel, [0, curStateRef.current.h3Max.h3l3])
+  )
 
-    return getHexColorExpr([0, maxValue])
+  const getVisibleLayers = () => {
+    const { current: map } = mapRef
+
+    if (!map) return []
+
+    const zoom = map.getZoom()
+
+    const visibleLayers = layers.filter(
+      ({ id, source, minzoom, maxzoom }) =>
+        (source === 'sites' || (source === 'h3' && id.endsWith('-fill'))) &&
+        zoom >= minzoom &&
+        zoom <= maxzoom
+    )
+    console.log('visible layers', visibleLayers)
+
+    return visibleLayers
   }
 
   const handleCreateMap = useCallback((map) => {
@@ -91,23 +108,26 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
         )
       })
 
+      Object.entries(siteTotals).forEach(([siteId, total = 0]) => {
+        map.setFeatureState(
+          { source: 'sites', sourceLayer: 'sites', id: parseInt(siteId, 10) },
+          { total, highlight: false }
+        )
+      })
+
       const fillLayerId = `${col}-fill`
 
+      // have to wait until idle for the set feature state to be done
       map.once('idle', () => {
         map.setPaintProperty(
           fillLayerId,
           'fill-color',
-          getH3ColorExpr(h3Totals[col])
+          getHexColorExpr([0, curStateRef.current.h3Max[col]])
         )
       })
 
       map.on('mousemove', fillLayerId, ({ features: [feature], lngLat }) => {
-        if (map.getZoom() < 3) {
-          return
-        }
-
-        /* eslint-disable-next-line no-param-reassign */
-        map.getCanvas().style.cursor = 'pointer'
+        const zoom = map.getZoom()
 
         const { source, sourceLayer, id: featureId } = feature
         const hoverFeature = {
@@ -116,12 +136,33 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
           id: featureId,
         }
 
+        // make sure that layer is actually visible; not clear why the event
+        // fires when features are not yet visible but appears related to
+        // using floating point divisions between layers
+        const { minzoom, maxzoom } = map.getLayer(`${sourceLayer}-fill`)
+        if (zoom < minzoom || zoom > maxzoom) {
+          return
+        }
+
+        /* eslint-disable-next-line no-param-reassign */
+        map.getCanvas().style.cursor = 'pointer'
+
         const {
-          current: { [col]: { [featureId]: total = 0 } = { [featureId]: 0 } },
-        } = h3TotalsRef
+          current: {
+            h3Totals: {
+              [col]: { [featureId]: total = 0 } = { [featureId]: 0 },
+            },
+            hasSpeciesFilter,
+          },
+        } = curStateRef
 
         // tooltip position follows mouse cursor
-        tooltip.setLngLat(lngLat).setHTML(`${total} ${metricLabel}`).addTo(map)
+        tooltip
+          .setLngLat(lngLat)
+          .setHTML(
+            `<b>${total}</b> ${metricLabel}<br/>in this area${hasSpeciesFilter ? '<br/>(of the selected species)' : ''}`
+          )
+          .addTo(map)
 
         if (hoverFeature !== hoverFeatureRef.current) {
           // unhighlight previous
@@ -142,16 +183,110 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
       })
     })
 
+    map.on('mousemove', 'sites', ({ features: [feature], lngLat }) => {
+      if (map.getZoom() < 10) {
+        return
+      }
+
+      /* eslint-disable-next-line no-param-reassign */
+      map.getCanvas().style.cursor = 'pointer'
+
+      const { source, sourceLayer, id: featureId } = feature
+      const hoverFeature = {
+        source,
+        sourceLayer,
+        id: featureId,
+      }
+
+      const {
+        current: {
+          siteTotals: { [featureId]: total = 0 },
+          hasSpeciesFilter,
+        },
+      } = curStateRef
+
+      // tooltip position follows mouse cursor
+      // TODO: count of detectors? (would need to respect filter)
+      tooltip
+        .setLngLat(lngLat)
+        .setHTML(
+          `<b>${total}</b> ${metricLabel}<br/>at this site${hasSpeciesFilter ? '<br/>(of the selected species)' : ''}`
+        )
+        .addTo(map)
+
+      if (hoverFeature !== hoverFeatureRef.current) {
+        // unhighlight previous
+        setFeatureHighlight(map, hoverFeatureRef.current, false)
+
+        hoverFeatureRef.current = hoverFeature
+        setFeatureHighlight(map, hoverFeatureRef.current, true)
+      }
+    })
+
+    map.on('mouseout', 'sites', () => {
+      setFeatureHighlight(map, hoverFeatureRef.current, false)
+      hoverFeatureRef.current = null
+
+      /* eslint-disable-next-line no-param-reassign */
+      map.getCanvas().style.cursor = ''
+      tooltip.remove()
+    })
+
+    map.on('zoomend', () => {
+      const zoom = map.getZoom()
+
+      const visibleLayers = getVisibleLayers()
+
+      // TODO: update legend
+      // const visibleLayers = layers.filter(
+      //   ({ id, source, minzoom, maxzoom }) =>
+      //     (source === 'sites' || (source === 'h3' && id.endsWith('-fill'))) &&
+      //     zoom >= minzoom &&
+      //     zoom <= maxzoom
+      // )
+      // console.log('visible layers', visibleLayers)
+
+      // Make sure that layer is still visible or hide tooltip / highlight if no
+      // longer in view.
+      const { current: hoverFeature } = hoverFeatureRef
+
+      if (hoverFeature && hoverFeature.source === 'h3') {
+        const { maxzoom } = map.getLayer(`${hoverFeature.sourceLayer}-fill`)
+        if (zoom > maxzoom) {
+          setFeatureHighlight(map, hoverFeatureRef.current, false)
+          hoverFeatureRef.current = null
+
+          /* eslint-disable-next-line no-param-reassign */
+          map.getCanvas().style.cursor = ''
+          tooltip.remove()
+        }
+      }
+    })
+
     // let consumers of map know that it is now fully loaded
     map.once('idle', () => onMapLoad(map))
   }, [])
 
+  /**
+   * Update layer filter and rendering when filters change
+   */
   useEffect(() => {
     const { current: map } = mapRef
 
     if (!(map && isLoaded)) return
 
-    h3TotalsRef.current = h3Totals
+    curStateRef.current = {
+      h3Totals,
+      h3Max: Object.fromEntries(
+        H3_COLS.map((col) => [
+          col,
+          Math.max(0, Math.max(...Object.values(h3Totals[col]))),
+        ])
+      ),
+      siteTotals,
+      siteMax: Math.max(0, Math.max(...Object.values(siteTotals))),
+      hasSpeciesFilter: filters && filters.species && filters.species.size > 0,
+    }
 
     // update filter on layers
     if (hasFilters) {
@@ -175,8 +310,6 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
       map.setFilter('sites', null)
     }
 
-    // TODO: set feature state to totals and update rendering
-
     H3_COLS.forEach((col) => {
       Object.entries(h3Totals[col]).forEach(([hexId, total = 0]) => {
         map.setFeatureState(
@@ -188,36 +321,90 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
       map.setPaintProperty(
         `${col}-fill`,
         'fill-color',
-        getH3ColorExpr(h3Totals[col])
+        getHexColorExpr([0, curStateRef.current.h3Max[col]])
       )
     })
-  }, [isLoaded, hasFilters, h3Totals, h3Ids, siteIds])
 
-  //   const updateLegend = (detectorLegend = []) => {
-  //     const entries = detectorLegend.slice()
-  //     if (species) {
-  //       entries.push(...legends.species())
-  //     }
+    Object.entries(siteTotals).forEach(([siteId, total = 0]) => {
+      map.setFeatureState(
+        { source: 'sites', sourceLayer: 'sites', id: parseInt(siteId, 10) },
+        { total }
+      )
+    })
 
-  //     setLegendEntries(entries)
-  //   }
-  // const legendTitle =
-  //   valueField === 'id'
-  //     ? `Number of ${METRIC_LABELS[valueField]} that detected ${SPECIES[species].commonName}`
-  //     : `Number of ${METRIC_LABELS[valueField]}`
+    const visibleLayers = getVisibleLayers()
+    const newLegendEntries = []
+    visibleLayers.forEach(({ id, source, getLegend }) => {
+      if (!getLegend) {
+        return
+      }
+
+      if (source === 'h3') {
+        const level = id.split('-')[0]
+        newLegendEntries.push(
+          ...getLegend(metricLabel, [0, curStateRef.current.h3Max[level]])
+        )
+      } else {
+        // TODO:
+      }
+    })
+    setLegendEntries(newLegendEntries)
+  }, [
+    isLoaded,
+    metricLabel,
+    hasFilters,
+    filters,
+    h3Totals,
+    h3Ids,
+    siteIds,
+    siteTotals,
+  ])
+
+  /**
+   * Reset feature state on basemap change
+   */
+  const handleBasemapChange = useCallback(() => {
+    const { current: map } = mapRef
+    if (!map) {
+      return
+    }
+
+    const {
+      current: { h3Totals: curH3Totals, siteTotals: curSiteTotals },
+    } = curStateRef
+
+    H3_COLS.forEach((col) => {
+      Object.entries(curH3Totals[col]).forEach(([hexId, total = 0]) => {
+        map.setFeatureState(
+          { source: 'h3', sourceLayer: col, id: parseInt(hexId, 10) },
+          { total }
+        )
+      })
+    })
+
+    Object.entries(curSiteTotals).forEach(([siteId, total = 0]) => {
+      map.setFeatureState(
+        { source: 'sites', sourceLayer: 'sites', id: parseInt(siteId, 10) },
+        { total }
+      )
+    })
+  }, [])
 
   return (
-    <Map onCreateMap={handleCreateMap} {...props}>
-      {/* <Legend
+    <Map
+      onCreateMap={handleCreateMap}
+      onBasemapChange={handleBasemapChange}
+      {...props}
+    >
+      <Legend
         entries={legendEntries}
-        title={legendTitle}
-        note={
-          detectors.length
-            ? 'Map shows detector locations.  They may be clustered together if near each other.'
-            : 'No detector locations visible.'
+        title="Number of species detected"
+        subtitle={
+          curStateRef.current.hasSpeciesFilter
+            ? 'of the selected species'
+            : null
         }
-      /> */}
-      {/* <Legend {...getLegend()} /> */}
+      />
       {children}
     </Map>
   )

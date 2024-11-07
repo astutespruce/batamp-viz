@@ -320,28 +320,5 @@ export const METRICS = {
   // },
 }
 
-export const HEX_LEVELS = {
-  // TODO: tune zoom levels
-  4: {
-    minZoom: 0,
-    maxZoom: 6,
-  },
-  5: {
-    minZoom: 7,
-    maxZoom: 8,
-  },
-  6: {
-    minZoom: 8,
-    maxZoom: 9,
-  },
-  7: {
-    minZoom: 10,
-    maxZoom: 11,
-  },
-  8: {
-    minZoom: 12,
-    maxZoom: 21,
-  },
-}
-
-export const H3_COLS = Object.keys(HEX_LEVELS).map((level) => `h3l${level}`)
+export const H3_LEVELS = [3, 4, 5, 6, 7, 8]
+export const H3_COLS = H3_LEVELS.map((level) => `h3l${level}`)

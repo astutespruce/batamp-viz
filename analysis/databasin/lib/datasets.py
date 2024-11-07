@@ -70,6 +70,11 @@ def download_dataset(client, id):
     for col in activity_cols:
         if col not in df.columns:
             df[col] = pd.NA
+
+        else:
+            # assume any negative values are typos
+            df[col] = df[col].fillna(pd.NA).abs()
+
         df[col] = df[col].astype("UInt32")
 
     ### Cleanup and standardize dataset

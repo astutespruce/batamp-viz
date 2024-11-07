@@ -1,10 +1,10 @@
 import {
   layers,
   hexColors,
-  hexColorGradient,
   getHexColorExpr,
   defaultHexFillColor,
 } from './layers'
+import { Legend } from './Legend'
 import Map from './Map'
 import { mapboxgl } from './mapbox'
 import { setFeatureHighlight } from './style'
@@ -12,8 +12,8 @@ import { setFeatureHighlight } from './style'
 export {
   mapboxgl,
   layers,
+  Legend,
   hexColors,
-  hexColorGradient,
   getHexColorExpr,
   defaultHexFillColor,
   Map,
