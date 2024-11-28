@@ -10,7 +10,7 @@ import { Provider as CrossfilterProvider } from 'components/Crossfilter'
 import Sidebar, { SidebarHeader } from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
 import { fetchFeather } from 'data'
-import { indexBy } from 'util/data'
+import { groupBy, indexBy } from 'util/data'
 import { SPECIES_ID, H3_COLS } from 'config'
 import { filters, Map } from 'components/SpeciesPresence'
 
@@ -20,9 +20,11 @@ const loadData = async () => {
     fetchFeather('/data/spp_occurrence.feather'),
   ])
 
+  const detectors = detectorsTable.objects()
+
   return {
-    detectorsIndex: indexBy(detectorsTable.objects(), 'id'),
-    // TODO: create lookup table of detectors by siteID
+    detectorsIndex: indexBy(detectors, 'id'),
+    detectorsBySite: groupBy(detectors, 'siteId'),
     occurrenceTable: occurrenceTable
       // unpack speciesId to 4 letter codes
       .derive({ species: escape((d) => SPECIES_ID[d.species]) })

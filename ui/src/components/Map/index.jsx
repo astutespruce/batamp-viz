@@ -3,6 +3,7 @@ import {
   hexColors,
   getHexColorExpr,
   defaultHexFillColor,
+  getHexRenderer,
 } from './layers'
 import { Legend } from './Legend'
 import Map from './Map'
@@ -16,6 +17,7 @@ export {
   hexColors,
   getHexColorExpr,
   defaultHexFillColor,
+  getHexRenderer,
   Map,
   setFeatureHighlight,
 }

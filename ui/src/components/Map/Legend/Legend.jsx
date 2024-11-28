@@ -1,6 +1,6 @@
 import React, { useState, memo } from 'react'
 import PropTypes from 'prop-types'
-import { Box, Flex, Text } from 'theme-ui'
+import { Box, Text } from 'theme-ui'
 
 import Circle from './Circle'
 import Patch from './Patch'
@@ -47,33 +47,20 @@ const Legend = ({ title, subtitle, entries, note }) => {
             ) : null}
           </Box>
 
-          {entries.map(
-            ({
-              id,
-              type,
-              ...rest
-              // label,
-              // radius,
-              // color = 'transparent',
-              // borderWidth = 0,
-              // borderColor = 'transparent',
-            }) => (
-              <Box
-                key={id}
-                sx={{
-                  '&:not(:first-of-type)': {
-                    mt: '0.5rem',
-                  },
-                }}
-              >
-                {type === 'circle' ? (
-                  <Circle {...rest} />
-                ) : (
-                  <Patch type={type} {...rest} />
-                )}
-              </Box>
-            )
-          )}
+          {entries.map(({ id, type, ...rest }, i) => (
+            <Box
+              key={id}
+              sx={{
+                mt: id === 'value0' && i > 0 ? '0.5rem' : 0,
+              }}
+            >
+              {type === 'circle' ? (
+                <Circle {...rest} />
+              ) : (
+                <Patch type={type} {...rest} />
+              )}
+            </Box>
+          ))}
 
           {note ? (
             <Text
@@ -110,13 +97,12 @@ Legend.propTypes = {
       height: PropTypes.string,
       opacity: PropTypes.number,
     })
-  ),
+  ).isRequired,
   note: PropTypes.string,
 }
 
 Legend.defaultProps = {
   subtitle: null,
-  entries: [],
   note: null,
 }
 

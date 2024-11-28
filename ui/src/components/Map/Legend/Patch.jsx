@@ -58,7 +58,7 @@ const Patch = ({
         sx={{
           flex: '0 0 1.25rem',
           width: '1.25rem',
-          height: '1.25rem',
+          height: '1.5rem',
           bg: color,
           borderStyle: 'solid',
           borderWidth: `${borderWidth}px`,
@@ -91,7 +91,7 @@ Patch.defaultProps = {
   height: '1.25rem',
   borderColor: 'transparent',
   borderWidth: 0,
-  borderRadius: '0.25rem',
+  borderRadius: null,
   opacity: 1,
 }
 

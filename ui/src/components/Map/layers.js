@@ -1,67 +1,116 @@
-import { interpolateYlGnBu, schemeYlGnBu } from 'd3-scale-chromatic'
-import {
-  scaleOrdinal,
-  scaleLinear,
-  scaleBand,
-  scaleQuantize,
-  scaleThreshold,
-} from 'd3-scale'
+import { schemeYlGnBu } from 'd3-scale-chromatic'
 
 import { getHighlightExpr } from './style'
 
 export const defaultHexFillColor = '#AAAAAA'
 export const defaultHexOutlineColor = '#333333'
 
-// use 20% stops for interpolated colors
-// export const hexColors = [...Array(6).keys()]
-//   .map((d) => d / 5)
-//   .map(interpolateYlGnBu)
+// fill missing color ramps so that we can do this for
+const hexColorScheme =
+  structuredClone !== undefined
+    ? structuredClone(schemeYlGnBu)
+    : [...schemeYlGnBu]
+// if only 1 value, use least intense color
+hexColorScheme[1] = [hexColorScheme[5][0]]
+// if only 3 values, use least and most intense colors
+hexColorScheme[2] = [hexColorScheme[5][0], hexColorScheme[5][3]]
+// update color scheme for 3 values so that lowest is always least extreme
+/* eslint-disable-next-line prefer-destructuring */
+hexColorScheme[3][0] = hexColorScheme[5][0]
 
-// fill missing colors
-const colorScheme = schemeYlGnBu
-colorScheme[1] = [colorScheme[5][3]]
-colorScheme[2] = [colorScheme[5][0], colorScheme[5][3]]
-console.log('colorScheme', colorScheme)
+// maximum number of color bins allowed in legend
+const MAX_BINS = 7
 
-// FIXME: remove if possible
-export const hexColors = colorScheme[5]
-
-// export const hexColorGradient = () => {
-//   const stops = hexColors
-//     .map((color, i) => `${color} ${(i / (hexColors.length - 1)) * 100}%`)
-//     .join(', ')
-//   return `linear-gradient(90deg, ${stops})`
-// }
-
-export const getHexColorExpr = (scale) => {
-  // FIXME:
-  window.scaleOrdinal = scaleOrdinal
-  window.scaleLinear = scaleLinear
-  window.scaleBand = scaleBand
-  window.scaleQuantize = scaleQuantize
-  window.scaleThreshold = scaleThreshold
-  window.schemeYlGnBu = schemeYlGnBu
-
-  if (scale[1] === 0) {
-    return defaultHexFillColor
+export const getHexRenderer = (maxValue, metricLabel) => {
+  const legendEntryStub = {
+    type: 'fill',
+    borderColor: `${defaultHexOutlineColor}33`,
+    borderWidth: 1,
+    opacity: 0.75,
   }
 
-  const colorExpr = ['interpolate', ['linear'], ['feature-state', 'total']]
-  const colorScale = scaleQuantize([1, scale[1]], hexColors)
-  colorScale.ticks(5).forEach((tick) => {
-    colorExpr.push(...[tick, colorScale(tick)])
-  })
-
-  return [
-    'case',
-    [
-      'any',
-      ['==', ['feature-state', 'total'], 0],
-      ['==', ['feature-state', 'total'], null],
-    ],
-    defaultHexFillColor,
-    colorExpr,
+  const legendElements = [
+    {
+      ...legendEntryStub,
+      id: 'value0',
+      label: `0 ${metricLabel}`,
+      color: defaultHexFillColor,
+    },
   ]
+
+  if (maxValue === 0) {
+    return {
+      // only value is 0, render as grey
+      fillExpr: defaultHexFillColor,
+      legend: legendElements,
+    }
+  }
+
+  let binColorExpr = []
+  if (maxValue <= MAX_BINS) {
+    const numBins = maxValue
+    const colors = hexColorScheme[numBins]
+    // use match expr to match values exactly
+    binColorExpr = ['match', ['feature-state', 'total']]
+    Array(numBins)
+      .keys()
+      .forEach((bin) => {
+        binColorExpr.push(bin + 1)
+        binColorExpr.push(colors[bin])
+        legendElements.unshift({
+          ...legendEntryStub,
+          id: `value${bin + 1}`,
+          label: `${bin + 1} ${metricLabel}`,
+          color: colors[bin],
+        })
+      })
+    binColorExpr.push(defaultHexFillColor)
+  } else {
+    const interval = Math.ceil(maxValue / MAX_BINS)
+    const numBins = Math.ceil(maxValue / interval)
+    const colors = hexColorScheme[numBins]
+
+    binColorExpr = ['step', ['feature-state', 'total']]
+    Array(numBins)
+      .keys()
+      .forEach((bin) => {
+        const binStart = bin * interval + 1
+        if (bin > 0) {
+          binColorExpr.push(binStart)
+        }
+        binColorExpr.push(colors[bin])
+
+        let upper = Math.min((bin + 1) * interval, maxValue)
+        if (bin * interval + 1 === maxValue) {
+          upper = null
+        }
+
+        const labelPrefix = upper
+          ? `${bin * interval + 1}-${upper}`
+          : `${bin * interval + 1}`
+
+        legendElements.unshift({
+          ...legendEntryStub,
+          id: `value${bin + 1}`,
+          label: `${labelPrefix} ${metricLabel}`,
+          color: colors[bin],
+        })
+      })
+  }
+
+  return {
+    fillExpr: [
+      'case',
+      [
+        'any',
+        ['==', ['feature-state', 'total'], 0],
+        ['==', ['feature-state', 'total'], null],
+      ],
+      defaultHexFillColor,
+      binColorExpr,
+    ],
+    legend: legendElements,
+  }
 }
 
 const hexFillStub = {
@@ -81,55 +130,6 @@ const hexFillStub = {
       16,
       0,
     ],
-  },
-  getLegend: (metricLabel, scale) => {
-    const entries = []
-
-    if (scale[1] > 0) {
-      const colorScale = scaleQuantize([1, scale[1]], hexColors)
-      if (scale[1] < 5) {
-        for (let i = scale[1]; i >= 1; i -= 1) {
-          entries.push({
-            id: `count${i}`,
-            type: 'fill',
-            label: `${i} ${metricLabel}`,
-            color: colorScale(i),
-            borderColor: `${defaultHexOutlineColor}33`,
-            borderWidth: 1,
-            opacity: 0.75,
-          })
-        }
-      } else {
-        const stops = colorScale
-          .ticks(5)
-          .map((t) => `${colorScale(t)} ${100 * ((t - scale[0]) / scale[1])}%`)
-          .join(', ')
-
-        // gradient is in descending order
-        entries.push({
-          id: 'speciesCounts',
-          type: 'gradient',
-          label: [`${scale[1]} ${metricLabel}`, `1 ${metricLabel}`],
-          height: '4rem',
-          color: `linear-gradient(0deg, ${stops})`,
-          borderColor: '#AAAAAA',
-          borderWidth: 1,
-          opacity: 0.8,
-        })
-      }
-    }
-
-    entries.push({
-      id: '0count',
-      type: 'fill',
-      label: `0 ${metricLabel}`,
-      color: defaultHexFillColor,
-      borderColor: `${defaultHexOutlineColor}33`,
-      borderWidth: 1,
-      opacity: 0.75,
-    })
-
-    return entries
   },
 }
 

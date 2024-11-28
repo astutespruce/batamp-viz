@@ -7,6 +7,7 @@ import { H3_COLS } from 'config'
 
 import {
   layers,
+  getHexRenderer,
   getHexColorExpr,
   defaultHexFillColor,
   Map,
@@ -38,10 +39,13 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
 
   const curStateRef = useRef({
     h3Totals,
-    h3Max: Object.fromEntries(
+    h3Renderer: Object.fromEntries(
       H3_COLS.map((col) => [
         col,
-        Math.max(0, Math.max(...Object.values(h3Totals[col]))),
+        getHexRenderer(
+          Math.max(0, Math.max(...Object.values(h3Totals[col]))),
+          metricLabel
+        ),
       ])
     ),
     siteTotals,
@@ -49,10 +53,8 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
     hasSpeciesFilter: filters && filters.species && filters.species.size > 0,
   })
 
-  const [legendEntries, setLegendEntries] = useState(() =>
-    layers
-      .filter(({ id }) => id === 'h3l3-fill')[0]
-      .getLegend(metricLabel, [0, curStateRef.current.h3Max.h3l3])
+  const [legendEntries, setLegendEntries] = useState(
+    () => curStateRef.current.h3Renderer.h3l3.legend
   )
 
   const getVisibleLayers = () => {
@@ -68,7 +70,6 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
         zoom >= minzoom &&
         zoom <= maxzoom
     )
-    console.log('visible layers', visibleLayers)
 
     return visibleLayers
   }
@@ -94,9 +95,21 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
     layers
       .filter(({ id }) => !id.startsWith('species'))
       .forEach((layer) => {
-        map.addLayer(layer)
+        if (layer.id.startsWith('h3') && layer.id.endsWith('-fill')) {
+          const col = layer.id.split('-')[0]
+          map.addLayer({
+            ...layer,
+            paint: {
+              ...layer.paint,
+              'fill-color': curStateRef.current.h3Renderer[col].fillExpr,
+            },
+          })
+        } else {
+          map.addLayer(layer)
+        }
       })
 
+    // set values for each hex in each leel
     H3_COLS.forEach((col) => {
       Object.entries(h3Totals[col]).forEach(([hexId, total = 0]) => {
         map.setFeatureState(
@@ -117,13 +130,9 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
 
       const fillLayerId = `${col}-fill`
 
-      // have to wait until idle for the set feature state to be done
+      // force repaint to sync up styling based on feature state
       map.once('idle', () => {
-        map.setPaintProperty(
-          fillLayerId,
-          'fill-color',
-          getHexColorExpr([0, curStateRef.current.h3Max[col]])
-        )
+        map.triggerRepaint()
       })
 
       map.on('mousemove', fillLayerId, ({ features: [feature], lngLat }) => {
@@ -236,15 +245,16 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
       const zoom = map.getZoom()
 
       const visibleLayers = getVisibleLayers()
-
-      // TODO: update legend
-      // const visibleLayers = layers.filter(
-      //   ({ id, source, minzoom, maxzoom }) =>
-      //     (source === 'sites' || (source === 'h3' && id.endsWith('-fill'))) &&
-      //     zoom >= minzoom &&
-      //     zoom <= maxzoom
-      // )
-      // console.log('visible layers', visibleLayers)
+      const newLegendEntries = []
+      visibleLayers.forEach(({ id, source, getLegend }) => {
+        if (source === 'h3') {
+          const col = id.split('-')[0]
+          newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
+        } else if (getLegend) {
+          // TODO: point legends
+        }
+      })
+      setLegendEntries(newLegendEntries)
 
       // Make sure that layer is still visible or hide tooltip / highlight if no
       // longer in view.
@@ -277,10 +287,13 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
 
     curStateRef.current = {
       h3Totals,
-      h3Max: Object.fromEntries(
+      h3Renderer: Object.fromEntries(
         H3_COLS.map((col) => [
           col,
-          Math.max(0, Math.max(...Object.values(h3Totals[col]))),
+          getHexRenderer(
+            Math.max(0, Math.max(...Object.values(h3Totals[col]))),
+            metricLabel
+          ),
         ])
       ),
       siteTotals,
@@ -311,6 +324,7 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
     }
 
     H3_COLS.forEach((col) => {
+      // update feature state
       Object.entries(h3Totals[col]).forEach(([hexId, total = 0]) => {
         map.setFeatureState(
           { source: 'h3', sourceLayer: col, id: parseInt(hexId, 10) },
@@ -321,7 +335,7 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
       map.setPaintProperty(
         `${col}-fill`,
         'fill-color',
-        getHexColorExpr([0, curStateRef.current.h3Max[col]])
+        curStateRef.current.h3Renderer[col].fillExpr
       )
     })
 
@@ -335,17 +349,11 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
     const visibleLayers = getVisibleLayers()
     const newLegendEntries = []
     visibleLayers.forEach(({ id, source, getLegend }) => {
-      if (!getLegend) {
-        return
-      }
-
       if (source === 'h3') {
-        const level = id.split('-')[0]
-        newLegendEntries.push(
-          ...getLegend(metricLabel, [0, curStateRef.current.h3Max[level]])
-        )
-      } else {
-        // TODO:
+        const col = id.split('-')[0]
+        newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
+      } else if (getLegend) {
+        // TODO: point legends
       }
     })
     setLegendEntries(newLegendEntries)
