@@ -8,8 +8,6 @@ import { H3_COLS } from 'config'
 import {
   layers,
   getHexRenderer,
-  getHexColorExpr,
-  defaultHexFillColor,
   Map,
   mapboxgl,
   setFeatureHighlight,
@@ -251,7 +249,7 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
           const col = id.split('-')[0]
           newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
         } else if (getLegend) {
-          // TODO: point legends
+          newLegendEntries.push(...getLegend(metricLabel))
         }
       })
       setLegendEntries(newLegendEntries)
@@ -353,7 +351,7 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
         const col = id.split('-')[0]
         newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
       } else if (getLegend) {
-        // TODO: point legends
+        newLegendEntries.push(...getLegend(metricLabel))
       }
     })
     setLegendEntries(newLegendEntries)

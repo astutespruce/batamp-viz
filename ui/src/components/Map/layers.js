@@ -330,6 +330,26 @@ export const layers = [
         '#ee7a14'
       ),
     },
-    getLegend: (metricLabel) => {},
+    getLegend: (metricLabel) => {
+      const legendStub = {
+        type: 'circle',
+        radius: 6,
+      }
+
+      return [
+        {
+          ...legendStub,
+          id: 'detectorWithValue',
+          color: '#c51b8a',
+          label: `detector with >=1 ${metricLabel}`,
+        },
+        {
+          ...legendStub,
+          id: 'detector0Value',
+          color: '#000000',
+          label: `detector with no ${metricLabel}`,
+        },
+      ]
+    },
   },
 ]

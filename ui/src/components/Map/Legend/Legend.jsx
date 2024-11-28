@@ -51,7 +51,10 @@ const Legend = ({ title, subtitle, entries, note }) => {
             <Box
               key={id}
               sx={{
-                mt: id === 'value0' && i > 0 ? '0.5rem' : 0,
+                mt:
+                  i > 0 && (id === 'value0' || type === 'circle')
+                    ? '0.5rem'
+                    : 0,
               }}
             >
               {type === 'circle' ? (

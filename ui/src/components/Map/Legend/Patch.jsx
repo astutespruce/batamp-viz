@@ -67,7 +67,9 @@ const Patch = ({
           opacity,
         }}
       />
-      <Box sx={{ fontSize: 1, color: 'grey.8', ml: '0.5rem' }}>{label}</Box>
+      <Box sx={{ fontSize: 1, color: 'grey.8', ml: '0.5rem', lineHeight: 1.2 }}>
+        {label}
+      </Box>
     </Flex>
   )
 }
