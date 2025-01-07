@@ -43,19 +43,19 @@ export const useThumbnail = (species) => {
   return thumbnails[species] || null
 }
 
-const MapThumbnail = ({ species, ...props }) => {
-  const thumbnail = useThumbnail(species)
+const MapThumbnail = ({ speciesID, ...props }) => {
+  const thumbnail = useThumbnail(speciesID)
   return thumbnail ? (
     <Img
       image={getImage(thumbnail)}
-      alt={`species distribution map for ${species}`}
+      alt={`species distribution map for ${speciesID}`}
       {...props}
     />
   ) : null
 }
 
 MapThumbnail.propTypes = {
-  species: PropTypes.string.isRequired,
+  speciesID: PropTypes.string.isRequired,
 }
 
 export default MapThumbnail

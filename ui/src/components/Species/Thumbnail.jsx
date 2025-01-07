@@ -54,20 +54,20 @@ export const useThumbnail = (species) => {
   return thumbnails[species] || null
 }
 
-const Thumbnail = ({ species, ...props }) => {
-  const thumbnail = useThumbnail(species)
+const Thumbnail = ({ speciesID, ...props }) => {
+  const thumbnail = useThumbnail(speciesID)
 
   return thumbnail ? (
     <Img
       image={getImage(thumbnail)}
-      alt={`species photo for ${species}`}
+      alt={`species photo for ${speciesID}`}
       {...props}
     />
   ) : null
 }
 
 Thumbnail.propTypes = {
-  species: PropTypes.string.isRequired,
+  speciesID: PropTypes.string.isRequired,
 }
 
 export default Thumbnail

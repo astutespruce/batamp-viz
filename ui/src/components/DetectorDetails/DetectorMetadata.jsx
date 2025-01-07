@@ -4,9 +4,9 @@ import { Check, Times } from '@emotion-icons/fa-solid'
 import { Box, Text } from 'theme-ui'
 
 import { OutboundLink } from 'components/Link'
+import { SPECIES } from 'config'
 import { formatNumber, quantityLabel } from 'util/format'
 import Field from './Field'
-import { SPECIES } from '../../../config/constants'
 
 const DetectorMetadata = ({
   lat,

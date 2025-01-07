@@ -1,5 +1,6 @@
 import { schemeYlGnBu } from 'd3-scale-chromatic'
 
+import { formatNumber } from 'util/format'
 import { getHighlightExpr } from './style'
 
 export const defaultHexFillColor = '#AAAAAA'
@@ -21,7 +22,7 @@ hexColorScheme[3][0] = hexColorScheme[5][0]
 // maximum number of color bins allowed in legend
 const MAX_BINS = 7
 
-export const getHexRenderer = (maxValue, metricLabel) => {
+export const getHexRenderer = (maxValue) => {
   const legendEntryStub = {
     type: 'fill',
     borderColor: `${defaultHexOutlineColor}33`,
@@ -33,7 +34,7 @@ export const getHexRenderer = (maxValue, metricLabel) => {
     {
       ...legendEntryStub,
       id: 'value0',
-      label: `0 ${metricLabel}`,
+      label: `0`,
       color: defaultHexFillColor,
     },
   ]
@@ -60,7 +61,7 @@ export const getHexRenderer = (maxValue, metricLabel) => {
         legendElements.unshift({
           ...legendEntryStub,
           id: `value${bin + 1}`,
-          label: `${bin + 1} ${metricLabel}`,
+          label: `${formatNumber(bin + 1)}`,
           color: colors[bin],
         })
       })
@@ -86,13 +87,13 @@ export const getHexRenderer = (maxValue, metricLabel) => {
         }
 
         const labelPrefix = upper
-          ? `${bin * interval + 1}-${upper}`
-          : `${bin * interval + 1}`
+          ? `${formatNumber(bin * interval + 1)} to ${formatNumber(upper)}`
+          : `${formatNumber(bin * interval + 1)}`
 
         legendElements.unshift({
           ...legendEntryStub,
           id: `value${bin + 1}`,
-          label: `${labelPrefix} ${metricLabel}`,
+          label: `${labelPrefix}`,
           color: colors[bin],
         })
       })
@@ -155,50 +156,6 @@ const hexOutlineStub = {
 }
 
 export const layers = [
-  {
-    id: 'species-fill',
-    source: 'species',
-    'source-layer': 'species_ranges',
-    type: 'fill',
-    minzoom: 0,
-    maxzoom: 22,
-    // filter: set dynamically when loaded
-    paint: {
-      'fill-color': '#ee7a14', // highlight.5
-      'fill-opacity': {
-        stops: [
-          [0, 0.1],
-          [8, 0.05],
-        ],
-      },
-    },
-  },
-  {
-    id: 'species-outline',
-    source: 'species',
-    'source-layer': 'species_ranges',
-    type: 'line',
-    minzoom: 0,
-    maxzoom: 22,
-    // filter: set dynamically when loaded
-    paint: {
-      'line-color': '#ee7a14', // highlight.5
-      'line-opacity': {
-        stops: [
-          [0, 0.1],
-          [6, 0.5],
-          [10, 0.75],
-        ],
-      },
-      'line-width': {
-        stops: [
-          [0, 0.1],
-          [6, 0.5],
-          [10, 0.75],
-        ],
-      },
-    },
-  },
   {
     id: 'h3l3-fill',
     'source-layer': 'h3l3',
@@ -350,6 +307,53 @@ export const layers = [
           label: `detector with no ${metricLabel}`,
         },
       ]
+    },
+  },
+]
+
+export const speciesLayers = [
+  {
+    id: 'species-fill',
+    source: 'species',
+    'source-layer': 'species_ranges',
+    type: 'fill',
+    minzoom: 0,
+    maxzoom: 22,
+    // filter: set dynamically when loaded
+    paint: {
+      'fill-color': '#ee7a14', // highlight.5
+      'fill-opacity': {
+        stops: [
+          [0, 0.1],
+          [8, 0.05],
+        ],
+      },
+    },
+  },
+  {
+    id: 'species-outline',
+    source: 'species',
+    'source-layer': 'species_ranges',
+    type: 'line',
+    minzoom: 0,
+    maxzoom: 22,
+    // filter: set dynamically when loaded
+    paint: {
+      'line-color': '#ee7a14', // highlight.5
+      'line-opacity': {
+        stops: [
+          [0, 0.1],
+          [6, 0.5],
+          [10, 0.75],
+        ],
+      },
+      'line-width': {
+        stops: [
+          [0, 0.1],
+          [6, 0.5],
+          [10, 0.75],
+        ],
+      },
     },
   },
 ]

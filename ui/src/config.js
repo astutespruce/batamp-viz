@@ -1,5 +1,3 @@
-import { op } from 'arquero'
-
 import summaryStats from '../data/summary.json'
 
 export { summaryStats }
@@ -290,7 +288,7 @@ export const METRIC_LABELS = {
   sppDetections: 'species detections',
   detectionNights: 'nights detected',
   detectorNights: 'nights monitored',
-  id: 'detectors',
+  detectors: 'detectors',
   speciesCount: 'species detected',
 }
 
@@ -307,7 +305,7 @@ export const METRICS = {
   detectorNights: {
     label: 'nights monitored',
   },
-  id: {
+  detectors: {
     label: 'detectors',
   },
   // // used on occurrence page

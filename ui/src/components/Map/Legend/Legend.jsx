@@ -5,7 +5,7 @@ import { Box, Text } from 'theme-ui'
 import Circle from './Circle'
 import Patch from './Patch'
 
-const Legend = ({ title, subtitle, entries, note }) => {
+const Legend = ({ title, subtitle, entries, note, maxWidth }) => {
   const [isClosed, setIsClosed] = useState(false)
   const toggle = () => setIsClosed((prevIsClosed) => !prevIsClosed)
 
@@ -14,7 +14,7 @@ const Legend = ({ title, subtitle, entries, note }) => {
       sx={{
         cursor: 'pointer',
         position: 'absolute',
-        maxWidth: '200px',
+        maxWidth,
         right: '10px',
         bottom: '24px',
         zIndex: 10000,
@@ -51,10 +51,7 @@ const Legend = ({ title, subtitle, entries, note }) => {
             <Box
               key={id}
               sx={{
-                mt:
-                  i > 0 && (id === 'value0' || type === 'circle')
-                    ? '0.5rem'
-                    : 0,
+                mt: i === 0 ? 0 : '2px',
               }}
             >
               {type === 'circle' ? (
@@ -102,11 +99,13 @@ Legend.propTypes = {
     })
   ).isRequired,
   note: PropTypes.string,
+  maxWidth: PropTypes.string,
 }
 
 Legend.defaultProps = {
   subtitle: null,
   note: null,
+  maxWidth: '200px',
 }
 
 export default memo(Legend)

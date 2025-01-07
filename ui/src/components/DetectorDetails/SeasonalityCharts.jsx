@@ -4,8 +4,8 @@ import { scaleLinear } from 'd3-scale'
 import { Box } from 'theme-ui'
 
 import BarChart from 'components/Chart/BarChart'
+import { MONTH_LABELS } from 'config'
 import MissingSpeciesWarning from './MissingSpeciesWarning'
-import { MONTH_LABELS } from '../../../config/constants'
 
 const SeasonalityCharts = ({ data, selectedSpecies }) => {
   const maxBySpp = data.map(({ values }) => Math.max(...values))

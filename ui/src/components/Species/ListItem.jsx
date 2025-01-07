@@ -9,7 +9,7 @@ import { formatNumber, quantityLabel } from 'util/format'
 
 const ListItem = ({
   item: {
-    species,
+    speciesID,
     commonName,
     sciName,
     detectors,
@@ -25,7 +25,7 @@ const ListItem = ({
   thumbnail,
   map,
 }) => {
-  const { imageCredits } = SPECIES[species]
+  const { imageCredits } = SPECIES[speciesID]
 
   return (
     <Box
@@ -40,7 +40,7 @@ const ListItem = ({
       }}
     >
       <Box sx={{ ml: '1rem', fontSize: '1.75rem' }}>
-        <Link to={`/species/${species}`}>
+        <Link to={`/species/${speciesID}`}>
           {commonName}{' '}
           <Text sx={{ display: 'inline', fontSize: '1.25rem' }}>
             ({sciName})
@@ -217,7 +217,7 @@ const ListItem = ({
 
 ListItem.propTypes = {
   item: PropTypes.shape({
-    species: PropTypes.string.isRequired,
+    speciesID: PropTypes.string.isRequired,
     commonName: PropTypes.string.isRequired,
     sciName: PropTypes.string.isRequired,
     detectors: PropTypes.number.isRequired,
@@ -243,7 +243,7 @@ ListItem.defaultProps = {
 export default memo(
   ListItem,
   (
-    { item: { species: prevSpecies }, metric: prevMetric },
-    { item: { species: nextSpecies }, metric: nextMetric }
+    { item: { speciesID: prevSpecies }, metric: prevMetric },
+    { item: { speciesID: nextSpecies }, metric: nextMetric }
   ) => prevSpecies === nextSpecies && prevMetric === nextMetric
 )

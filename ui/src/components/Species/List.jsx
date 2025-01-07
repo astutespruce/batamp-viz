@@ -98,11 +98,11 @@ const SpeciesList = ({ speciesTable }) => {
         {items.length > 0 ? (
           items.map((item) => (
             <ListItem
-              key={item.species}
+              key={item.speciesID}
               item={item}
               metric={metric}
-              thumbnail={thumbnails[item.species] || null}
-              map={maps[item.species] || null}
+              thumbnail={thumbnails[item.speciesID] || null}
+              map={maps[item.speciesID] || null}
             />
           ))
         ) : (

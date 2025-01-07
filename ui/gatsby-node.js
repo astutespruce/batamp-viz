@@ -64,7 +64,7 @@ exports.createPages = ({ graphql, actions: { createPage } }) =>
         query {
           summaryJson {
             speciesTable {
-              species
+              speciesID: species
             }
           }
         }
@@ -75,12 +75,14 @@ exports.createPages = ({ graphql, actions: { createPage } }) =>
           return
         }
 
-        const speciesTemplate = path.resolve(`./src/templates/Species.jsx`)
-        result.data.summaryJson.speciesTable.species.forEach((species) => {
+        const speciesTemplate = path.resolve(
+          `./src/components/Species/SpeciesTemplate.jsx`
+        )
+        result.data.summaryJson.speciesTable.speciesID.forEach((speciesID) => {
           createPage({
-            path: `/species/${species}`,
+            path: `/species/${speciesID}`,
             component: speciesTemplate,
-            context: { species },
+            context: { speciesID },
           })
         })
       })

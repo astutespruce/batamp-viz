@@ -10,98 +10,21 @@ import {
   ValueFieldSelector,
 } from 'components/Crossfilter'
 
+import { loadSingleSpeciesData } from 'api'
 import Sidebar from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
-import SpeciesFilters from 'components/SpeciesFilters'
 import { Map } from 'components/Species'
-import { MONTHS, MONTH_LABELS, SPECIES, H3_COLS } from 'config'
-import { fetchFeather } from 'data'
-import { indexBy } from 'util/data'
+import { SPECIES } from 'config'
+import SpeciesFilters from './SpeciesFilters'
 
-const loadData = async (species) => {
-  const [detectorsTable, rawSpeciesTable] = await Promise.all([
-    fetchFeather('/data/detectors.feather'),
-    fetchFeather(`/data/species/${species}.feather`),
-  ])
-
-  const speciesTable = rawSpeciesTable.join(
-    detectorsTable.select([
-      'id',
-      'siteId',
-      'admin1Name',
-      'countType',
-      ...H3_COLS,
-    ]),
-    ['detId', 'id']
-  )
-
-  const { admin1Name: admin1Names, year: years } = speciesTable
-    .rollup({
-      admin1Name: op.array_agg_distinct('admin1Name'),
-      year: op.array_agg_distinct('year'),
-    })
-    .objects()[0]
-
-  admin1Names.sort()
-  years.sort()
-  console.log('admin1names', admin1Names)
-  console.log('years', years)
-
-  const filters = [
-    {
-      field: 'month',
-      title: 'Seasonality',
-      isOpen: true,
-      vertical: true,
-      values: MONTHS,
-      labels: MONTH_LABELS.map((m) => m.slice(0, 3)),
-      aggregateById: true,
-    },
-    {
-      field: 'year',
-      title: 'Year',
-      isOpen: true,
-      vertical: true,
-      values: years,
-      labels:
-        years.length > 6
-          ? years.map((y) => `'${y.toString().slice(2)}`)
-          : years,
-    },
-    {
-      field: 'admin1Name',
-      title: 'State / Province',
-      isOpen: false,
-      sort: true,
-      hideEmpty: true,
-      values: admin1Names,
-    },
-    {
-      field: 'countType',
-      title: 'Was activity or presence monitored?',
-      isOpen: false,
-      values: ['p', 'a'],
-      labels: ['Presence', 'Activity'],
-      help: 'Some detectors monitored only the presence of a species on a given night, whereas other detectors monitored total activity during the night.',
-    },
-  ]
-
-  return {
-    detectorsIndex: indexBy(detectorsTable.objects(), 'id'),
-    // TODO: create lookup table of detectors by siteID
-    speciesTable,
-    filters,
-  }
-}
-
-const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
+const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
   const {
     isLoading,
     error,
     data: { detectorsIndex, speciesTable, filters } = {},
   } = useQuery({
-    queryKey: [selectedSpecies],
-    queryFn: async () => loadData(selectedSpecies),
+    queryKey: [speciesID],
+    queryFn: async () => loadSingleSpeciesData(speciesID),
 
     // FIXME:
     retry: false,
@@ -231,23 +154,23 @@ const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
         <CrossfilterProvider
           table={speciesTable}
           filters={filters}
-          valueField="totalDetections"
+          valueField="detections"
           aggFuncs={{
-            totalDetections: op.sum('detections'),
-            totalDetectionNights: op.sum('detectionNights'),
+            detections: op.sum('detections'),
+            detectionNights: op.sum('detectionNights'),
             detectors: op.distinct('detId'),
           }}
         >
           <Sidebar allowScroll={false}>
             {selected.features.length > 0 ? (
               <DetectorDetails
-                selectedSpecies={selectedSpecies}
+                speciesID={speciesID}
                 detectors={selected.features}
                 // onSetDetector={handleSetFeature}
                 // onClose={handleDetailsClose}
               />
             ) : (
-              <SpeciesFilters species={selectedSpecies} filters={filters} />
+              <SpeciesFilters speciesID={speciesID} filters={filters} />
             )}
           </Sidebar>
 
@@ -264,16 +187,14 @@ const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
                 left: '1rem',
               }}
             >
-              <ValueFieldSelector
-                fields={['detections', 'detectionNights', 'id']}
-              />
+              <ValueFieldSelector />
             </Flex>
 
-            {/* <Map
-                species={selectedSpecies}
-                selectedFeature={selected.feature}
-                // onSelectFeatures={handleSelectFeatures}
-              /> */}
+            <Map
+              speciesID={speciesID}
+              selectedFeature={selected.feature}
+              // onSelectFeatures={handleSelectFeatures}
+            />
           </Box>
         </CrossfilterProvider>
       </Flex>
@@ -283,15 +204,15 @@ const SpeciesTemplate = ({ pageContext: { species: selectedSpecies } }) => {
 
 SpeciesTemplate.propTypes = {
   pageContext: PropTypes.shape({
-    species: PropTypes.string.isRequired,
+    speciesID: PropTypes.string.isRequired,
   }).isRequired,
 }
 
 export default SpeciesTemplate
 
 /* eslint-disable-next-line react/prop-types */
-export const Head = ({ pageContext: { species: selectedSpecies } }) => {
-  const { commonName, sciName } = SPECIES[selectedSpecies]
+export const Head = ({ pageContext: { speciesID } }) => {
+  const { commonName, sciName } = SPECIES[speciesID]
 
   return <SEO title={`${commonName} (${sciName})`} />
 }

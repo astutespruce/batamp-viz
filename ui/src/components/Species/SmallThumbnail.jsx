@@ -55,16 +55,16 @@ export const useSmallThumbnail = (species) => {
   return thumbnails[species] || null
 }
 
-const SmallThumbnail = ({ species, ...props }) => {
-  const thumbnail = useSmallThumbnail(species)
+const SmallThumbnail = ({ speciesID, ...props }) => {
+  const thumbnail = useSmallThumbnail(speciesID)
 
   return thumbnail ? (
-    <Img image={thumbnail} alt={`species photo for ${species}`} {...props} />
+    <Img image={thumbnail} alt={`species photo for ${speciesID}`} {...props} />
   ) : null
 }
 
 SmallThumbnail.propTypes = {
-  species: PropTypes.string.isRequired,
+  speciesID: PropTypes.string.isRequired,
 }
 
 export default SmallThumbnail

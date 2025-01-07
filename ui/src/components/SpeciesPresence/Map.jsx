@@ -1,6 +1,6 @@
+// @refresh reset
 /* eslint-disable max-len,no-underscore-dangle,camelcase */
 import React, { useRef, useState, useCallback, useEffect } from 'react'
-import PropTypes from 'prop-types'
 
 import { useCrossfilter } from 'components/Crossfilter'
 import { H3_COLS } from 'config'
@@ -14,8 +14,7 @@ import {
   Legend,
 } from 'components/Map'
 
-// TODO: props: use or remove
-const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
+const SpeciesOccurrenceMap = () => {
   const mapRef = useRef(null)
 
   const [isLoaded, setIsLoaded] = useState(false)
@@ -40,10 +39,7 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
     h3Renderer: Object.fromEntries(
       H3_COLS.map((col) => [
         col,
-        getHexRenderer(
-          Math.max(0, Math.max(...Object.values(h3Totals[col]))),
-          metricLabel
-        ),
+        getHexRenderer(Math.max(0, Math.max(...Object.values(h3Totals[col])))),
       ])
     ),
     siteTotals,
@@ -51,8 +47,9 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
     hasSpeciesFilter: filters && filters.species && filters.species.size > 0,
   })
 
+  // initialize renderer to lowest hex level
   const [legendEntries, setLegendEntries] = useState(
-    () => curStateRef.current.h3Renderer.h3l3.legend
+    () => Object.values(curStateRef.current.h3Renderer)[0].legend
   )
 
   const getVisibleLayers = () => {
@@ -83,31 +80,28 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
       offset: 20,
     })
 
-    // TODO: add layers, etc
     map.once('idle', () => {
       // update state once to trigger other components to update with map object
       setIsLoaded(() => true)
     })
 
     // add layers
-    layers
-      .filter(({ id }) => !id.startsWith('species'))
-      .forEach((layer) => {
-        if (layer.id.startsWith('h3') && layer.id.endsWith('-fill')) {
-          const col = layer.id.split('-')[0]
-          map.addLayer({
-            ...layer,
-            paint: {
-              ...layer.paint,
-              'fill-color': curStateRef.current.h3Renderer[col].fillExpr,
-            },
-          })
-        } else {
-          map.addLayer(layer)
-        }
-      })
+    layers.forEach((layer) => {
+      if (layer.id.startsWith('h3') && layer.id.endsWith('-fill')) {
+        const col = layer.id.split('-')[0]
+        map.addLayer({
+          ...layer,
+          paint: {
+            ...layer.paint,
+            'fill-color': curStateRef.current.h3Renderer[col].fillExpr,
+          },
+        })
+      } else {
+        map.addLayer(layer)
+      }
+    })
 
-    // set values for each hex in each leel
+    // set values for each hex in each level
     H3_COLS.forEach((col) => {
       Object.entries(h3Totals[col]).forEach(([hexId, total = 0]) => {
         map.setFeatureState(
@@ -270,9 +264,6 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
         }
       }
     })
-
-    // let consumers of map know that it is now fully loaded
-    map.once('idle', () => onMapLoad(map))
   }, [])
 
   /**
@@ -289,8 +280,7 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
         H3_COLS.map((col) => [
           col,
           getHexRenderer(
-            Math.max(0, Math.max(...Object.values(h3Totals[col]))),
-            metricLabel
+            Math.max(0, Math.max(...Object.values(h3Totals[col])))
           ),
         ])
       ),
@@ -397,36 +387,14 @@ const SpeciesOccurrenceMap = ({ onMapLoad, children, ...props }) => {
   }, [])
 
   return (
-    <Map
-      onCreateMap={handleCreateMap}
-      onBasemapChange={handleBasemapChange}
-      {...props}
-    >
+    <Map onCreateMap={handleCreateMap} onBasemapChange={handleBasemapChange}>
       <Legend
         entries={legendEntries}
-        title="Number of species detected"
-        subtitle={
-          curStateRef.current.hasSpeciesFilter
-            ? 'of the selected species'
-            : null
-        }
+        title={`Number of${curStateRef.current.hasSpeciesFilter ? ' selected' : ''} species detected`}
+        maxWidth="150px"
       />
-      {children}
     </Map>
   )
-}
-
-SpeciesOccurrenceMap.propTypes = {
-  children: PropTypes.oneOfType([
-    PropTypes.arrayOf(PropTypes.node),
-    PropTypes.node,
-  ]),
-  onMapLoad: PropTypes.func,
-}
-
-SpeciesOccurrenceMap.defaultProps = {
-  children: null,
-  onMapLoad: () => {},
 }
 
 export default SpeciesOccurrenceMap

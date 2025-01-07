@@ -1,20 +1,19 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { Box, Flex } from 'theme-ui'
 
 import { ToggleButton } from 'components/Button'
 import { METRIC_LABELS } from 'config'
 import { useCrossfilter } from './Context'
 
-const ValueFieldSelector = ({ fields }) => {
+const ValueFieldSelector = () => {
   const {
     setValueField,
-    state: { valueField },
+    state: {
+      metric: { field },
+    },
   } = useCrossfilter()
 
-  const handleChange = (field) => {
-    setValueField(field)
-  }
+  const fields = ['detections', 'detectionNights', 'detectors']
 
   const options = fields.map((f) => ({
     value: f,
@@ -31,16 +30,12 @@ const ValueFieldSelector = ({ fields }) => {
             py: '0.25rem',
           },
         }}
-        value={valueField}
+        value={field}
         options={options}
-        onChange={handleChange}
+        onChange={setValueField}
       />
     </Flex>
   )
-}
-
-ValueFieldSelector.propTypes = {
-  fields: PropTypes.arrayOf(PropTypes.string).isRequired,
 }
 
 export default ValueFieldSelector

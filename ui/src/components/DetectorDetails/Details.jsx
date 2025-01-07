@@ -5,11 +5,11 @@ import { TimesCircle, ExclamationTriangle } from '@emotion-icons/fa-solid'
 
 import { Tab, Tabs } from 'components/Tabs'
 import { useCrossfilter } from 'components/Crossfilter'
+import { MONTHS, SPECIES, METRIC_LABELS } from 'config'
 import { formatNumber } from 'util/format'
 import { sumBy, groupBy, filterObject } from 'util/data'
 import TotalCharts from './TotalCharts'
 import SeasonalityCharts from './SeasonalityCharts'
-import { MONTHS, SPECIES, METRIC_LABELS } from '../../../config/constants'
 
 import DetectorMetadata from './DetectorMetadata'
 

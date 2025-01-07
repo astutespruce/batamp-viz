@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Box, Flex, Heading, Text } from 'theme-ui'
+import { Box, Flex, Heading } from 'theme-ui'
 import { ExternalLinkAlt } from '@emotion-icons/fa-solid'
 
 import { OutboundLink } from 'components/Link'
@@ -11,15 +11,15 @@ import { SPECIES, PROFILE_ROOT_URL } from 'config'
 
 const resolveProfileId = (sciName) => sciName.toLowerCase().replace(' ', '-')
 
-const index = ({ species, filters }) => {
-  const { commonName, sciName, profileId, imageCredits } = SPECIES[species]
+const SpeciesFilters = ({ speciesID, filters }) => {
+  const { commonName, sciName, profileId, imageCredits } = SPECIES[speciesID]
 
   return (
     <Flex sx={{ flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: '0 0 auto', mt: '1rem', mx: '1rem', lineHeight: 1.2 }}>
         <Flex sx={{ gap: '0.5rem' }}>
           <Box>
-            <SmallThumbnail species={species} />
+            <SmallThumbnail speciesID={speciesID} />
             <Box sx={{ mt: '0.1rem', fontSize: '0.7rem', color: 'grey.6' }}>
               credit:{' '}
               {imageCredits || (
@@ -85,8 +85,8 @@ const index = ({ species, filters }) => {
   )
 }
 
-index.propTypes = {
-  species: PropTypes.string.isRequired,
+SpeciesFilters.propTypes = {
+  speciesID: PropTypes.string.isRequired,
   filters: PropTypes.arrayOf(
     PropTypes.shape({
       field: PropTypes.string.isRequired,
@@ -94,4 +94,4 @@ index.propTypes = {
   ).isRequired,
 }
 
-export default index
+export default SpeciesFilters

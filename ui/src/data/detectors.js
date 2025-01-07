@@ -1,7 +1,7 @@
 import { csvParse, autoType } from 'd3-dsv'
 import { useStaticQuery, graphql } from 'gatsby'
 
-import { SPECIES_ID } from '../../config/constants'
+import { SPECIES_ID } from 'config'
 
 /**
  * Parse detector data with packed CSV and metadata into

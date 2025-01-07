@@ -9,21 +9,24 @@ import { SubpageHeaderImage as HeaderImage } from 'components/Image'
 import { SpeciesList } from 'components/Species'
 import { summaryStats, SPECIES } from 'config'
 
-const SpeciesPage = ({ data: { headerImage } }) => {
-  const speciesTable = aq.table(summaryStats.speciesTable).join(
-    aq.from(
-      Object.entries(SPECIES).map(
-        ([species, { sciName, commonName, ...rest }]) => ({
-          species,
-          sciName,
-          commonName,
-          searchKey: `${species} ${commonName.toLowerCase()} ${sciName.toLowerCase()}`,
-          ...rest,
-        })
-      )
-    ),
-    'species'
-  )
+const SpeciesListPage = ({ data: { headerImage } }) => {
+  const speciesTable = aq
+    .table(summaryStats.speciesTable)
+    .rename({ species: 'speciesID' })
+    .join(
+      aq.from(
+        Object.entries(SPECIES).map(
+          ([speciesID, { sciName, commonName, ...rest }]) => ({
+            speciesID,
+            sciName,
+            commonName,
+            searchKey: `${speciesID} ${commonName.toLowerCase()} ${sciName.toLowerCase()}`,
+            ...rest,
+          })
+        )
+      ),
+      'speciesID'
+    )
 
   return (
     <Layout>
@@ -47,7 +50,7 @@ const SpeciesPage = ({ data: { headerImage } }) => {
   )
 }
 
-SpeciesPage.propTypes = {
+SpeciesListPage.propTypes = {
   data: PropTypes.shape({
     headerImage: PropTypes.object.isRequired,
   }).isRequired,
@@ -67,6 +70,6 @@ export const pageQuery = graphql`
   }
 `
 
-export default SpeciesPage
+export default SpeciesListPage
 
 export const Head = () => <SEO title="Explore Bat Species" />

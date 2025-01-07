@@ -12,14 +12,10 @@ import PropTypes from 'prop-types'
 import { H3_COLS, METRIC_LABELS } from 'config'
 import { isDebug } from 'util/dom'
 
-// import { Crossfilter } from './Crossfilter'
 import {
   aggregateByDimension,
-  // aggregateByH3,
   applyFilters,
   createDimensions,
-  // getFilteredTotal,
-  // getTotal,
   getDistinctValues,
   aggregateByGroup,
   getTotals,
@@ -35,7 +31,6 @@ const DispatchContext = createContext()
 export const Provider = ({
   table,
   filters: filterConfig,
-  // metric: initMetric,
   valueField: initValueField,
   aggFuncs,
   preFilter,

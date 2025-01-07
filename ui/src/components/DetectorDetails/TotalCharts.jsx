@@ -3,8 +3,8 @@ import PropTypes from 'prop-types'
 import { Box } from 'theme-ui'
 
 import { HorizontalBarChart } from 'components/Chart'
+import { SPECIES } from 'config'
 import MissingSpeciesWarning from './MissingSpeciesWarning'
-import { SPECIES } from '../../../config/constants'
 
 const TotalCharts = ({ data, selectedSpecies, max }) => {
   let detectedSelected = false

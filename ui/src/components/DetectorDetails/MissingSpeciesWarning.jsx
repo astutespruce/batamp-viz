@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { ExclamationTriangle } from '@emotion-icons/fa-solid'
 import { Box } from 'theme-ui'
 
-import { SPECIES } from '../../../config/constants'
+import { SPECIES } from 'config'
 
 const MissingSpeciesWarning = ({ species }) => (
   <Box sx={{ color: 'highlight.5' }}>
