@@ -37,61 +37,6 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
 
   const [selected, setSelected] = useState({ features: [], feature: null })
 
-  // // use state initialization to ensure that we only process data when page mounts
-  // // and not subsequent rerenders when a detector is selected
-  // const {
-  //   data,
-  //   detectors,
-  //   detectorLocations,
-  //   detectorTS,
-  //   filters,
-  //   visibleFilters,
-  // } = useMemo(() => {
-  //   // aggregate species data up to detector / month for this species so we can merge into detectorsTS below
-  //   const grouped = groupBy(
-  //     speciesTS.map(({ id, month, ...rest }) => ({
-  //       id,
-  //       month,
-  //       ...rest,
-  //       key: `${id}-${month}`,
-  //     })),
-  //     'key'
-  //   )
-
-  //   // sum species detection stats by month for this species
-  //   const speciesMonthlyTS = Object.values(grouped).map((v) =>
-  //     v.reduce(
-  //       (
-  //         prev,
-  //         { id, species, month, detections, detectionNights, detectorNights }
-  //       ) =>
-  //         Object.assign(prev, {
-  //           id,
-  //           species,
-  //           month,
-  //           detections: (detections || 0) + (prev.detections || 0),
-  //           detectionNights:
-  //             (detectionNights || 0) + (prev.detectionNights || 0),
-  //           detectorNights: (detectorNights || 0) + (prev.detectorNights || 0),
-  //         }),
-  //       {}
-  //     )
-  //   )
-
-  //   const ts = allSpeciesTS
-  //     .filter(({ species }) => species !== selectedSpecies)
-  //     .concat(speciesMonthlyTS)
-
-  //   const locations = speciesDetectors.map(
-  //     ({ id, lat, lon, admin1Name, presenceOnly }) => ({
-  //       id,
-  //       lat,
-  //       lon,
-  //       admin1Name,
-  //       activity: presenceOnly ? [0] : [0, 1],
-  //     })
-  //   )
-
   // const handleSelectFeatures = (ids) => {
   //   const features = detectors
   //     .filter(({ id }) => ids.has(id))

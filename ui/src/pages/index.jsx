@@ -16,8 +16,8 @@ const IndexPage = ({ data: { headerImage: img } }) => (
   <Layout>
     <HeaderImage
       image={img}
-      height="60vh"
-      minHeight="39rem"
+      height="40vh"
+      minHeight="32rem"
       position="bottom"
       credits={{
         author:

@@ -103,6 +103,9 @@ export const Provider = ({
     })
 
     const initialState = {
+      // original stats do not change
+      initialTopLevelStats: topLevelStats,
+
       // metric changes when valueField changes
       metric: {
         field: initValueField,
@@ -153,14 +156,12 @@ export const Provider = ({
         }
 
         const {
-          // discard prev filter
+          metric: { field: valueField },
+          // discard prev filter for this field and create a new one (don't mutate it)
           filters: { [filterField]: prevFilter, ...prevFilters },
         } = prevState
 
-        // Create new instance, don't mutate
-        const newFilters = {
-          ...prevFilters,
-        }
+        const newFilters = { ...prevFilters }
 
         // only set if filter is non-empty
         if (filterValue && filterValue.size) {
@@ -203,7 +204,7 @@ export const Provider = ({
           siteStats,
           h3Ids,
           siteIds,
-          valueField: initValueField,
+          valueField,
         })
 
         const newState = {
@@ -322,28 +323,53 @@ export const Provider = ({
 
   const setValueField = useCallback(
     (newValueField) => {
-      throw new Error('setValueField not implemented!')
-      // setState((prevState) => {
-      //   if (isDebug) {
-      //     console.log('setValueField', newValueField)
-      //     console.log('Prev state', prevState)
-      //   }
+      setState((prevState) => {
+        if (isDebug) {
+          console.log('setValueField', newValueField)
+          console.log('Prev state', prevState)
+          console.time('setValueField')
+        }
 
-      //   const newState = {
-      //     ...prevState,
-      //     valueField: newValueField,
-      //     dimensionTotals: aggregateByDimension(dimensions, newValueField),
-      //     filteredTotal: getFilteredTotal(crossfilter, newValueField),
-      //     // total: getRawTotal(crossfilter, valueField),
-      //     total: getTotal(table, newValueField),
-      //   }
+        const {
+          initialTopLevelStats,
+          topLevelStats,
+          dimensionStats,
+          h3Stats,
+          siteStats,
+          h3Ids,
+          siteIds,
+        } = prevState
 
-      //   if (isDebug) {
-      //     console.log('Next state', newState)
-      //   }
+        const { total, dimensionTotals, h3Totals, siteTotals } = getTotals({
+          topLevelStats,
+          dimensionStats,
+          h3Stats,
+          siteStats,
+          h3Ids,
+          siteIds,
+          valueField: newValueField,
+        })
 
-      //   return newState
-      // })
+        const newState = {
+          ...prevState,
+          total,
+          dimensionTotals,
+          h3Totals,
+          siteTotals,
+          metric: {
+            field: newValueField,
+            label: METRIC_LABELS[newValueField],
+            total: initialTopLevelStats[newValueField] || 0,
+          },
+        }
+
+        if (isDebug) {
+          console.log('Next state', newState)
+          console.timeEnd('setValueField')
+        }
+
+        return newState
+      })
     },
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
     []
@@ -376,7 +402,6 @@ Provider.propTypes = {
   ).isRequired,
   // used to pre-filter table before calculating dimension totals
   preFilter: PropTypes.func,
-  // valueField: PropTypes.string.isRequired,
   children: PropTypes.oneOfType([
     PropTypes.node,
     PropTypes.element,

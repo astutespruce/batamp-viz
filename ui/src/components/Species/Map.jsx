@@ -2,14 +2,9 @@
 /* eslint-disable max-len,no-underscore-dangle,camelcase */
 import React, { useRef, useState, useCallback, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { Box } from 'theme-ui'
-import { dequal } from 'dequal'
 
 import { useCrossfilter } from 'components/Crossfilter'
-import { METRIC_LABELS, SPECIES, H3_COLS } from 'config'
-import { formatNumber, quantityLabel } from 'util/format'
-import { niceNumber, difference, clone } from 'util/data'
-import { useIsEqualEffect } from 'util/hooks'
+import { H3_COLS } from 'config'
 
 import {
   layers,
@@ -21,7 +16,6 @@ import {
   Legend,
 } from 'components/Map'
 
-// TODO: props
 const SpeciesMap = ({ speciesID, selectedFeature }) => {
   const mapRef = useRef(null)
 
@@ -29,29 +23,17 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
   const hoverFeatureRef = useRef(null)
   const selectedFeatureRef = useRef(selectedFeature)
 
-  // FIXME:
-  // const valueFieldRef = useRef(valueField)
-  // const hasFilterRef = useRef(hasFilters)
-  // const detectorsRef = useRef(detectors)
-
-  // const [legendEntries, setLegendEntries] = useState(
-  //   species ? legends.species() : []
-  // )
-
   const {
     state: {
       metric: { label: metricLabel },
       hasFilters,
       filters,
       h3Totals,
-      h3Stats,
       h3Ids,
       siteIds,
       siteTotals,
     },
   } = useCrossfilter()
-
-  console.log('stats', h3Stats)
 
   const curStateRef = useRef({
     h3Totals,
@@ -151,12 +133,14 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
 
       const fillLayerId = `${col}-fill`
 
-      map.on('mousemove', fillLayerId, ({ features: [feature], lngLat }) => {
-        if (map.getZoom() < 3) {
-          return
-        }
+      // force repaint to sync up styling based on feature state
+      map.once('idle', () => {
+        map.triggerRepaint()
+      })
 
-        console.log('feature', feature)
+      map.on('mousemove', fillLayerId, ({ features: [feature], lngLat }) => {
+        const zoom = map.getZoom()
+
         const { source, sourceLayer, id: featureId } = feature
         const hoverFeature = {
           source,
@@ -164,13 +148,29 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
           id: featureId,
         }
 
+        // make sure that layer is actually visible; not clear why the event
+        // fires when features are not yet visible but appears related to
+        // using floating point divisions between layers
+        const { minzoom, maxzoom } = map.getLayer(`${sourceLayer}-fill`)
+        if (zoom < minzoom || zoom > maxzoom) {
+          return
+        }
+
         /* eslint-disable-next-line no-param-reassign */
         map.getCanvas().style.cursor = 'pointer'
+
+        const {
+          current: {
+            h3Totals: {
+              [col]: { [featureId]: total = 0 } = { [featureId]: 0 },
+            },
+          },
+        } = curStateRef
 
         // tooltip position follows mouse cursor
         tooltip
           .setLngLat(lngLat)
-          .setHTML(`${formatNumber(h3Totals[col][featureId])} ${metricLabel}`)
+          .setHTML(`<b>${total}</b> ${metricLabel}<br/>in this area`)
           .addTo(map)
 
         if (hoverFeature !== hoverFeatureRef.current) {
@@ -191,34 +191,166 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
         tooltip.remove()
       })
     })
+
+    map.on('mousemove', 'sites', ({ features: [feature], lngLat }) => {
+      if (map.getZoom() < 10) {
+        return
+      }
+
+      /* eslint-disable-next-line no-param-reassign */
+      map.getCanvas().style.cursor = 'pointer'
+
+      const { source, sourceLayer, id: featureId } = feature
+      const hoverFeature = {
+        source,
+        sourceLayer,
+        id: featureId,
+      }
+
+      const {
+        current: {
+          siteTotals: { [featureId]: total = 0 },
+          hasSpeciesFilter,
+        },
+      } = curStateRef
+
+      // tooltip position follows mouse cursor
+      // TODO: count of detectors? (would need to respect filter)
+      tooltip
+        .setLngLat(lngLat)
+        .setHTML(
+          `<b>${total}</b> ${metricLabel}<br/>at this site${hasSpeciesFilter ? '<br/>(of the selected species)' : ''}`
+        )
+        .addTo(map)
+
+      if (hoverFeature !== hoverFeatureRef.current) {
+        // unhighlight previous
+        setFeatureHighlight(map, hoverFeatureRef.current, false)
+
+        hoverFeatureRef.current = hoverFeature
+        setFeatureHighlight(map, hoverFeatureRef.current, true)
+      }
+    })
+
+    map.on('mouseout', 'sites', () => {
+      setFeatureHighlight(map, hoverFeatureRef.current, false)
+      hoverFeatureRef.current = null
+
+      /* eslint-disable-next-line no-param-reassign */
+      map.getCanvas().style.cursor = ''
+      tooltip.remove()
+    })
+
+    map.on('zoomend', () => {
+      const zoom = map.getZoom()
+
+      const visibleLayers = getVisibleLayers()
+      const newLegendEntries = []
+      visibleLayers.forEach(({ id, source, getLegend }) => {
+        if (source === 'h3') {
+          const col = id.split('-')[0]
+          newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
+        } else if (getLegend) {
+          newLegendEntries.push(...getLegend(metricLabel))
+        }
+      })
+      setLegendEntries(newLegendEntries)
+
+      // Make sure that layer is still visible or hide tooltip / highlight if no
+      // longer in view.
+      const { current: hoverFeature } = hoverFeatureRef
+
+      if (hoverFeature && hoverFeature.source === 'h3') {
+        const { maxzoom } = map.getLayer(`${hoverFeature.sourceLayer}-fill`)
+        if (zoom > maxzoom) {
+          setFeatureHighlight(map, hoverFeatureRef.current, false)
+          hoverFeatureRef.current = null
+
+          /* eslint-disable-next-line no-param-reassign */
+          map.getCanvas().style.cursor = ''
+          tooltip.remove()
+        }
+      }
+    })
   }, [])
 
-  // useEffect(() => {
-  //   const { current: map } = mapRef
+  /**
+   * Update layer filter and rendering when filters change
+   */
+  useEffect(() => {
+    const { current: map } = mapRef
 
-  //   if (!(map && isLoaded)) return
+    if (!(map && isLoaded)) return
 
-  //   // update filter on layers
-  //   H3_COLS.forEach((col) => {
-  //     const layerIds = [`${col}-fill`, `${col}-outline`]
-  //     layerIds.forEach((layerId) => {
-  //       map.setFilter(layerId, ['in', ['id'], ['literal', h3Ids[col]]])
-  //     })
-  //   })
+    curStateRef.current = {
+      h3Totals,
+      h3Renderer: Object.fromEntries(
+        H3_COLS.map((col) => [
+          col,
+          getHexRenderer(
+            Math.max(0, Math.max(...Object.values(h3Totals[col])))
+          ),
+        ])
+      ),
+      siteTotals,
+      siteMax: Math.max(0, Math.max(...Object.values(siteTotals))),
+    }
 
-  //   map.setFilter('sites', ['in', ['id'], ['literal', siteIds]])
+    // update filter on layers
+    H3_COLS.forEach((col) => {
+      const layerIds = [`${col}-fill`, `${col}-outline`]
+      layerIds.forEach((layerId) => {
+        map.setFilter(layerId, ['in', ['id'], ['literal', h3Ids[col]]])
+      })
+    })
 
-  //   // TODO: update rendering
-  // }, [isLoaded, surveyedH3Ids, surveyedSiteIds])
+    map.setFilter('sites', ['in', ['id'], ['literal', siteIds]])
 
-  // const updateLegend = (detectorLegend = []) => {
-  //   const entries = detectorLegend.slice()
-  //   if (species) {
-  //     entries.push(...legends.species())
-  //   }
+    H3_COLS.forEach((col) => {
+      // update feature state
+      Object.entries(h3Totals[col]).forEach(([hexId, total = 0]) => {
+        map.setFeatureState(
+          { source: 'h3', sourceLayer: col, id: parseInt(hexId, 10) },
+          { total }
+        )
+      })
 
-  //   setLegendEntries(entries)
-  // }
+      map.setPaintProperty(
+        `${col}-fill`,
+        'fill-color',
+        curStateRef.current.h3Renderer[col].fillExpr
+      )
+    })
+
+    Object.entries(siteTotals).forEach(([siteId, total = 0]) => {
+      map.setFeatureState(
+        { source: 'sites', sourceLayer: 'sites', id: parseInt(siteId, 10) },
+        { total }
+      )
+    })
+
+    const visibleLayers = getVisibleLayers()
+    const newLegendEntries = []
+    visibleLayers.forEach(({ id, source, getLegend }) => {
+      if (source === 'h3') {
+        const col = id.split('-')[0]
+        newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
+      } else if (getLegend) {
+        newLegendEntries.push(...getLegend(metricLabel))
+      }
+    })
+    setLegendEntries(newLegendEntries)
+  }, [
+    isLoaded,
+    metricLabel,
+    hasFilters,
+    filters,
+    h3Totals,
+    h3Ids,
+    siteIds,
+    siteTotals,
+  ])
+
   // const legendTitle =
   //   valueField === 'id'
   //     ? `Number of ${METRIC_LABELS[valueField]} that detected ${SPECIES[species].commonName}`
@@ -260,24 +392,7 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
       selectedFeature={selectedFeature}
       onBasemapChange={handleBasemapChange}
     >
-      <Legend
-        entries={legendEntries}
-        title="TODO:"
-        // subtitle={
-        //   curStateRef.current.hasSpeciesFilter
-        //     ? 'of the selected species'
-        //     : null
-        // }
-      />
-      {/* <Legend
-        entries={legendEntries}
-        title={legendTitle}
-        note={
-          detectors.length
-            ? 'Map shows detector locations.  They may be clustered together if near each other.'
-            : 'No detector locations visible.'
-        }
-      /> */}
+      <Legend entries={legendEntries} title={`Number of ${metricLabel}`} />
     </Map>
   )
 }

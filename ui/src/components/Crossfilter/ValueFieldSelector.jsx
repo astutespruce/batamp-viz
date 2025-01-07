@@ -15,9 +15,9 @@ const ValueFieldSelector = () => {
 
   const fields = ['detections', 'detectionNights', 'detectors']
 
-  const options = fields.map((f) => ({
-    value: f,
-    label: METRIC_LABELS[f],
+  const options = fields.map((value) => ({
+    value,
+    label: METRIC_LABELS[value],
   }))
 
   return (
