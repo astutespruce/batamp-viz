@@ -37,10 +37,7 @@ const SpeciesOccurrenceMap = () => {
   const curStateRef = useRef({
     h3Totals,
     h3Renderer: Object.fromEntries(
-      H3_COLS.map((col) => [
-        col,
-        getHexRenderer(Math.max(0, Math.max(...Object.values(h3Totals[col])))),
-      ])
+      H3_COLS.map((col) => [col, getHexRenderer(Object.values(h3Totals[col]))])
     ),
     siteTotals,
     siteMax: Math.max(0, Math.max(...Object.values(siteTotals))),
@@ -279,9 +276,7 @@ const SpeciesOccurrenceMap = () => {
       h3Renderer: Object.fromEntries(
         H3_COLS.map((col) => [
           col,
-          getHexRenderer(
-            Math.max(0, Math.max(...Object.values(h3Totals[col])))
-          ),
+          getHexRenderer(Object.values(h3Totals[col])),
         ])
       ),
       siteTotals,

@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
 
 import { useCrossfilter } from 'components/Crossfilter'
 import { H3_COLS, SPECIES } from 'config'
-import { formatNumber } from 'util/format'
+import { formatNumber, quantityLabel } from 'util/format'
 
 import {
   layers,
@@ -40,10 +40,7 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
     metric,
     h3Totals,
     h3Renderer: Object.fromEntries(
-      H3_COLS.map((col) => [
-        col,
-        getHexRenderer(Math.max(0, Math.max(...Object.values(h3Totals[col])))),
-      ])
+      H3_COLS.map((col) => [col, getHexRenderer(Object.values(h3Totals[col]))])
     ),
     siteTotals,
     siteMax: Math.max(0, Math.max(...Object.values(siteTotals))),
@@ -173,7 +170,7 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
         tooltip
           .setLngLat(lngLat)
           .setHTML(
-            `<b>${formatNumber(total)}</b> ${curStateRef.current.metric.label}<br/>in this area`
+            `<b>${formatNumber(total)}</b> ${quantityLabel(curStateRef.current.metric.label, total)}<br/>in this area`
           )
           .addTo(map)
 
@@ -218,11 +215,10 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
       } = curStateRef
 
       // tooltip position follows mouse cursor
-      // TODO: count of detectors? (would need to respect filter)
       tooltip
         .setLngLat(lngLat)
         .setHTML(
-          `<b>${total}</b> ${curStateRef.current.metric.label}<br/>at this site`
+          `<b>${formatNumber(total)}</b> ${quantityLabel(curStateRef.current.metric.label, total)}<br/>at this site`
         )
         .addTo(map)
 
@@ -301,9 +297,7 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
       h3Renderer: Object.fromEntries(
         H3_COLS.map((col) => [
           col,
-          getHexRenderer(
-            Math.max(0, Math.max(...Object.values(h3Totals[col])))
-          ),
+          getHexRenderer(Object.values(h3Totals[col])),
         ])
       ),
       siteTotals,

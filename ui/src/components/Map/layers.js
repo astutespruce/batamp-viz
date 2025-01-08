@@ -1,4 +1,5 @@
 import { schemeYlGnBu } from 'd3-scale-chromatic'
+import { scaleQuantile } from 'd3-scale'
 
 import { formatNumber } from 'util/format'
 import { getHighlightExpr } from './style'
@@ -22,7 +23,16 @@ hexColorScheme[3][0] = hexColorScheme[5][0]
 // maximum number of color bins allowed in legend
 const MAX_BINS = 7
 
-export const getHexRenderer = (maxValue) => {
+export const getHexRenderer = (values) => {
+  let maxValue = 0
+  const nonzeroValues = values.filter((d) => {
+    if (d > 0) {
+      maxValue = Math.max(maxValue, d)
+      return true
+    }
+    return false
+  })
+
   const legendEntryStub = {
     type: 'fill',
     borderColor: `${defaultHexOutlineColor}33`,
@@ -67,36 +77,40 @@ export const getHexRenderer = (maxValue) => {
       })
     binColorExpr.push(defaultHexFillColor)
   } else {
-    const interval = Math.ceil(maxValue / MAX_BINS)
-    const numBins = Math.ceil(maxValue / interval)
-    const colors = hexColorScheme[numBins]
+    const range = Array.from(Array(MAX_BINS)).map((d, i) => i + 1)
+    // round to integer, extract unique values, and make sure first bin starts at 1
+    let quantiles = scaleQuantile()
+      .domain(nonzeroValues)
+      .range(range)
+      .quantiles()
+      .map(Math.round)
+    quantiles = quantiles.filter((d, i) => i === 0 || d !== quantiles[i - 1])
+    if (quantiles[0] > 1) {
+      quantiles.unshift(1)
+    }
 
+    const bins = quantiles.map((d, i) =>
+      i < quantiles.length - 1 ? [d, quantiles[i + 1] - 1] : [d, maxValue]
+    )
+
+    const colors = hexColorScheme[bins.length]
     binColorExpr = ['step', ['feature-state', 'total']]
-    Array(numBins)
-      .keys()
-      .forEach((bin) => {
-        const binStart = bin * interval + 1
-        if (bin > 0) {
-          binColorExpr.push(binStart)
-        }
-        binColorExpr.push(colors[bin])
-
-        let upper = Math.min((bin + 1) * interval, maxValue)
-        if (bin * interval + 1 === maxValue) {
-          upper = null
-        }
-
-        const labelPrefix = upper
-          ? `${formatNumber(bin * interval + 1)} to ${formatNumber(upper)}`
-          : `${formatNumber(bin * interval + 1)}`
-
-        legendElements.unshift({
-          ...legendEntryStub,
-          id: `value${bin + 1}`,
-          label: `${labelPrefix}`,
-          color: colors[bin],
-        })
+    bins.forEach(([min, max], i) => {
+      if (i > 0) {
+        binColorExpr.push(min)
+      }
+      binColorExpr.push(colors[i])
+      const label =
+        max > min
+          ? `${formatNumber(min)} to ${formatNumber(max)}`
+          : formatNumber(min)
+      legendElements.unshift({
+        ...legendEntryStub,
+        id: `value${i + 1}`,
+        label,
+        color: colors[i],
       })
+    })
   }
 
   return {

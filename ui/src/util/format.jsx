@@ -27,12 +27,12 @@ export const formatNumber = (number, decimals = null) => {
 
 /**
  * Return a singular label (remove trailing 's') if quantity === 1
- * @param {*} label - plural label 
+ * @param {*} label - plural label
  * @param {*} quantity
  */
 export const quantityLabel = (label, quantity) => {
   if (quantity === 1 && label.endsWith('s')) {
-    return label.slice(0, label.length -1)
+    return label.slice(0, label.length - 1)
   }
   return label
 }
