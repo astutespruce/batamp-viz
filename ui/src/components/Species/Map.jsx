@@ -4,7 +4,8 @@ import React, { useRef, useState, useCallback, useEffect } from 'react'
 import PropTypes from 'prop-types'
 
 import { useCrossfilter } from 'components/Crossfilter'
-import { H3_COLS } from 'config'
+import { H3_COLS, SPECIES } from 'config'
+import { formatNumber } from 'util/format'
 
 import {
   layers,
@@ -25,7 +26,7 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
 
   const {
     state: {
-      metric: { label: metricLabel },
+      metric,
       hasFilters,
       filters,
       h3Totals,
@@ -36,6 +37,7 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
   } = useCrossfilter()
 
   const curStateRef = useRef({
+    metric,
     h3Totals,
     h3Renderer: Object.fromEntries(
       H3_COLS.map((col) => [
@@ -170,7 +172,9 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
         // tooltip position follows mouse cursor
         tooltip
           .setLngLat(lngLat)
-          .setHTML(`<b>${total}</b> ${metricLabel}<br/>in this area`)
+          .setHTML(
+            `<b>${formatNumber(total)}</b> ${curStateRef.current.metric.label}<br/>in this area`
+          )
           .addTo(map)
 
         if (hoverFeature !== hoverFeatureRef.current) {
@@ -210,7 +214,6 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
       const {
         current: {
           siteTotals: { [featureId]: total = 0 },
-          hasSpeciesFilter,
         },
       } = curStateRef
 
@@ -219,7 +222,7 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
       tooltip
         .setLngLat(lngLat)
         .setHTML(
-          `<b>${total}</b> ${metricLabel}<br/>at this site${hasSpeciesFilter ? '<br/>(of the selected species)' : ''}`
+          `<b>${total}</b> ${curStateRef.current.metric.label}<br/>at this site`
         )
         .addTo(map)
 
@@ -243,15 +246,25 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
 
     map.on('zoomend', () => {
       const zoom = map.getZoom()
-
       const visibleLayers = getVisibleLayers()
+
+      const {
+        current: {
+          metric: { field: valueField, label: metricLabel },
+        },
+      } = curStateRef
+
       const newLegendEntries = []
       visibleLayers.forEach(({ id, source, getLegend }) => {
         if (source === 'h3') {
           const col = id.split('-')[0]
-          newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
+          let entries = [...curStateRef.current.h3Renderer[col].legend]
+          if (valueField === 'detectors') {
+            entries = entries.slice(0, -1) // remove 0 value
+          }
+          newLegendEntries.push(...entries)
         } else if (getLegend) {
-          newLegendEntries.push(...getLegend(metricLabel))
+          newLegendEntries.push(...getLegend(valueField, metricLabel))
         }
       })
       setLegendEntries(newLegendEntries)
@@ -283,6 +296,7 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
     if (!(map && isLoaded)) return
 
     curStateRef.current = {
+      metric,
       h3Totals,
       h3Renderer: Object.fromEntries(
         H3_COLS.map((col) => [
@@ -296,32 +310,8 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
       siteMax: Math.max(0, Math.max(...Object.values(siteTotals))),
     }
 
-    // update filter on layers
-    H3_COLS.forEach((col) => {
-      const layerIds = [`${col}-fill`, `${col}-outline`]
-      layerIds.forEach((layerId) => {
-        map.setFilter(layerId, ['in', ['id'], ['literal', h3Ids[col]]])
-      })
-    })
-
+    // map.setLayoutProperty('sites', 'visibility', 'none')
     map.setFilter('sites', ['in', ['id'], ['literal', siteIds]])
-
-    H3_COLS.forEach((col) => {
-      // update feature state
-      Object.entries(h3Totals[col]).forEach(([hexId, total = 0]) => {
-        map.setFeatureState(
-          { source: 'h3', sourceLayer: col, id: parseInt(hexId, 10) },
-          { total }
-        )
-      })
-
-      map.setPaintProperty(
-        `${col}-fill`,
-        'fill-color',
-        curStateRef.current.h3Renderer[col].fillExpr
-      )
-    })
-
     Object.entries(siteTotals).forEach(([siteId, total = 0]) => {
       map.setFeatureState(
         { source: 'sites', sourceLayer: 'sites', id: parseInt(siteId, 10) },
@@ -329,20 +319,54 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
       )
     })
 
+    // update filter on layers
+    H3_COLS.forEach((col) => {
+      const filterExpr = ['in', ['id'], ['literal', h3Ids[col]]]
+      map.setFilter(`${col}-fill`, filterExpr)
+      map.setFilter(`${col}-outline`, filterExpr)
+
+      Object.entries(h3Totals[col]).forEach(([hexId, total = 0]) => {
+        map.setFeatureState(
+          { source: 'h3', sourceLayer: col, id: parseInt(hexId, 10) },
+          { total }
+        )
+      })
+      map.setPaintProperty(
+        `${col}-fill`,
+        'fill-color',
+        curStateRef.current.h3Renderer[col].fillExpr
+      )
+    })
+
+    map.triggerRepaint()
+
     const visibleLayers = getVisibleLayers()
+
+    const {
+      current: {
+        metric: { field: valueField, label: metricLabel },
+      },
+    } = curStateRef
+
     const newLegendEntries = []
     visibleLayers.forEach(({ id, source, getLegend }) => {
       if (source === 'h3') {
         const col = id.split('-')[0]
-        newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
+        let entries = [...curStateRef.current.h3Renderer[col].legend]
+
+        if (valueField === 'detectors') {
+          // remove 0 value from the end
+          entries = entries.slice(0, -1)
+        }
+        newLegendEntries.push(...entries)
       } else if (getLegend) {
-        newLegendEntries.push(...getLegend(metricLabel))
+        newLegendEntries.push(...getLegend(valueField, metricLabel))
       }
     })
     setLegendEntries(newLegendEntries)
   }, [
+    metric,
     isLoaded,
-    metricLabel,
     hasFilters,
     filters,
     h3Totals,
@@ -350,11 +374,6 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
     siteIds,
     siteTotals,
   ])
-
-  // const legendTitle =
-  //   valueField === 'id'
-  //     ? `Number of ${METRIC_LABELS[valueField]} that detected ${SPECIES[species].commonName}`
-  //     : `Number of ${METRIC_LABELS[valueField]}`
 
   /**
    * Reset feature state on basemap change
@@ -392,7 +411,15 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
       selectedFeature={selectedFeature}
       onBasemapChange={handleBasemapChange}
     >
-      <Legend entries={legendEntries} title={`Number of ${metricLabel}`} />
+      <Legend
+        entries={legendEntries}
+        title={`Number of ${curStateRef.current.metric.label}`}
+        note={
+          curStateRef.current.metric.field === 'detectors'
+            ? `limited to detectors that surveyed for ${SPECIES[speciesID].commonName}`
+            : ''
+        }
+      />
     </Map>
   )
 }

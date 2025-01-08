@@ -27,10 +27,16 @@ export const loadOccurrenceData = async () => {
     occurrenceTable: occurrenceTable
       // unpack speciesId to 4 letter codes
       .derive({ species: escape((d) => SPECIES_ID[d.species]) })
-      .join(detectorsTable.select(['id', 'siteId', 'admin1Name', ...H3_COLS]), [
-        'detId',
-        'id',
-      ]),
+      .join(
+        detectorsTable.select([
+          'id',
+          'source',
+          'siteId',
+          'admin1Name',
+          ...H3_COLS,
+        ]),
+        ['detId', 'id']
+      ),
   }
 }
 
@@ -43,6 +49,7 @@ export const loadSingleSpeciesData = async (speciesID) => {
   const speciesTable = rawSpeciesTable.join(
     detectorsTable.select([
       'id',
+      'source',
       'siteId',
       'admin1Name',
       'countType',
@@ -89,6 +96,16 @@ export const loadSingleSpeciesData = async (speciesID) => {
       sort: true,
       hideEmpty: true,
       values: admin1Names,
+    },
+    {
+      field: 'source',
+      title: 'Data source',
+      isOpen: false,
+      labels: [
+        'Bat Acoustic Monitoring Portal (BatAMP)',
+        'North American Bat Monitoring Program (NABat)',
+      ],
+      values: ['batamp', 'nabat'],
     },
     {
       field: 'countType',

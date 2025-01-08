@@ -51,7 +51,7 @@ const Legend = ({ title, subtitle, entries, note, maxWidth }) => {
             <Box
               key={id}
               sx={{
-                mt: i === 0 ? 0 : '2px',
+                mt: i === 0 ? 0 : type === 'circle' ? '0.5rem' : '2px',
               }}
             >
               {type === 'circle' ? (
@@ -66,7 +66,7 @@ const Legend = ({ title, subtitle, entries, note, maxWidth }) => {
             <Text
               sx={{
                 fontSize: 0,
-                color: 'grey.6',
+                color: 'grey.8',
                 lineHeight: 1.1,
                 mt: '0.5rem',
               }}

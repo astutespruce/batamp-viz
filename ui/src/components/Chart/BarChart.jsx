@@ -73,7 +73,7 @@ const BarChart = ({ title, subtitle, data, scale, highlight }) => {
               <Text
                 sx={{
                   fontSize: '0.6rem',
-                  color: 'grey.6',
+                  color: 'grey.8',
                   textAlign: 'center',
                 }}
               >

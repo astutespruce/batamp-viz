@@ -67,7 +67,7 @@ const VerticalBar = ({
         className="tooltip"
         sx={{
           fontSize: '0.8rem',
-          color: 'grey.6',
+          color: 'grey.8',
           position: 'absolute',
           textAlign: 'center',
           top: '-1.25rem',
@@ -96,7 +96,7 @@ const VerticalBar = ({
     <Text
       sx={{
         textAlign: 'center',
-        color: isFiltered ? 'highlight.5' : 'grey.6',
+        color: isFiltered ? 'highlight.5' : 'grey.8',
         fontWeight: isFiltered ? 'bold' : 'normal',
         fontSize: '0.7rem',
       }}

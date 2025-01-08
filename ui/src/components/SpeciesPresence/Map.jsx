@@ -24,7 +24,7 @@ const SpeciesOccurrenceMap = () => {
 
   const {
     state: {
-      metric: { label: metricLabel },
+      metric: { field: valueField, label: metricLabel },
       hasFilters,
       filters,
       h3Totals,
@@ -243,7 +243,7 @@ const SpeciesOccurrenceMap = () => {
           const col = id.split('-')[0]
           newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
         } else if (getLegend) {
-          newLegendEntries.push(...getLegend(metricLabel))
+          newLegendEntries.push(...getLegend(valueField, metricLabel))
         }
       })
       setLegendEntries(newLegendEntries)
@@ -341,12 +341,13 @@ const SpeciesOccurrenceMap = () => {
         const col = id.split('-')[0]
         newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
       } else if (getLegend) {
-        newLegendEntries.push(...getLegend(metricLabel))
+        newLegendEntries.push(...getLegend(valueField, metricLabel))
       }
     })
     setLegendEntries(newLegendEntries)
   }, [
     isLoaded,
+    valueField,
     metricLabel,
     hasFilters,
     filters,

@@ -159,7 +159,7 @@ const Filter = ({
           ) : (
             <Box
               sx={{
-                color: 'grey.6',
+                color: 'grey.8',
                 textAlign: 'center',
                 fontStyle: 'italic',
                 fontSize: 'smaller',

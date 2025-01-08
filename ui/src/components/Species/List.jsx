@@ -106,7 +106,7 @@ const SpeciesList = ({ speciesTable }) => {
             />
           ))
         ) : (
-          <Box sx={{ color: 'grey.6', mt: '2rem', textAlign: 'center' }}>
+          <Box sx={{ color: 'grey.8', mt: '2rem', textAlign: 'center' }}>
             No visible species...
           </Box>
         )}

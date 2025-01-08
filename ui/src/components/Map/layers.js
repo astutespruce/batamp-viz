@@ -287,10 +287,21 @@ export const layers = [
         '#ee7a14'
       ),
     },
-    getLegend: (metricLabel) => {
+    getLegend: (valueField, label) => {
       const legendStub = {
         type: 'circle',
         radius: 6,
+      }
+
+      if (valueField === 'detectors') {
+        return [
+          {
+            ...legendStub,
+            id: 'detectorWithValue',
+            color: '#c51b8a',
+            label: '>=1 detectors at site',
+          },
+        ]
       }
 
       return [
@@ -298,13 +309,13 @@ export const layers = [
           ...legendStub,
           id: 'detectorWithValue',
           color: '#c51b8a',
-          label: `detector with >=1 ${metricLabel}`,
+          label: `detector with >=1 ${label}`,
         },
         {
           ...legendStub,
           id: 'detector0Value',
           color: '#000000',
-          label: `detector with no ${metricLabel}`,
+          label: `detector with no ${label}`,
         },
       ]
     },

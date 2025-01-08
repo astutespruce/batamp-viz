@@ -25,7 +25,7 @@ const Circle = ({
         sx={{
           justifyContent: 'center',
           alignItems: 'center',
-          width: '36px',
+          width: '24px',
           textAlign: 'center',
         }}
       >
@@ -40,7 +40,9 @@ const Circle = ({
           />
         </svg>
       </Flex>
-      <Box sx={{ fontSize: 1, color: 'grey.8', ml: '0.5rem', lineHeight: 1.2 }}>
+      <Box
+        sx={{ fontSize: 1, color: 'grey.8', ml: '0.25rem', lineHeight: 1.2 }}
+      >
         {label}
       </Box>
     </Flex>

@@ -45,4 +45,14 @@ export const filters = [
     hideEmpty: true,
     values: admin1,
   },
+  {
+    field: 'source',
+    title: 'Data source',
+    isOpen: false,
+    labels: [
+      'Bat Acoustic Monitoring Portal (BatAMP)',
+      'North American Bat Monitoring Program (NABat)',
+    ],
+    values: ['batamp', 'nabat'],
+  },
 ]
