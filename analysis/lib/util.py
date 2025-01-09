@@ -1,3 +1,6 @@
+import re
+
+
 def to_nested_json(filename, df, field_name):
     with open(filename, "w") as out:
         out.write('{{"{field_name}": {data}}}'.format(field_name=field_name, data=df.to_json(orient="records")))
@@ -19,6 +22,21 @@ def camelcase(df):
         return "".join([parts[0]] + ["{0}{1}".format(p[0].upper(), p[1:]) for p in parts[1:]])
 
     return df.rename(columns={c: to_camel(c) for c in df.columns})
+
+
+def from_camelcase(value):
+    """Split a "TitleCase" name into "Title Case"
+
+    Parameters
+    ----------
+    value : str
+
+    Returns
+    -------
+    str
+    """
+
+    return " ".join(re.sub("([A-Z][a-z]+)", r" \1", re.sub("(?<=[a-z])([A-Z0-9]+)", r" \1", value)).split())
 
 
 def get_min_uint_dtype(max_value):

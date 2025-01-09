@@ -37,12 +37,6 @@ static_spp_data_dir.mkdir(exist_ok=True)
 tmp_dir = Path("/tmp")
 
 
-# FIXME: remove
-# location_fields = ["lat", "lon"]
-# detector_index_fields = location_fields + ["mic_ht", "presence_only"]
-# Due to size limits in Gatsby, just doing by month for now
-time_fields = ["year", "month"]
-
 ################################################################################
 ### Calculate center of each GRTS cell and use these to mark coordinates likely assigned there
 ################################################################################
@@ -53,9 +47,7 @@ grts["center"] = gp.GeoSeries(shapely.centroid(grts.geometry.values), crs=grts.c
 ################################################################################
 ### Load states / provinces
 ################################################################################
-admin_df = gp.read_feather(
-    boundary_dir / "na_admin1.feather", columns=["geometry", "admin1_name", "country"]
-)  # .drop(columns=["admin1"]).rename(columns={"id": "admin1"})
+admin_df = gp.read_feather(boundary_dir / "na_admin1.feather", columns=["geometry", "admin1_name", "country"])
 admin_df["name"] = admin_df.admin1_name + ", " + admin_df.country.map({"CA": "Canada", "MX": "Mexico", "US": "USA"})
 
 ################################################################################
@@ -71,6 +63,11 @@ presence_df["count_type"] = "p"  # presence-only
 batamp = pd.concat([activity_df, presence_df], ignore_index=True)
 batamp = clean_batamp(batamp, admin_df)
 batamp["source"] = "batamp"
+
+# fill missing columns specific to NABat
+for col in ["organization"]:
+    if col not in batamp.columns:
+        batamp[col] = ""
 
 
 ################################################################################
@@ -97,16 +94,21 @@ nabat = gp.read_feather(
     ],
 ).rename(
     columns={
-        "location_name": "site_id",
+        "location_name": "site_name",
         "detector": "det_type",
         "microphone": "mic_type",
         "microphone_height_meters": "mic_ht",
         "software": "call_id",
         "project_id": "dataset",
         "project_name": "dataset_name",
-        "organization_name": "contributor",
+        "organization_name": "organization",
     }
 )
+nabat_contributors = (
+    pd.read_feather(src_dir / "nabat/projects.feather", columns=["id", "contributor"]).set_index("id").contributor
+)
+nabat = nabat.join(nabat_contributors, on="dataset")
+
 nabat = clean_nabat(nabat).drop(columns=["event_geometry_id"])
 nabat["count_type"] = "a"  # all are activity measures (in theory)
 nabat["source"] = "nabat"
@@ -259,7 +261,7 @@ df.loc[ix, "obs_id"] = df.loc[ix].obs_id.map(loc_fixes.nabat_obs_id)
 
 ### drop all duplicates at (cleaned) points where activity values are the same
 # NOTE: this intentionally allows what could be separate original points (fuzzed to GRTS center)
-# to be deduplicated; there is no way to tell them apart (not unique by site_id as of 10/17/2024)
+# to be deduplicated; there is no way to tell them apart (not unique by site_name as of 10/17/2024)
 prev_count = len(df)
 df = df.drop_duplicates(subset=["source", "point_id", "night", "mic_ht"] + activity_columns)
 print(f"Dropped {prev_count - len(df):,} duplicate records with same source, location, night, activity values")
@@ -400,9 +402,6 @@ ix = df.count_type == "p"
 df.loc[ix, activity_columns] = df.loc[ix, activity_columns].clip(0, 1, axis=1)
 
 
-# FIXME: remove
-df.to_feather("/tmp/checkpoint2.feather")
-
 ################################################################################
 ### Extract point geometries and do spatial joins
 ################################################################################
@@ -486,7 +485,9 @@ detectors = (
             "wthr_prof",
             "call_id",
             "dataset",
+            "organization",
             "contributor",
+            "site_name",
             "count_type",
             "night",
             "year",
@@ -510,7 +511,7 @@ detectors = (
                     "count_type",
                 ]
             },
-            **{c: "unique" for c in ["dataset", "contributor"]},
+            **{c: "unique" for c in ["dataset", "organization", "contributor", "site_name"]},
             "night": "unique",
             "year": "nunique",
             "spp_detections": "sum",
@@ -526,8 +527,10 @@ det_id = detectors.set_index("det_id").id
 df["det_id"] = df.det_id.map(det_id)
 
 # set contributors and datasets to comma-delimited list
-detectors["contributor"] = detectors.contributor.apply(",".join).apply(lambda x: ",".join(sorted(set(x.split(",")))))
-detectors["dataset"] = detectors.dataset.apply(",".join).apply(lambda x: ",".join(sorted(set(x.split(",")))))
+for col in ["dataset", "organization", "contributor", "site_name"]:
+    delim = "," if col == "dataset" else ", "
+    detectors[col] = detectors[col].apply(",".join).apply(lambda x: delim.join(sorted(set(x.split(",")))))
+
 
 # calculate date range and number of nights
 detectors["date_range"] = detectors.detector_nights.apply(sorted).apply(
@@ -583,7 +586,9 @@ for col in [
     "call_id",
     "count_type",
     "dataset",
+    "organization",
     "contributor",
+    "site_name",
     "date_range",
     "years",
     "detector_nights",

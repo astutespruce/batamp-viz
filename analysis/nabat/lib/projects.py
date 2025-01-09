@@ -23,10 +23,6 @@ async def get_user_projects(client, token, user_id):
             nodes {
                 id: projectId
                 name: projectName
-                description
-                create_date: createdDate
-                organization
-                leaders: projectLeaders
             }
         }
     }
@@ -42,12 +38,11 @@ async def get_user_projects(client, token, user_id):
         headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
     )
     request.raise_for_status()
-    df = pd.DataFrame(request.json()["data"]["allVwUserProjects"]["nodes"])
+
+    # projects may appear multiple times if requesting user has multiple roles in project
+    df = pd.DataFrame(request.json()["data"]["allVwUserProjects"]["nodes"]).drop_duplicates(subset="id")
     df["id"] = df.id.astype("uint")
     df["name"] = df.name.fillna("").str.strip()
-    df["description"] = df.description.fillna("").str.strip()
-    df["create_date"] = pd.to_datetime(df.create_date.str[:15])
-    df["organization"] = df.organization.fillna("").str.strip()
 
     return df
 
@@ -83,8 +78,9 @@ async def get_project_info(client, token, project_ids):
                         }
                     }
                 }
-                # project users
-                users: userProjectsByProjectId {
+                # project leaders (marked as contributors)
+                # roleId 2 = Project Leader
+                contributor: userProjectsByProjectId(filter: {roleId: {equalTo: 2}}) {
                     nodes {
                         role: roleByRoleId {
                             role
@@ -129,17 +125,18 @@ async def get_project_info(client, token, project_ids):
         lambda x: ", ".join([e["organization"]["name"].strip() for e in x["nodes"]])
     )
     df["num_surveys"] = df.surveys.apply(lambda x: x["count"])
-    df["num_survey_events"] = df.surveys.apply(
-        lambda x: sum([e["survey_events"]["count"] for e in x["nodes"]])
-    )
-    df["project_leads"] = df.users.apply(
-        lambda x: ", ".join(
-            [
-                f"{e['user']['first'].strip()} {e['user']['last'].strip()}"
-                for e in x["nodes"]
-                if e["role"]["role"] == "Project Leader"
-            ]
+    df["num_survey_events"] = df.surveys.apply(lambda x: sum([e["survey_events"]["count"] for e in x["nodes"]]))
+
+    # mark project leaders as the contributors for the project
+    # extract these as a comma-delimited sorted list
+    df["contributor"] = (
+        df.contributor.apply(
+            lambda x: [f"{e['user']['first'].strip()} {e['user']['last'].strip()}" for e in x["nodes"]]
         )
+        .apply(lambda x: ["Ted Weller" if v == "Ted depreciated-weller" else v for v in x])
+        .apply(set)
+        .apply(sorted)
+        .apply(", ".join)
     )
 
-    return df.drop(columns=["users"])
+    return df

@@ -3,6 +3,7 @@ import warnings
 import geopandas as gp
 
 from analysis.constants import GEO_CRS, ACTIVITY_COLUMNS
+from analysis.lib.util import from_camelcase
 
 
 def clean_nabat(df):
@@ -82,17 +83,18 @@ def clean_nabat(df):
     df = gp.GeoDataFrame(df, geometry="geometry", crs=GEO_CRS)
 
     ### clean site name
-    ix = df.site_id.str.startswith("_")
-    df.loc[ix, "site_id"] = "CONUS" + df.loc[ix].site_id
+    ix = df.site_name.str.startswith("_")
+    df.loc[ix, "site_name"] = "CONUS" + df.loc[ix].site_name
     # fixes are based on varying name at a given location
-    df["site_id"] = (
-        df.site_id.str.replace("_", " ", regex=False)
+    df["site_name"] = (
+        df.site_name.apply(from_camelcase)
+        .str.replace("_", " ", regex=False)
+        .str.replace("- ", "-", regex=False)
+        .str.replace(" -", "-", regex=False)
         .replace("HBNWR Lanpher", "HBNWR Lanphere")
         .replace("Callda", "Calida")
         .replace("PinePoint", "Pine Point")
-        .replace("HighMountain", "High Mountain")
         .replace("Twin Lake", "Twin Lakes")
-        .replace("DeerLake", "Deer Lake")
         .replace("Albee Albee", "Humboldt Redwoods Albee")
     )
 
@@ -100,7 +102,7 @@ def clean_nabat(df):
     # align software to call_id values
     df["call_id"] = df.call_id.str.replace("Wildlife Acoustics Kaleidoscope", "Kaleidoscope")
 
-    # align detector values with BatAMP
+    # align detect values with BatAMP
     df["det_type"] = (
         df.det_type.str.replace("WILDLIFE ACOUSTICS", "Wildlife Acoustics")
         .str.replace("SM4BAT", "SM4Bat")

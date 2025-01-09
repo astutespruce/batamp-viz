@@ -55,11 +55,7 @@ def download_dataset(client, id):
         read_csv(BytesIO(data.encode("UTF-8")))
         .to_pandas()
         .rename(
-            columns={
-                "db_longitude": "lon",
-                "db_latitude": "lat",
-                "source_dataset": "dataset",
-            }
+            columns={"db_longitude": "lon", "db_latitude": "lat", "source_dataset": "dataset", "site_id": "site_name"}
         )
     )
 
@@ -104,7 +100,7 @@ def download_dataset(client, id):
         "refl_type",
         "call_id_1",
         "call_id_2",
-        "site_id",
+        "site_name",
         "det_id",
         "wthr_prof",  # sometimes absent from datasets
     ]:

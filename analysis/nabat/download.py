@@ -31,6 +31,8 @@ async def download():
         token = info["access_token"]
         user_id = info["user_id"]
 
+        print(f"user_id: {user_id}")
+
         # download full species list
         # NOTE: only needs to be run when species list changes in NABat
         print("Downloading species list")

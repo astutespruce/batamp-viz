@@ -1,8 +1,8 @@
 import numpy as np
-import pandas as pd
 import shapely
 
 from analysis.constants import ACTIVITY_COLUMNS
+from analysis.lib.util import from_camelcase
 
 
 def clean_batamp(df, admin_df):
@@ -40,10 +40,10 @@ def clean_batamp(df, admin_df):
     ] = "a"
 
     # Cleanup site id
-    ix = df.site_id.str.startswith("_")
-    df.loc[ix, "site_id"] = "CONUS" + df.loc[ix].site_id
-    df["site_id"] = (
-        df.site_id.str.replace("_", " ", regex=False)
+    ix = df.site_name.str.startswith("_")
+    df.loc[ix, "site_name"] = "CONUS" + df.loc[ix].site_name
+    df["site_name"] = (
+        df.site_name.str.replace("_", " ", regex=False)
         .replace("Six Rivers NF", "Six Rivers National Forest")
         .replace("Red Hills One", "Red Hills 1")
         .replace("Shasta Trinity National Forest", "Shasta-Trinity National Forest")
@@ -63,7 +63,6 @@ def clean_batamp(df, admin_df):
         .replace("Minnetonka", "Minnetonka Cave")
         .replace("LOSARR", "Los Arroyos del Oeste")
         .replace("Darcus", "Vaseux Lakeshore")
-        .replace("VaseuxLakeshore", "Vaseux Lakeshore")
         .replace("SU088752", "Manila, CA")
         .replace("Manila", "Manila, CA")
         .replace("Manila CA", "Manila, CA")
@@ -72,16 +71,18 @@ def clean_batamp(df, admin_df):
         .replace("KATM NONV21", "NONV")
         .replace("NESL", "NELS")
         .replace("Hirz LO", "Hirz Lookout")
-        .replace("HirzLookout", "Hirz Lookout")
         .replace("Hugh Smith Cabin", "Hugh Smith Lake")
         .replace("Inyo/Sequoia National Forest", "Sequoia National Forest")
         .replace("Huron-Manistee NF", "Huron-Manistee National Forest")
         .replace("Monona WI", "Monona, WI")
         .replace("Monona", "Monona, WI")
+        .apply(from_camelcase)
+        .str.replace("- ", "-", regex=False)
+        .str.replace(" -", "-", regex=False)
     )
     # strip year from Stantec offshore data
-    ix = df.site_id.str.startswith("Stantec Offshore")
-    df.loc[ix, "site_id"] = "Stantec Offshore"
+    ix = df.site_name.str.startswith("Stantec Offshore")
+    df.loc[ix, "site_name"] = "Stantec Offshore"
 
     # Cleanup call IDs for known issues
     for col in ["call_id_1", "call_id_2"]:
@@ -222,16 +223,20 @@ def clean_batamp(df, admin_df):
 
     df.loc[df.dataset == "457eba95878349f9bfdfc1385184f194", "mic_ht"] = np.float32(2.5)
     df.loc[
-        (df.dataset == "4826c07604084155a80b607d97077160") & (df.site_id == "White Mountain National Forest"), "mic_ht"
+        (df.dataset == "4826c07604084155a80b607d97077160") & (df.site_name == "White Mountain National Forest"),
+        "mic_ht",
     ] = np.float32(3.0)
     df.loc[df.dataset == "d4cce5c5faed441baf99ec27f45b05c9", "mic_ht"] = np.float32(3.0)
     df.loc[df.dataset == "5f7f5ed62bbe477cb7ecac585441f96e", "mic_ht"] = np.float32(2.0)
-    df.loc[(df.dataset == "8b73492b228e4cd89acc856dea5d2e5e") & (df.site_id == "Robertson"), "mic_ht"] = np.float32(2.0)
+    df.loc[(df.dataset == "8b73492b228e4cd89acc856dea5d2e5e") & (df.site_name == "Robertson"), "mic_ht"] = np.float32(
+        2.0
+    )
     df.loc[
-        (df.dataset == "dc5d4686e8824594899a593deeb24467") & (df.site_id == "Pinion Range Aspen Exclosure"), "mic_ht"
+        (df.dataset == "dc5d4686e8824594899a593deeb24467") & (df.site_name == "Pinion Range Aspen Exclosure"), "mic_ht"
     ] = np.float32(3.5)
     df.loc[
-        (df.dataset == "4826c07604084155a80b607d97077160") & (df.site_id == "White Mountain National Forest"), "mic_ht"
+        (df.dataset == "4826c07604084155a80b607d97077160") & (df.site_name == "White Mountain National Forest"),
+        "mic_ht",
     ] = np.float32(3.0)
     df.loc[(df.dataset == "bb31cf5cfed7486bb1fb855bf8d4c29f") & (df.det_id == "5622_24S07_two"), "mic_ht"] = np.float32(
         1.8
@@ -243,7 +248,7 @@ def clean_batamp(df, admin_df):
             "dataset",
             "dataset_name",
             "contributor",
-            "site_id",
+            "site_name",
             "night",
             "year",
             "month",
