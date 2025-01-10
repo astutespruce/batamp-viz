@@ -194,6 +194,11 @@ const SpeciesMap = ({ speciesID, selectedFeature, onSelectFeature }) => {
       })
 
       map.on('mouseout', fillLayerId, () => {
+        // prevent clear of highlight of selected feature
+        if (selectedFeatureRef.current !== null) {
+          return
+        }
+
         setFeatureHighlight(map, hoverFeatureRef.current, false)
         hoverFeatureRef.current = null
 

@@ -1,25 +1,46 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 
-import { Box, Flex } from 'theme-ui'
+import { Box, Flex, Text } from 'theme-ui'
 import { formatNumber } from 'util/format'
 
-const HorizontalBarChart = ({ label, quantity, max, highlight }) => {
-  const position = quantity / max
+const HorizontalBarChart = ({
+  commonName,
+  sciName,
+  total,
+  max,
+  highlight,
+  note,
+}) => {
+  const position = total / max
   const remainder = 1 - position
 
   return (
     <Box sx={{ lineHeight: 1, mb: '1rem' }}>
-      <Flex sx={{ justifyContent: 'space-between', fontSize: '0.8rem' }}>
+      <Flex sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
         <Box
           sx={{ flex: '1 1 auto', color: highlight ? 'highlight.5' : 'grey.9' }}
         >
-          {label}
+          {commonName}
+          <Text
+            sx={{
+              display: 'inline',
+              ml: '0.5em',
+              color: 'grey.8',
+              fontSize: 1,
+            }}
+          >
+            ({sciName})
+          </Text>
         </Box>
         <Box
-          sx={{ flex: '0 0 auto', color: highlight ? 'highlight.5' : 'grey.7' }}
+          sx={{
+            flex: '0 0 auto',
+            color: highlight ? 'highlight.5' : 'grey.8',
+            fontSize: 1,
+          }}
         >
-          {formatNumber(quantity)}
+          {formatNumber(total)}
         </Box>
       </Flex>
       <Flex
@@ -29,6 +50,7 @@ const HorizontalBarChart = ({ label, quantity, max, highlight }) => {
           bg: 'grey.2',
           border: '1px solid',
           borderColor: 'grey.2',
+          my: '0.1rem',
         }}
       >
         {position > 0 && (
@@ -48,19 +70,25 @@ const HorizontalBarChart = ({ label, quantity, max, highlight }) => {
           />
         )}
       </Flex>
+      {note ? (
+        <Box sx={{ fontSize: 0, color: 'grey.8', mb: '1.25rem' }}>{note}</Box>
+      ) : null}
     </Box>
   )
 }
 
 HorizontalBarChart.propTypes = {
-  label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  quantity: PropTypes.number.isRequired,
+  commonName: PropTypes.string.isRequired,
+  sciName: PropTypes.string.isRequired,
+  total: PropTypes.number.isRequired,
   max: PropTypes.number.isRequired,
   highlight: PropTypes.bool,
+  note: PropTypes.string,
 }
 
 HorizontalBarChart.defaultProps = {
   highlight: false,
+  note: null,
 }
 
 export default memo(HorizontalBarChart)

@@ -49,8 +49,7 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
   })
 
   const handleSelectFeature = (feature) => {
-    console.log('handleSelectFeature', feature)
-
+    console.log('select', feature)
     if (feature === null) {
       setState(() => ({
         selectedFeature: null,
@@ -66,7 +65,6 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
     }
   }
 
-  // FIXME:
   const handleSetDetectorIndex = (newIndex) => {
     console.log('update feature index', newIndex)
     setState((prevState) => ({ ...prevState, selectedIndex: newIndex }))

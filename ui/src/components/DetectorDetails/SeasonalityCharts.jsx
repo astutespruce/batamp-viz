@@ -3,75 +3,63 @@ import PropTypes from 'prop-types'
 import { scaleLinear } from 'd3-scale'
 import { Box } from 'theme-ui'
 
-import BarChart from 'components/Chart/BarChart'
-import { MONTH_LABELS } from 'config'
-import MissingSpeciesWarning from './MissingSpeciesWarning'
+import { MONTH_LABELS, SPECIES } from 'config'
+import SpeciesMonthlyChart from './SpeciesMonthlyChart'
 
-const SeasonalityCharts = ({ data, selectedSpecies }) => {
-  const maxBySpp = data.map(({ values }) => Math.max(...values))
-  const max = Math.max(...maxBySpp)
+// TODO: add monthly detectorNights
+const SeasonalityCharts = ({ displayField, data, speciesID }) => {
+  let max = 0
 
-  const chartScale = scaleLinear().domain([1, max]).range([6, 100])
+  // expand data to all months; backfill missing months with null
+  const sppData = Object.entries(data)
+    .map(([id, obs]) => {
+      const { commonName, sciName } = SPECIES[id]
 
-  const sppData = data
-    .filter(({ species }) => species !== selectedSpecies)
-    .sort((left, right) =>
+      let sppMax = 0
+      const months = MONTH_LABELS.map((label, i) => {
+        const {
+          // adjust 1-based indexing in data to 0-based indexing in MONTH_LABELS
+          [i + 1]: {
+            [displayField]: total,
+            detectorNights: sppDetectorNights,
+          } = {
+            [displayField]: null,
+            detectorNights: 0,
+          },
+        } = obs
+        max = Math.max(max, total || 0)
+        sppMax = Math.max(sppMax, total || 0)
+
+        return {
+          label: label.slice(0, 3),
+          total,
+          detectorNights: sppDetectorNights,
+        }
+      })
+      return {
+        id,
+        commonName,
+        sciName,
+        months,
+        max: sppMax,
+      }
+    })
+    // only show nonzero values unless selected species
+    .filter(({ id, max: sppMax }) => sppMax > 0 || id === speciesID)
+    .sort(({ commonName: leftName }, { commonName: rightName }) =>
       // sort alphabetically on name
-      left.commonName < right.commonName ? -1 : 1
+      leftName < rightName ? -1 : 1
     )
 
-  let detectedSelected = false
-  let selectedSppChart = null
-  if (selectedSpecies) {
-    const selectedSppData = data.find(
-      ({ species }) => species === selectedSpecies
-    )
+  const chartScale = scaleLinear().domain([0, max]).range([2, 100])
 
-    if (selectedSppData) {
-      detectedSelected = true
-      // else, species was not detected at this detector
-      const { commonName, sciName, values } = selectedSppData
-      selectedSppChart = (
-        <Box
-          sx={{
-            '&:not(:first-of-type)': {
-              mt: '1.5rem',
-              pt: '1rem',
-              borderTop: '2px solid',
-              borderTopColor: 'grey.2',
-            },
-          }}
-        >
-          <BarChart
-            title={commonName}
-            subtitle={`(${sciName})`}
-            data={values.map((d, i) => ({
-              value: d,
-              label: MONTH_LABELS[i].slice(0, 3),
-            }))}
-            scale={chartScale}
-            highlight
-          />
-        </Box>
-      )
-    }
-  }
+  // always show selected species at the top, if specified
+  const selectedSppData = sppData.find(({ id }) => id === speciesID)
 
   return (
-    <Box>
-      {selectedSpecies ? (
-        <>
-          {detectedSelected ? (
-            selectedSppChart
-          ) : (
-            <MissingSpeciesWarning species={selectedSpecies} />
-          )}
-        </>
-      ) : null}
-
-      {sppData.map(({ species, commonName, sciName, values }) => (
+    <Box sx={{ mt: '1.5rem' }}>
+      {selectedSppData ? (
         <Box
-          key={species}
           sx={{
             '&:not(:first-of-type)': {
               mt: '1.5rem',
@@ -81,36 +69,46 @@ const SeasonalityCharts = ({ data, selectedSpecies }) => {
             },
           }}
         >
-          <BarChart
-            title={commonName}
-            subtitle={`(${sciName})`}
-            data={values.map((d, i) => ({
-              value: d,
-              label: MONTH_LABELS[i].slice(0, 3),
-            }))}
+          <SpeciesMonthlyChart
+            {...selectedSppData}
             scale={chartScale}
-            highlight={species === selectedSpecies}
+            highlight
+            note={
+              selectedSppData.max === 0 ? '(not detected on any night)' : ''
+            }
           />
         </Box>
-      ))}
+      ) : null}
+
+      {sppData
+        .filter(({ id }) => id !== speciesID)
+        .map(({ id, ...rest }) => (
+          <Box
+            key={id}
+            sx={{
+              '&:not(:first-of-type)': {
+                mt: '1.5rem',
+                pt: '1rem',
+                borderTop: '2px solid',
+                borderTopColor: 'grey.2',
+              },
+            }}
+          >
+            <SpeciesMonthlyChart {...rest} scale={chartScale} />
+          </Box>
+        ))}
     </Box>
   )
 }
 
 SeasonalityCharts.propTypes = {
-  data: PropTypes.arrayOf(
-    PropTypes.shape({
-      species: PropTypes.string.isRequired,
-      commonName: PropTypes.string.isRequired,
-      sciName: PropTypes.string.isRequired,
-      values: PropTypes.arrayOf(PropTypes.number).isRequired,
-    })
-  ).isRequired,
-  selectedSpecies: PropTypes.string,
+  displayField: PropTypes.string.isRequired,
+  data: PropTypes.object.isRequired,
+  speciesID: PropTypes.string,
 }
 
 SeasonalityCharts.defaultProps = {
-  selectedSpecies: null,
+  speciesID: null,
 }
 
 export default SeasonalityCharts

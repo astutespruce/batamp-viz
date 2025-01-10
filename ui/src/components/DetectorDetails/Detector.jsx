@@ -2,14 +2,13 @@ import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 import { Box, Flex, Heading, Text } from 'theme-ui'
 import { TimesCircle, ExclamationTriangle } from '@emotion-icons/fa-solid'
-import { escape, op } from 'arquero'
+import { op } from 'arquero'
 
 import { Tab, Tabs } from 'components/Tabs'
 import { useCrossfilter } from 'components/Crossfilter'
-import { MONTHS, SPECIES, METRIC_LABELS } from 'config'
-import { formatNumber } from 'util/format'
-import { sumBy, groupBy, filterObject } from 'util/data'
-import TotalCharts from './TotalCharts'
+import { METRIC_LABELS } from 'config'
+import { formatNumber, quantityLabel } from 'util/format'
+import SpeciesTotalCharts from './SpeciesTotalCharts'
 import SeasonalityCharts from './SeasonalityCharts'
 
 import DetectorMetadata from './DetectorMetadata'
@@ -24,11 +23,6 @@ const tabCSS = {
 }
 
 const Detector = ({ detector, speciesID, onClose }) => {
-  console.log('incoming', detector)
-
-  // FIXME: remove
-  window.detectorTable = detector.table
-
   const {
     state: {
       metric: { field: valueField },
@@ -40,25 +34,18 @@ const Detector = ({ detector, speciesID, onClose }) => {
     valueField === 'detectors' || valueField === 'species'
       ? 'detectionNights'
       : valueField
-
-  // FIXME: remove
-  console.log('display field is: ', displayField)
+  const metricLabel = METRIC_LABELS[displayField]
 
   const {
+    source,
     siteName,
-    // detections,
     admin1Name,
-    // species, // FIXME: derive from table instead
     detectionNights,
     detectorNights,
     countType,
     dateRange,
     table,
   } = detector
-
-  // FIXME:
-  window.op = op
-  window.escape = escape
 
   const { detections, years } = table
     .rollup({
@@ -84,9 +71,13 @@ const Detector = ({ detector, speciesID, onClose }) => {
   const sppByMonth = Object.fromEntries(
     table
       .groupby('species', 'month')
-      .rollup({ [displayField]: op.sum(displayField) })
+      .rollup({
+        [displayField]: op.sum(displayField),
+        detectorNights: op.sum('detectorNights'),
+      })
       .groupby('species')
-      .rollup({ monthEntries: op.entries_agg('month', displayField) })
+      .derive({ row: op.row_object(displayField, 'detectorNights') })
+      .rollup({ monthEntries: op.entries_agg('month', 'row') })
       .derive({ byMonth: (d) => op.object(d.monthEntries) })
       .rollup({ entries: op.entries_agg('species', 'byMonth') })
       .array('entries')[0]
@@ -95,66 +86,25 @@ const Detector = ({ detector, speciesID, onClose }) => {
   // If we are showing nights, we need to show the true effort which is
   // number of detector nights
   const max =
-    valueField === 'detectionNights'
+    displayField === 'detectionNights'
       ? detectorNights
-      : Math.max(0, ...Object.values(sppTotals))
+      : Math.max(
+          0,
+          ...Object.values(sppTotals).map(({ [displayField]: total }) => total)
+        )
 
-  console.log('sppByMonth', sppByMonth, 'sppTotals', sppTotals)
-
-  // calculate totals by species, for non-zero species
-
-  // const bySpp = filterObject(sumBy(ts, 'species', valueField), (d) => d > 0)
-
-  // /* eslint-disable-next-line no-unused-vars */
-  // const sppTotals = Object.entries(bySpp).sort(([sppA, a], [sppB, b]) =>
-  //   a < b ? 1 : -1
-  // )
-
-  // // create a map of species to array of monthly data, with an entry populated for each month
-  // const monthlyData =
-  //   ts.length > 0
-  //     ? Object.assign(
-  //         ...Object.entries(groupBy(ts, 'species')).map(([spp, records]) => {
-  //           const byMonth = sumBy(records, 'month', valueField)
-  //           return { [spp]: MONTHS.map((month) => byMonth[month] || 0) }
-  //         })
-  //       )
-  //     : []
-
-  // const seasonalityData = sppTotals.map(([spp]) => ({
-  //   species: spp,
-  //   ...SPECIES[spp],
-  //   values: monthlyData[spp],
-  // }))
-
-  const metricLabel = METRIC_LABELS[displayField]
-
-  // FIXME: are these still needed?
-  const hasBats = detectionNights > 0
-  // const hasSpecies = species && species.length > 0
-  const hasSpecies = table.size > 0
-
-  let speciesWarning = null
   let presenceOnlyWarning = null
-
   if (countType === 'p' && displayField === 'detections') {
     presenceOnlyWarning = (
-      <Box sx={{ color: 'highlight.5', mb: '2rem', fontSize: 1 }}>
-        <ExclamationTriangle size="1.5em" />
-        This detector monitored nightly occurrence instead of nightly activity.
-        Only one detection was recorded per night for each species.
-      </Box>
+      <Text variant="help" sx={{ mb: '2rem', fontSize: 1 }}>
+        Note: this detector monitored nightly occurrence instead of nightly
+        activity; only one detection was recorded per night for each species.
+      </Text>
     )
   }
 
-  if (!hasBats) {
-    speciesWarning = (
-      <Box sx={{ color: 'highlight.5', mb: '2rem' }}>
-        <ExclamationTriangle size="1.5em" />
-        No bats were detected on any night.
-      </Box>
-    )
-  } else if (!hasSpecies) {
+  let speciesWarning = null
+  if (table.size === 0) {
     speciesWarning = (
       <Box sx={{ color: 'highlight.5', mb: '2rem' }}>
         <ExclamationTriangle size="1.5em" />
@@ -167,7 +117,10 @@ const Detector = ({ detector, speciesID, onClose }) => {
 
   const filterNote = hasFilters ? (
     <Text variant="help" sx={{ mb: '1rem' }}>
-      <ExclamationTriangle size="1.5em" />
+      <ExclamationTriangle
+        size="1em"
+        style={{ marginTop: '-3px', marginRight: '0.25em' }}
+      />
       Note: your filters are not applied to the following data.
     </Text>
   ) : null
@@ -195,6 +148,12 @@ const Detector = ({ detector, speciesID, onClose }) => {
             <Heading as="h1" sx={{ fontSize: '1.5rem', m: '0 0 0.25rem 0' }}>
               {siteName}
             </Heading>
+            <Text sx={{ fontSize: 1, color: 'grey.8' }}>
+              From:{' '}
+              {source === 'nabat'
+                ? 'North American Bat Monitoring Program (NABat)'
+                : 'Bat Acoustic Monitoring Portal (BatAMP)'}
+            </Text>
           </Box>
           <Box
             onClick={onClose}
@@ -222,29 +181,26 @@ const Detector = ({ detector, speciesID, onClose }) => {
         >
           <Flex sx={{ justifyContent: 'space-between' }}>
             <Box sx={{ flex: '1 1 auto' }}>
-              {admin1Name ? <b>{admin1Name}</b> : null}
-              <br />
+              {admin1Name ? (
+                <>
+                  <b>{admin1Name}</b>
+                  <br />
+                </>
+              ) : null}
               {dateRange}
             </Box>
             <Box sx={{ flex: '0 0 auto', textAlign: 'right' }}>
-              <b>{formatNumber(detections, 0)}</b> species detections
+              <b>{formatNumber(detections, 0)}</b> species{' '}
+              {quantityLabel('detections', detections)}
               <br />
-              <b>{formatNumber(detectorNights, 0)}</b> nights monitored
+              <b>{formatNumber(detectorNights, 0)}</b>{' '}
+              {quantityLabel('nights', detectorNights)} monitored
             </Box>
           </Flex>
         </Box>
       </Box>
 
       <Tabs sx={{ flex: '1 1 auto', overflow: 'hidden' }}>
-        <Tab sx={tabCSS} id="overview" label="Detector Information">
-          <DetectorMetadata
-            displayField={displayField}
-            {...detector}
-            speciesTotals={sppTotals}
-            speciesID={speciesID}
-          />
-        </Tab>
-
         <Tab id="species" label="Species Detected" sx={tabCSS}>
           {filterNote}
           {speciesWarning || (
@@ -263,7 +219,14 @@ const Detector = ({ detector, speciesID, onClose }) => {
                 Total {metricLabel}
               </Heading>
               {presenceOnlyWarning}
-              <TotalCharts data={sppTotals} speciesID={speciesID} max={max} />
+              <SpeciesTotalCharts
+                displayField={displayField}
+                countType={countType}
+                speciesID={speciesID}
+                data={sppTotals}
+                max={max}
+                detectorNights={detectorNights}
+              />
             </>
           )}
         </Tab>
@@ -294,9 +257,21 @@ const Detector = ({ detector, speciesID, onClose }) => {
 
               {presenceOnlyWarning}
 
-              <SeasonalityCharts data={sppByMonth} speciesID={speciesID} />
+              <SeasonalityCharts
+                displayField={displayField}
+                data={sppByMonth}
+                speciesID={speciesID}
+              />
             </>
           )}
+        </Tab>
+        <Tab sx={tabCSS} id="overview" label="Detector Information">
+          <DetectorMetadata
+            {...detector}
+            displayField={displayField}
+            speciesTotals={sppTotals}
+            speciesID={speciesID}
+          />
         </Tab>
       </Tabs>
     </Flex>

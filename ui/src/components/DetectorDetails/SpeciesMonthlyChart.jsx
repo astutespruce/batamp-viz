@@ -5,31 +5,28 @@ import { Box, Flex, Text } from 'theme-ui'
 
 import { formatNumber } from 'util/format'
 
-const BarChart = ({ title, subtitle, data, scale, highlight }) => {
-  const max = Math.max(...data.map(({ value }) => value))
+const BarChart = ({ commonName, sciName, note, months, scale, highlight }) => {
+  const max = Math.max(...months.map(({ total }) => total))
   const maxHeight = Math.max(scale(max), 32)
 
   return (
     <Box>
-      <Text sx={{ color: highlight ? 'highlight.5' : 'grey.9', fontSize: 3 }}>
-        {title}
-
-        {subtitle ? (
-          <Text
-            sx={{
-              display: 'inline',
-              ml: '0.5em',
-              fontSize: 2,
-              color: highlight ? 'highlight.5' : 'grey.7',
-            }}
-          >
-            {subtitle}
-          </Text>
-        ) : null}
+      <Text sx={{ color: highlight ? 'highlight.5' : 'grey.9', fontSize: 2 }}>
+        {commonName}
+        <Text
+          sx={{
+            display: 'inline',
+            ml: '0.5em',
+            fontSize: 1,
+            color: highlight ? 'highlight.5' : 'grey.8',
+          }}
+        >
+          ({sciName})
+        </Text>
       </Text>
-
+      {note ? <Text sx={{ fontSize: 1, color: 'grey.8' }}>{note}</Text> : null}
       <Flex sx={{ flexWrap: 'no-wrap', justifyContent: 'space-evenly' }}>
-        {data.map(({ label, value }) => (
+        {months.map(({ label, total }) => (
           <Box key={label} sx={{ flex: '1 1 auto' }}>
             <Flex
               sx={{
@@ -40,7 +37,7 @@ const BarChart = ({ title, subtitle, data, scale, highlight }) => {
                 borderBottomColor: 'grey.2',
               }}
             >
-              {value > 0 ? (
+              {total !== null && total >= 0 ? (
                 <>
                   <Text
                     sx={{
@@ -50,7 +47,7 @@ const BarChart = ({ title, subtitle, data, scale, highlight }) => {
                       flex: '0 0 auto',
                     }}
                   >
-                    {formatNumber(value)}
+                    {formatNumber(total)}
                   </Text>
                   <Box
                     sx={{
@@ -62,7 +59,7 @@ const BarChart = ({ title, subtitle, data, scale, highlight }) => {
                       borderRight: '1px solid',
                       borderRightColor: 'grey.2',
                     }}
-                    style={{ flexBasis: scale(value) }}
+                    style={{ flexBasis: scale(total) }}
                   />
                 </>
               ) : (
@@ -88,13 +85,14 @@ const BarChart = ({ title, subtitle, data, scale, highlight }) => {
 }
 
 BarChart.propTypes = {
-  title: PropTypes.string.isRequired,
-  subtitle: PropTypes.string,
-  data: PropTypes.arrayOf(
+  commonName: PropTypes.string.isRequired,
+  sciName: PropTypes.string.isRequired,
+  note: PropTypes.string,
+  months: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string,
       tooltip: PropTypes.string,
-      value: PropTypes.number.isRequired,
+      total: PropTypes.number,
     })
   ).isRequired,
   scale: PropTypes.func.isRequired,
@@ -102,7 +100,7 @@ BarChart.propTypes = {
 }
 
 BarChart.defaultProps = {
-  subtitle: null,
+  note: null,
   highlight: false,
 }
 

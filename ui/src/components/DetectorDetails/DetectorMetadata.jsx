@@ -30,13 +30,8 @@ const DetectorMetadata = ({
   detectorNights,
   detectionNights,
   speciesTotals,
-  // species,
-  // targetSpecies,
   speciesID,
 }) => {
-  const numContributors = contributors.split(',').length
-
-  // const detectedSpp = new Set(species)
   let numDetected = 0
   let hasVaryingMonitoredSpecies = false
   const monitoredSpp = Object.entries(speciesTotals)
@@ -65,7 +60,6 @@ const DetectorMetadata = ({
 
   const numMonitored = monitoredSpp.length
 
-  // FIXME:
   const rootURL =
     source === 'nabat'
       ? 'https://sciencebase.usgs.gov/nabat/#/projects'
@@ -228,33 +222,45 @@ const DetectorMetadata = ({
       <Field label="Data source:">
         <Box>
           Source database:{' '}
-          {source === 'nabat' ? (
-            <OutboundLink to="https://www.nabatmonitoring.org/">
-              North American Bat Monitoring Program{' '}
-              <ExternalLinkAlt
-                size="1em"
-                style={{
-                  opacity: 0.6,
-                  marginLeft: '0.5rem',
-                  marginTop: '-4px',
-                }}
-              />
-            </OutboundLink>
-          ) : (
-            <OutboundLink to="https://batamp.databasin.org">
-              Bat Acoustic Monitoring Portal
-              <ExternalLinkAlt
-                size="1em"
-                style={{
-                  opacity: 0.6,
-                  marginLeft: '0.5rem',
-                  marginTop: '-4px',
-                }}
-              />
-            </OutboundLink>
-          )}
+          <Box
+            as="ul"
+            sx={{
+              pl: '2rem',
+              '& li+li': {
+                mt: '0.25rem',
+              },
+            }}
+          >
+            <li>
+              {source === 'nabat' ? (
+                <OutboundLink to="https://www.nabatmonitoring.org/">
+                  North American Bat Monitoring Program (NABat)
+                  <ExternalLinkAlt
+                    size="1em"
+                    style={{
+                      opacity: 0.6,
+                      marginLeft: '0.5rem',
+                      marginTop: '-4px',
+                    }}
+                  />
+                </OutboundLink>
+              ) : (
+                <OutboundLink to="https://batamp.databasin.org">
+                  Bat Acoustic Monitoring Portal (BatAMP)
+                  <ExternalLinkAlt
+                    size="1em"
+                    style={{
+                      opacity: 0.6,
+                      marginLeft: '0.5rem',
+                      marginTop: '-4px',
+                    }}
+                  />
+                </OutboundLink>
+              )}
+            </li>
+          </Box>
         </Box>
-        <Box sx={{ mt: '0.5rem' }}>
+        <Box sx={{ mt: '1rem' }}>
           Source{' '}
           {quantityLabel(
             source === 'nabat' ? 'projects' : 'datasets',
@@ -265,7 +271,6 @@ const DetectorMetadata = ({
         <Box
           as="ul"
           sx={{
-            mt: '0.25rem',
             pl: '2rem',
             '& li+li': {
               mt: '0.25rem',
@@ -300,6 +305,7 @@ const DetectorMetadata = ({
 }
 
 DetectorMetadata.propTypes = {
+  displayField: PropTypes.string.isRequired,
   source: PropTypes.string.isRequired,
   countType: PropTypes.string.isRequired,
   lat: PropTypes.number.isRequired,
@@ -311,7 +317,7 @@ DetectorMetadata.propTypes = {
   micType: PropTypes.string,
   reflType: PropTypes.string,
   callId: PropTypes.string,
-  dataset: PropTypes.arrayOf(PropTypes.string).isRequired,
+  dataset: PropTypes.string.isRequired,
   detectorNights: PropTypes.number.isRequired,
   detectionNights: PropTypes.number.isRequired,
   speciesTotals: PropTypes.object.isRequired,
