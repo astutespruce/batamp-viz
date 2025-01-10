@@ -127,17 +127,16 @@ const SpeciesOccurrenceMap = () => {
       map.on('mousemove', fillLayerId, ({ features: [feature], lngLat }) => {
         const zoom = map.getZoom()
 
-        const { source, sourceLayer, id: featureId } = feature
-        const hoverFeature = {
+        const {
           source,
           sourceLayer,
           id: featureId,
-        }
+          layer: { minzoom, maxzoom = 21 },
+        } = feature
 
         // make sure that layer is actually visible; not clear why the event
         // fires when features are not yet visible but appears related to
         // using floating point divisions between layers
-        const { minzoom, maxzoom } = map.getLayer(`${sourceLayer}-fill`)
         if (zoom < minzoom || zoom > maxzoom) {
           return
         }
@@ -161,6 +160,12 @@ const SpeciesOccurrenceMap = () => {
             `<b>${total}</b> ${metricLabel}<br/>in this area${hasSpeciesFilter ? '<br/>(of the selected species)' : ''}`
           )
           .addTo(map)
+
+        const hoverFeature = {
+          source,
+          sourceLayer,
+          id: featureId,
+        }
 
         if (hoverFeature !== hoverFeatureRef.current) {
           // unhighlight previous

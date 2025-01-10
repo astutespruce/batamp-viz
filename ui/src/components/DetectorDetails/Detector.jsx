@@ -2,6 +2,7 @@ import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 import { Box, Flex, Heading, Text } from 'theme-ui'
 import { TimesCircle, ExclamationTriangle } from '@emotion-icons/fa-solid'
+import { escape, op } from 'arquero'
 
 import { Tab, Tabs } from 'components/Tabs'
 import { useCrossfilter } from 'components/Crossfilter'
@@ -22,36 +23,73 @@ const tabCSS = {
   overflowX: 'auto',
 }
 
-const Details = ({ detector, selectedSpecies, onClose }) => {
-  const { state } = useCrossfilter()
+const Detector = ({ detector, speciesID, onClose }) => {
+  console.log('incoming', detector)
 
-  const { hasVisibleFilters } = state
-  let { valueField } = state
-  if (valueField === 'id' || valueField === 'species') {
-    valueField = 'detectionNights'
-  }
+  // FIXME: remove
+  window.detectorTable = detector.table
 
   const {
-    name,
-    detections,
+    state: {
+      metric: { field: valueField },
+      hasFilters,
+    },
+  } = useCrossfilter()
+
+  const displayField =
+    valueField === 'detectors' || valueField === 'species'
+      ? 'detectionNights'
+      : valueField
+
+  // FIXME: remove
+  console.log('display field is: ', displayField)
+
+  const {
+    siteName,
+    // detections,
     admin1Name,
-    country,
-    species,
+    // species, // FIXME: derive from table instead
     detectionNights,
     detectorNights,
-    presenceOnly,
+    countType,
     dateRange,
-    years,
-    ts,
+    table,
   } = detector
 
-  // calculate totals by species, for non-zero species
+  // FIXME:
+  window.op = op
+  window.escape = escape
 
-  const bySpp = filterObject(sumBy(ts, 'species', valueField), (d) => d > 0)
+  const { detections, years } = table
+    .rollup({
+      detections: op.sum('detections'),
+      years: op.distinct('year'),
+    })
+    .objects()[0]
 
-  /* eslint-disable-next-line no-unused-vars */
-  const sppTotals = Object.entries(bySpp).sort(([sppA, a], [sppB, b]) =>
-    a < b ? 1 : -1
+  // calculate total displayField and detector nights by species
+  const sppTotals = Object.fromEntries(
+    table
+      .groupby('species')
+      .rollup({
+        [displayField]: op.sum(displayField),
+        detectorNights: op.sum('detectorNights'),
+      })
+      .derive({ row: op.row_object(displayField, 'detectorNights') })
+      .rollup({ entries: op.entries_agg('species', 'row') })
+      .array('entries')[0]
+  )
+
+  // aggregate to nested object of totals by month per species
+  const sppByMonth = Object.fromEntries(
+    table
+      .groupby('species', 'month')
+      .rollup({ [displayField]: op.sum(displayField) })
+      .groupby('species')
+      .rollup({ monthEntries: op.entries_agg('month', displayField) })
+      .derive({ byMonth: (d) => op.object(d.monthEntries) })
+      .rollup({ entries: op.entries_agg('species', 'byMonth') })
+      .array('entries')[0]
   )
 
   // If we are showing nights, we need to show the true effort which is
@@ -59,34 +97,47 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
   const max =
     valueField === 'detectionNights'
       ? detectorNights
-      : Math.max(0, ...Object.values(bySpp))
+      : Math.max(0, ...Object.values(sppTotals))
 
-  // create a map of species to array of monthly data, with an entry populated for each month
-  const monthlyData =
-    ts.length > 0
-      ? Object.assign(
-          ...Object.entries(groupBy(ts, 'species')).map(([spp, records]) => {
-            const byMonth = sumBy(records, 'month', valueField)
-            return { [spp]: MONTHS.map((month) => byMonth[month] || 0) }
-          })
-        )
-      : []
+  console.log('sppByMonth', sppByMonth, 'sppTotals', sppTotals)
 
-  const seasonalityData = sppTotals.map(([spp]) => ({
-    species: spp,
-    ...SPECIES[spp],
-    values: monthlyData[spp],
-  }))
+  // calculate totals by species, for non-zero species
 
-  const metric = METRIC_LABELS[valueField]
+  // const bySpp = filterObject(sumBy(ts, 'species', valueField), (d) => d > 0)
 
+  // /* eslint-disable-next-line no-unused-vars */
+  // const sppTotals = Object.entries(bySpp).sort(([sppA, a], [sppB, b]) =>
+  //   a < b ? 1 : -1
+  // )
+
+  // // create a map of species to array of monthly data, with an entry populated for each month
+  // const monthlyData =
+  //   ts.length > 0
+  //     ? Object.assign(
+  //         ...Object.entries(groupBy(ts, 'species')).map(([spp, records]) => {
+  //           const byMonth = sumBy(records, 'month', valueField)
+  //           return { [spp]: MONTHS.map((month) => byMonth[month] || 0) }
+  //         })
+  //       )
+  //     : []
+
+  // const seasonalityData = sppTotals.map(([spp]) => ({
+  //   species: spp,
+  //   ...SPECIES[spp],
+  //   values: monthlyData[spp],
+  // }))
+
+  const metricLabel = METRIC_LABELS[displayField]
+
+  // FIXME: are these still needed?
   const hasBats = detectionNights > 0
-  const hasSpecies = species && species.length > 0
+  // const hasSpecies = species && species.length > 0
+  const hasSpecies = table.size > 0
 
   let speciesWarning = null
   let presenceOnlyWarning = null
 
-  if (presenceOnly && metric === 'detections') {
+  if (countType === 'p' && displayField === 'detections') {
     presenceOnlyWarning = (
       <Box sx={{ color: 'highlight.5', mb: '2rem', fontSize: 1 }}>
         <ExclamationTriangle size="1.5em" />
@@ -114,7 +165,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
     )
   }
 
-  const filterNote = hasVisibleFilters ? (
+  const filterNote = hasFilters ? (
     <Text variant="help" sx={{ mb: '1rem' }}>
       <ExclamationTriangle size="1.5em" />
       Note: your filters are not applied to the following data.
@@ -142,7 +193,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
         <Flex sx={{ justifyContent: 'space-between' }}>
           <Box sx={{ flex: '1 1 auto' }}>
             <Heading as="h1" sx={{ fontSize: '1.5rem', m: '0 0 0.25rem 0' }}>
-              {name}
+              {siteName}
             </Heading>
           </Box>
           <Box
@@ -171,12 +222,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
         >
           <Flex sx={{ justifyContent: 'space-between' }}>
             <Box sx={{ flex: '1 1 auto' }}>
-              {admin1Name ? (
-                <b>
-                  {admin1Name}
-                  {country ? `, ${country}` : null}
-                </b>
-              ) : null}
+              {admin1Name ? <b>{admin1Name}</b> : null}
               <br />
               {dateRange}
             </Box>
@@ -190,6 +236,15 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
       </Box>
 
       <Tabs sx={{ flex: '1 1 auto', overflow: 'hidden' }}>
+        <Tab sx={tabCSS} id="overview" label="Detector Information">
+          <DetectorMetadata
+            displayField={displayField}
+            {...detector}
+            speciesTotals={sppTotals}
+            speciesID={speciesID}
+          />
+        </Tab>
+
         <Tab id="species" label="Species Detected" sx={tabCSS}>
           {filterNote}
           {speciesWarning || (
@@ -205,14 +260,10 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
                   textTransform: 'capitalize',
                 }}
               >
-                Total {metric}
+                Total {metricLabel}
               </Heading>
               {presenceOnlyWarning}
-              <TotalCharts
-                data={sppTotals}
-                selectedSpecies={selectedSpecies}
-                max={max}
-              />
+              <TotalCharts data={sppTotals} speciesID={speciesID} max={max} />
             </>
           )}
         </Tab>
@@ -232,7 +283,7 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
                   textTransform: 'capitalize',
                 }}
               >
-                {metric} by month
+                {metricLabel} by month
               </Heading>
 
               {years > 1 && (
@@ -243,58 +294,33 @@ const Details = ({ detector, selectedSpecies, onClose }) => {
 
               {presenceOnlyWarning}
 
-              <SeasonalityCharts
-                data={seasonalityData}
-                selectedSpecies={selectedSpecies}
-              />
+              <SeasonalityCharts data={sppByMonth} speciesID={speciesID} />
             </>
           )}
-        </Tab>
-
-        <Tab sx={tabCSS} id="overview" label="Detector Information">
-          <DetectorMetadata {...detector} selectedSpecies={selectedSpecies} />
         </Tab>
       </Tabs>
     </Flex>
   )
 }
 
-Details.propTypes = {
+Detector.propTypes = {
   detector: PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    lat: PropTypes.number.isRequired,
-    lon: PropTypes.number.isRequired,
-    micHt: PropTypes.number.isRequired,
-    detections: PropTypes.number.isRequired,
-    contributors: PropTypes.string.isRequired,
-    mfg: PropTypes.string,
-    model: PropTypes.string,
-    micType: PropTypes.string,
-    reflType: PropTypes.string,
-    idMethods: PropTypes.arrayOf(PropTypes.string),
-    presenceOnly: PropTypes.number,
-    datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
+    id: PropTypes.number.isRequired,
+    countType: PropTypes.string.isRequired,
+    siteName: PropTypes.string.isRequired,
     detectorNights: PropTypes.number.isRequired,
     detectionNights: PropTypes.number.isRequired,
     dateRange: PropTypes.string.isRequired,
-    years: PropTypes.number.isRequired,
     admin1Name: PropTypes.string.isRequired,
-    country: PropTypes.string.isRequired,
-    species: PropTypes.arrayOf(PropTypes.string).isRequired,
-    ts: PropTypes.arrayOf(
-      PropTypes.shape({
-        detections: PropTypes.number,
-        detectionNights: PropTypes.number.isRequired,
-        month: PropTypes.number.isRequired,
-      })
-    ).isRequired,
+    table: PropTypes.object.isRequired, // table filtered to this specific detector
+    // other props validated by subcomponents
   }).isRequired,
-  selectedSpecies: PropTypes.string,
+  speciesID: PropTypes.string,
   onClose: PropTypes.func.isRequired,
 }
 
-Details.defaultProps = {
-  selectedSpecies: null,
+Detector.defaultProps = {
+  speciesID: null,
 }
 
-export default memo(Details)
+export default memo(Detector)

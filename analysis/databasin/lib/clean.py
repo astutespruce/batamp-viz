@@ -98,11 +98,11 @@ def clean_batamp(df, admin_df):
         )
 
     # Coalesce call ids into single comma-delimited field
-    df["call_id"] = df[["call_id_1", "call_id_2"]].apply(lambda row: ", ".join([v for v in row if v]), axis=1)
+    df["call_id"] = df[["call_id_1", "call_id_2"]].apply(lambda row: ",".join([v for v in row if v]), axis=1)
 
     ### Contributor name fixes
-    df["contributor"] = (
-        df.contributor.replace("T M", "Tom Malloy")
+    df["contributors"] = (
+        df.contributors.replace("T M", "Tom Malloy")
         .replace("Burger Paul", "Paul Burger")
         .replace("Ali Helmig", "Almeta Helmig")
         .replace("Antoinette Sitting-up", "Antoinette Sitting Up Perez")
@@ -210,7 +210,7 @@ def clean_batamp(df, admin_df):
     ### Fix mic_ht issues
     # fix variable mic_ht for MT NHP; it varies between 3 and 4 for 2013 and
     # 2014 but is 3 for all subsequent years
-    df.loc[df.contributor == "Montana NHP", "mic_ht"] = np.float32(3)
+    df.loc[df.contributors == "Montana NHP", "mic_ht"] = np.float32(3)
 
     # fix mic_ht that is the result of auto-increment copy / paste in Excel
     # TEMP: uncomment the following to review potential issues manually
@@ -247,7 +247,7 @@ def clean_batamp(df, admin_df):
         [
             "dataset",
             "dataset_name",
-            "contributor",
+            "contributors",
             "site_name",
             "night",
             "year",

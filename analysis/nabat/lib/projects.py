@@ -78,9 +78,9 @@ async def get_project_info(client, token, project_ids):
                         }
                     }
                 }
-                # project leaders (marked as contributors)
+                # project leaders
                 # roleId 2 = Project Leader
-                contributor: userProjectsByProjectId(filter: {roleId: {equalTo: 2}}) {
+                leaders: userProjectsByProjectId(filter: {roleId: {equalTo: 2}}) {
                     nodes {
                         role: roleByRoleId {
                             role
@@ -122,21 +122,18 @@ async def get_project_info(client, token, project_ids):
     # unpack nested fields
     df["organization"] = df.organization.apply(lambda x: x["name"])
     df["collaborating_organizations"] = df.collaborating_organizations.apply(
-        lambda x: ", ".join([e["organization"]["name"].strip() for e in x["nodes"]])
+        lambda x: ",".join([e["organization"]["name"].strip() for e in x["nodes"]])
     )
     df["num_surveys"] = df.surveys.apply(lambda x: x["count"])
     df["num_survey_events"] = df.surveys.apply(lambda x: sum([e["survey_events"]["count"] for e in x["nodes"]]))
 
-    # mark project leaders as the contributors for the project
     # extract these as a comma-delimited sorted list
-    df["contributor"] = (
-        df.contributor.apply(
-            lambda x: [f"{e['user']['first'].strip()} {e['user']['last'].strip()}" for e in x["nodes"]]
-        )
+    df["leaders"] = (
+        df.leaders.apply(lambda x: [f"{e['user']['first'].strip()} {e['user']['last'].strip()}" for e in x["nodes"]])
         .apply(lambda x: ["Ted Weller" if v == "Ted depreciated-weller" else v for v in x])
         .apply(set)
         .apply(sorted)
-        .apply(", ".join)
+        .apply(",".join)
     )
 
     return df

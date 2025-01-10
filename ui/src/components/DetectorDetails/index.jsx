@@ -1,16 +1,18 @@
 import React, { useState, useLayoutEffect, memo } from 'react'
 import PropTypes from 'prop-types'
 import { dequal } from 'dequal'
+import { escape } from 'arquero'
 
 import { Flex } from 'theme-ui'
 
-import Details from './Details'
+import Detector from './Detector'
 import Iterator from './Iterator'
 
 const DetectorDetails = ({
+  table,
   detectors,
-  selectedSpecies,
-  onSetDetector,
+  speciesID,
+  onSetDetectorIndex,
   onClose,
 }) => {
   const [index, setIndex] = useState(0)
@@ -22,7 +24,7 @@ const DetectorDetails = ({
 
   const handleIteratorChange = (newIndex) => {
     setIndex(newIndex)
-    onSetDetector(detectors[newIndex].id)
+    onSetDetectorIndex(newIndex)
   }
 
   return (
@@ -35,9 +37,12 @@ const DetectorDetails = ({
         />
       ) : null}
 
-      <Details
-        detector={detectors[index]}
-        selectedSpecies={selectedSpecies}
+      <Detector
+        detector={{
+          ...detectors[index],
+          table: table.filter(escape((d) => d.detId === detectors[index].id)),
+        }}
+        speciesID={speciesID}
         onClose={onClose}
       />
     </Flex>
@@ -45,18 +50,19 @@ const DetectorDetails = ({
 }
 
 DetectorDetails.propTypes = {
+  table: PropTypes.object.isRequired, // full table including all species for all detectors
   detectors: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.number.isRequired,
     })
   ).isRequired,
-  onSetDetector: PropTypes.func.isRequired,
+  onSetDetectorIndex: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
-  selectedSpecies: PropTypes.string,
+  speciesID: PropTypes.string,
 }
 
 DetectorDetails.defaultProps = {
-  selectedSpecies: null,
+  speciesID: null,
 }
 
 // only rerender on updates to detectors

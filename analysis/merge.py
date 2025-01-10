@@ -104,8 +104,11 @@ nabat = gp.read_feather(
         "organization_name": "organization",
     }
 )
+# mark project leaders as the contributors for the project
 nabat_contributors = (
-    pd.read_feather(src_dir / "nabat/projects.feather", columns=["id", "contributor"]).set_index("id").contributor
+    pd.read_feather(src_dir / "nabat/projects.feather", columns=["id", "leaders"])
+    .set_index("id")
+    .leaders.rename("contributors")
 )
 nabat = nabat.join(nabat_contributors, on="dataset")
 
@@ -369,9 +372,9 @@ df = gp.GeoDataFrame(
             **{
                 c: "first"
                 for c in df.columns
-                if c not in ["obs_id", "dataset", "contributor", "record_id"] + activity_columns
+                if c not in ["obs_id", "dataset", "contributors", "record_id"] + activity_columns
             },
-            **{c: "unique" for c in ["dataset", "contributor"]},
+            **{c: "unique" for c in ["dataset", "contributors"]},
             **{c: "max" for c in activity_columns},
         }
     )
@@ -381,7 +384,7 @@ df = gp.GeoDataFrame(
 
 # update unique cols
 df["dataset"] = df.dataset.apply(",".join)
-df["contributor"] = df.contributor.apply(",".join)
+df["contributors"] = df.contributors.apply(",".join)
 
 # recalculate counts
 df["spp_present"] = (df[activity_columns] > 0).sum(axis=1).astype("uint8")
@@ -443,13 +446,13 @@ hex_levels = [
 
 
 H3_COLS = [f"h3l{entry['level']}" for entry in hex_levels]
-x = sites.geometry.x
-y = sites.geometry.y
+sites["lon"] = sites.geometry.x
+sites["lat"] = sites.geometry.y
 tilesets = []
 for entry, col in zip(hex_levels, H3_COLS):
     level = entry["level"]
     print(f"Assigning to H3 level {level} and creating tiles")
-    hex_id = coordinates_to_cells(y, x, level)
+    hex_id = coordinates_to_cells(sites.lat.values, sites.lon.values, level)
     ids, index_values = np.unique(hex_id, return_inverse=True)
     # use smaller index values to avoid BigInt issues in UI (can currently fit all values into uint16)
     index_values = (index_values + 1).astype("uint16")
@@ -486,11 +489,10 @@ detectors = (
             "call_id",
             "dataset",
             "organization",
-            "contributor",
+            "contributors",
             "site_name",
             "count_type",
             "night",
-            "year",
             "spp_detections",
         ]
     ]
@@ -511,68 +513,49 @@ detectors = (
                     "count_type",
                 ]
             },
-            **{c: "unique" for c in ["dataset", "organization", "contributor", "site_name"]},
+            **{c: "unique" for c in ["dataset", "organization", "contributors", "site_name"]},
             "night": "unique",
-            "year": "nunique",
             "spp_detections": "sum",
         }
     )
     .reset_index()
     .reset_index()
-    .rename(columns={"index": "id", "night": "detector_nights", "year": "years"})
+    .rename(
+        columns={
+            "index": "id",
+            "night": "detector_nights",
+        }
+    )
 )
 
 detectors["id"] = (detectors.id + 1).astype("uint16")
 det_id = detectors.set_index("det_id").id
 df["det_id"] = df.det_id.map(det_id)
+detectors = detectors.drop(columns=["det_id"])
 
 # set contributors and datasets to comma-delimited list
-for col in ["dataset", "organization", "contributor", "site_name"]:
-    delim = "," if col == "dataset" else ", "
-    detectors[col] = detectors[col].apply(",".join).apply(lambda x: delim.join(sorted(set(x.split(",")))))
-
+for col in ["dataset", "organization", "contributors", "site_name"]:
+    detectors[col] = detectors[col].apply(",".join).apply(lambda x: ",".join(sorted(set(x.split(",")))))
 
 # calculate date range and number of nights
 detectors["date_range"] = detectors.detector_nights.apply(sorted).apply(
     lambda x: " - ".join(v.strftime("%b %d, %Y") for v in sorted(set([x[0], x[-1]])))
 )
+
 detectors["detector_nights"] = detectors.detector_nights.apply(len)
 # detection nights are the sum of nights where there was activity in at least one activity column
-detection_nights = df.loc[df.spp_detections > 0].groupby("det_id").size()
+detection_nights = df.loc[df.spp_detections > 0].groupby("det_id").night.nunique()
 detectors["detection_nights"] = detectors.id.map(detection_nights).fillna(0).astype("uint")
 
-### build lists of species actually detected and species surveyed but not detected
-stacked = (
-    df[["det_id"] + activity_columns]
-    .set_index("det_id")
-    .stack(future_stack=True)
-    .dropna()
-    .rename("detections")
-    .reset_index()
-    .rename(columns={"level_1": "species"})
-)
-stacked["species"] = stacked.species.map(SPECIES_ID)
-det_spp_detected = (
-    stacked[stacked.detections > 0]
-    .groupby("det_id")
-    .species.unique()
-    .apply(sorted)
-    .apply("".join)
-    .rename("spp_detected")
-)
-det_spp_notdetected = (
-    stacked[stacked.detections == 0]
-    .groupby("det_id")
-    .species.unique()
-    .apply(sorted)
-    .apply("".join)
-    .rename("spp_not_detected")
-)
-# combine detected and nondetected species into pipe delimited string
-detectors["species"] = detectors.det_id.map(
-    pd.DataFrame(det_spp_detected).join(det_spp_notdetected, how="outer").fillna("").apply("|".join, axis=1)
-)
+# join site info
+detectors = detectors.join(sites.set_index("id")[["admin1_name", "lat", "lon"] + H3_COLS], on="site_id")
 
+# can be calculated on frontend
+detectors = detectors.drop(columns=["spp_detections"])
+
+# round coordinates
+for col in ["lat", "lon"]:
+    detectors[col] = detectors[col].round(5).astype("float32")
 
 # pack into categorical types
 for col in [
@@ -587,20 +570,14 @@ for col in [
     "count_type",
     "dataset",
     "organization",
-    "contributor",
+    "contributors",
     "site_name",
     "date_range",
-    "years",
+    # "years",
     "detector_nights",
     "detection_nights",
-    "spp_detections",
-    "species",
 ]:
     detectors[col] = detectors[col].astype("category")
-
-
-# join site info
-detectors = detectors.join(sites.set_index("id")[["admin1_name"] + H3_COLS], on="site_id").drop(columns=["det_id"])
 
 table = pa.Table.from_pandas(camelcase(detectors)).replace_schema_metadata()
 write_feather(table, static_data_dir / "detectors.feather", compression="uncompressed")
@@ -610,29 +587,54 @@ write_feather(table, static_data_dir / "detectors.feather", compression="uncompr
 ### Bin species detections and detection nights by detector, year, and month
 ################################################################################
 
-for species in activity_columns:
-    subset = df.loc[df[species].notnull()]
-    spp_detections = subset.groupby(["det_id", "year", "month"])[species].sum().rename("detections")
-    spp_detection_nights = (
-        subset.loc[df[species] > 0].groupby(["det_id", "year", "month"]).night.nunique().rename("detection_nights")
-    )
-    spp_stats = pd.DataFrame(spp_detections).join(spp_detection_nights).reset_index()
-    spp_stats["detection_nights"] = spp_stats.detection_nights.fillna(0).astype("uint8")
+# aggregate species detections by detector, year, month, and night
+# NOTE: the following drops any records where the species was not surveyed
+stacked = (
+    df[["det_id", "year", "month", "night"] + activity_columns]
+    .set_index(["det_id", "year", "month", "night"])
+    .stack(future_stack=True)
+    .dropna()
+    .rename("detections")
+    .reset_index()
+    .rename(columns={"level_4": "species"})
+)
 
-    for col in ["det_id", "year", "month", "detection_nights"]:
-        spp_stats[col] = spp_stats[col].astype("category")
+group_cols = ["det_id", "year", "month", "species"]
 
-    spp_stats["detections"] = spp_stats.detections.astype(get_min_uint_dtype(spp_stats.detections.max())).astype(
-        "category"
-    )
+spp_detections = stacked.groupby(group_cols).detections.sum().reset_index()
 
-    table = pa.Table.from_pandas(camelcase(spp_stats)).replace_schema_metadata()
-    write_feather(table, static_spp_data_dir / f"{species}.feather", compression="uncompressed")
+# count all nights per year and month where detections were nonzero
+spp_detection_nights = (
+    stacked.loc[stacked.detections > 0].groupby(group_cols).night.nunique().rename("detection_nights")
+)
+
+# count all nights where each species was surveyed
+# NOTE: this does not backfill any nights where a species was null even if that species
+# was observed on other nights in the time series for that detector
+spp_detector_nights = stacked.groupby(group_cols).night.nunique().rename("detector_nights")
+
+spp_stats = spp_detections.join(spp_detection_nights, on=group_cols).join(spp_detector_nights, on=group_cols)
+spp_stats["species"] = spp_stats.species.map(SPECIES_ID)
+
+# NOTE: we use uint8 because all values are <= 31
+for col in ["detection_nights", "detector_nights"]:
+    spp_stats[col] = spp_stats[col].fillna(0).astype("uint8")
+
+for col in ["species", "det_id", "year", "month", "detection_nights", "detector_nights"]:
+    spp_stats[col] = spp_stats[col].astype("category")
+
+spp_stats["detections"] = spp_stats.detections.astype(get_min_uint_dtype(spp_stats.detections.max())).astype("category")
+
+table = pa.Table.from_pandas(camelcase(spp_stats)).replace_schema_metadata()
+write_feather(table, static_data_dir / "spp_detections.feather", compression="uncompressed")
 
 
 ################################################################################
 ### Bin species occurrences by detector, year, and month
 ################################################################################
+
+# FIXME: this can use stacked above and just sum activity and clip to 0,1
+
 spp_occurrence = (
     df.groupby(["det_id", "year", "month"])[activity_columns]
     .max()
@@ -655,7 +657,7 @@ write_feather(table, static_data_dir / "spp_occurrence.feather", compression="un
 ################################################################################
 ### Calculate contributor statistics
 ################################################################################
-grouped = df.groupby("contributor")
+grouped = df.groupby("contributors")
 contributor_spp_detections = grouped[activity_columns].sum().sum(axis=1).astype("uint").rename("spp_detections")
 # detector nights - total sampling effort
 contributor_nights = grouped.size().astype("uint").rename("detector_nights")
@@ -664,7 +666,7 @@ contributor_detectors = grouped.det_id.nunique().rename("detectors")
 # need to pivot species columns to rows and calculate unique list of species per contributor
 # then count them up
 stacked = (
-    df.set_index("contributor")[activity_columns]
+    df.set_index("contributors")[activity_columns]
     .stack(future_stack=True)
     .dropna()
     .rename("detections")
@@ -672,7 +674,7 @@ stacked = (
     .rename(columns={"level_1": "spp"})
 )
 # only keep species where there was > 0 activity detected
-contributor_species = stacked[stacked.detections > 0].groupby("contributor").spp.nunique().rename("species")
+contributor_species = stacked[stacked.detections > 0].groupby("contributors").spp.nunique().rename("species")
 
 contributor_stats = (
     pd.DataFrame(contributor_spp_detections)
@@ -704,14 +706,14 @@ spp_detection_nights = (df[activity_columns] > 0).sum().rename("detection_nights
 
 # pivot species then tally up count of unique contributors for each
 spp_contributors = (
-    df.set_index("contributor")[activity_columns]
+    df.set_index("contributors")[activity_columns]
     .stack(future_stack=True)
     .dropna()
     .rename("detections")
     .reset_index()
     .rename(columns={"level_1": "species"})
     .groupby("species")
-    .contributor.nunique()
+    .contributors.nunique()
     .rename("contributors")
 )
 

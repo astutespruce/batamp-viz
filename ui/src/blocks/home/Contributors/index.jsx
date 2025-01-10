@@ -41,7 +41,7 @@ const Contributors = () => {
     .derive({ percent: aq.escape((d) => (100 * d[metric]) / total) })
     .objects()
 
-  const remainder = contributorsTable.slice(6).array('contributor')
+  const remainder = contributorsTable.slice(6).array('contributors')
 
   return (
     <Box sx={{ py: '3rem' }}>
@@ -71,12 +71,8 @@ const Contributors = () => {
       </Flex>
 
       <Grid columns={[2, 3]} gap={3} sx={{ mt: '0.5rem' }}>
-        {topN.map((contributor) => (
-          <Contributor
-            key={contributor.contributor}
-            metric={metric}
-            {...contributor}
-          />
+        {topN.map((row) => (
+          <Contributor key={row.contributors} metric={metric} {...row} />
         ))}
       </Grid>
       {remainder.length > 0 && (

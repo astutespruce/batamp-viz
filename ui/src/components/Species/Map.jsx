@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 
 import { useCrossfilter } from 'components/Crossfilter'
 import { H3_COLS, SPECIES } from 'config'
+import { isEqual } from 'util/data'
 import { formatNumber, quantityLabel } from 'util/format'
 
 import {
@@ -17,12 +18,12 @@ import {
   Legend,
 } from 'components/Map'
 
-const SpeciesMap = ({ speciesID, selectedFeature }) => {
+const SpeciesMap = ({ speciesID, selectedFeature, onSelectFeature }) => {
   const mapRef = useRef(null)
 
   const [isLoaded, setIsLoaded] = useState(false)
   const hoverFeatureRef = useRef(null)
-  const selectedFeatureRef = useRef(selectedFeature)
+  const selectedFeatureRef = useRef(null)
 
   const {
     state: {
@@ -138,19 +139,22 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
       })
 
       map.on('mousemove', fillLayerId, ({ features: [feature], lngLat }) => {
+        // prevent hover when there is a selected feature
+        if (selectedFeatureRef.current !== null) {
+          return
+        }
+
         const zoom = map.getZoom()
 
-        const { source, sourceLayer, id: featureId } = feature
-        const hoverFeature = {
+        const {
           source,
           sourceLayer,
           id: featureId,
-        }
-
+          layer: { minzoom, maxzoom = 21 },
+        } = feature
         // make sure that layer is actually visible; not clear why the event
         // fires when features are not yet visible but appears related to
         // using floating point divisions between layers
-        const { minzoom, maxzoom } = map.getLayer(`${sourceLayer}-fill`)
         if (zoom < minzoom || zoom > maxzoom) {
           return
         }
@@ -173,6 +177,12 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
             `<b>${formatNumber(total)}</b> ${quantityLabel(curStateRef.current.metric.label, total)}<br/>in this area`
           )
           .addTo(map)
+
+        const hoverFeature = {
+          source,
+          sourceLayer,
+          id: featureId,
+        }
 
         if (hoverFeature !== hoverFeatureRef.current) {
           // unhighlight previous
@@ -223,8 +233,15 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
         .addTo(map)
 
       if (hoverFeature !== hoverFeatureRef.current) {
-        // unhighlight previous
-        setFeatureHighlight(map, hoverFeatureRef.current, false)
+        if (
+          !isEqual(hoverFeatureRef.current, selectedFeatureRef.current, [
+            'sourceLayer',
+            'id',
+          ])
+        ) {
+          // unhighlight previous
+          setFeatureHighlight(map, hoverFeatureRef.current, false)
+        }
 
         hoverFeatureRef.current = hoverFeature
         setFeatureHighlight(map, hoverFeatureRef.current, true)
@@ -232,12 +249,47 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
     })
 
     map.on('mouseout', 'sites', () => {
-      setFeatureHighlight(map, hoverFeatureRef.current, false)
-      hoverFeatureRef.current = null
-
       /* eslint-disable-next-line no-param-reassign */
       map.getCanvas().style.cursor = ''
       tooltip.remove()
+
+      if (
+        isEqual(hoverFeatureRef.current, selectedFeatureRef.current, [
+          'sourceLayer',
+          'id',
+        ])
+      ) {
+        return
+      }
+
+      setFeatureHighlight(map, hoverFeatureRef.current, false)
+      hoverFeatureRef.current = null
+    })
+
+    const clickLayers = layers
+      .filter(({ id }) => id.endsWith('-fill') || id === 'sites')
+      .map(({ id }) => id)
+
+    map.on('click', ({ point }) => {
+      // always clear out prior selected feature and hover feature
+      setFeatureHighlight(map, selectedFeatureRef.current, false)
+      selectedFeatureRef.current = null
+      setFeatureHighlight(map, hoverFeatureRef.current, false)
+      hoverFeatureRef.current = null
+
+      const zoom = map.getZoom()
+      const features = map
+        .queryRenderedFeatures(point, {
+          layers: clickLayers,
+        })
+        // filter to those actually visible at zoom
+        .filter(({ layer: { id: layerId, minzoom, maxzoom = 21 } }) =>
+          layerId === 'sites' ? zoom >= 10 : zoom >= minzoom && zoom <= maxzoom
+        )
+
+      const [feature = null] = features
+
+      onSelectFeature(feature)
     })
 
     map.on('zoomend', () => {
@@ -369,6 +421,20 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
     siteTotals,
   ])
 
+  useEffect(() => {
+    if (selectedFeature === null) {
+      return
+    }
+
+    const { current: map } = mapRef
+    if (!map) {
+      return
+    }
+
+    selectedFeatureRef.current = selectedFeature
+    setFeatureHighlight(map, selectedFeatureRef.current, true)
+  }, [selectedFeature])
+
   /**
    * Reset feature state on basemap change
    */
@@ -400,11 +466,7 @@ const SpeciesMap = ({ speciesID, selectedFeature }) => {
   }, [])
 
   return (
-    <Map
-      onCreateMap={handleCreateMap}
-      selectedFeature={selectedFeature}
-      onBasemapChange={handleBasemapChange}
-    >
+    <Map onCreateMap={handleCreateMap} onBasemapChange={handleBasemapChange}>
       <Legend
         entries={legendEntries}
         title={`Number of ${curStateRef.current.metric.label}`}
@@ -422,4 +484,10 @@ export default SpeciesMap
 
 SpeciesMap.propTypes = {
   speciesID: PropTypes.string.isRequired,
+  selectedFeature: PropTypes.object,
+  onSelectFeature: PropTypes.func.isRequired,
+}
+
+SpeciesMap.defaultProps = {
+  selectedFeature: null,
 }

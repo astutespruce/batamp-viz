@@ -21,7 +21,12 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
   const {
     isLoading,
     error,
-    data: { detectorsIndex, speciesTable, filters } = {},
+    data: {
+      detectorsBySite,
+      allSpeciesTable,
+      selectedSpeciesTable,
+      filters,
+    } = {},
   } = useQuery({
     queryKey: [speciesID],
     queryFn: async () => loadSingleSpeciesData(speciesID),
@@ -35,34 +40,45 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
     refetchOnMount: false,
   })
 
-  const [selected, setSelected] = useState({ features: [], feature: null })
+  window.detectorsBySite = detectorsBySite
 
-  // const handleSelectFeatures = (ids) => {
-  //   const features = detectors
-  //     .filter(({ id }) => ids.has(id))
-  //     .map((d) => ({
-  //       ...d,
-  //       ts: detectorTS.filter(({ id }) => id === d.id),
-  //     }))
+  const [{ selectedFeature, selectedDetectors }, setState] = useState({
+    selectedFeature: null,
+    selectedDetectors: [],
+    selectedIndex: 0,
+  })
 
-  //   console.log('selected features', features)
+  const handleSelectFeature = (feature) => {
+    console.log('handleSelectFeature', feature)
 
-  //   setSelected({
-  //     features,
-  //     feature: features.length ? features[0].id : null,
-  //   })
-  // }
+    if (feature === null) {
+      setState(() => ({
+        selectedFeature: null,
+        selectedDetectors: [],
+        selectedIndex: 0,
+      }))
+    } else if (feature.sourceLayer === 'sites') {
+      setState(() => ({
+        selectedFeature: feature,
+        selectedDetectors: detectorsBySite[feature.id],
+        selectedIndex: 0,
+      }))
+    }
+  }
 
-  // const handleSetFeature = (feature) => {
-  //   setSelected({
-  //     features: selected.features,
-  //     feature,
-  //   })
-  // }
+  // FIXME:
+  const handleSetDetectorIndex = (newIndex) => {
+    console.log('update feature index', newIndex)
+    setState((prevState) => ({ ...prevState, selectedIndex: newIndex }))
+  }
 
-  // const handleDetailsClose = () => {
-  //   setSelected({ features: [], feature: null })
-  // }
+  const handleDetailsClose = () => {
+    setState(() => ({
+      selectedFeature: null,
+      selectedDetectors: [],
+      selectedIndex: 0,
+    }))
+  }
 
   if (isLoading) {
     return (
@@ -97,7 +113,7 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
     <Layout>
       <Flex sx={{ height: '100%' }}>
         <CrossfilterProvider
-          table={speciesTable}
+          table={selectedSpeciesTable}
           filters={filters}
           valueField="detections"
           aggFuncs={{
@@ -107,12 +123,13 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
           }}
         >
           <Sidebar allowScroll={false}>
-            {selected.features.length > 0 ? (
+            {selectedDetectors.length > 0 ? (
               <DetectorDetails
+                table={allSpeciesTable}
                 speciesID={speciesID}
-                detectors={selected.features}
-                // onSetDetector={handleSetFeature}
-                // onClose={handleDetailsClose}
+                detectors={selectedDetectors}
+                onSetDetectorIndex={handleSetDetectorIndex}
+                onClose={handleDetailsClose}
               />
             ) : (
               <SpeciesFilters speciesID={speciesID} filters={filters} />
@@ -137,8 +154,8 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
 
             <Map
               speciesID={speciesID}
-              selectedFeature={selected.feature}
-              // onSelectFeatures={handleSelectFeatures}
+              selectedFeature={selectedFeature}
+              onSelectFeature={handleSelectFeature}
             />
           </Box>
         </CrossfilterProvider>

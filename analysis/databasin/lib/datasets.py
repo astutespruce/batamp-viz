@@ -110,7 +110,7 @@ def download_dataset(client, id):
         else:
             df[col] = ""
 
-    df["contributor"] = (df.first_name + " " + df.last_name).str.strip()
+    df["contributors"] = (df.first_name + " " + df.last_name).str.strip()
 
     # drop unneeded columns
     df = df.drop(

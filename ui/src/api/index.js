@@ -32,6 +32,8 @@ export const loadOccurrenceData = async () => {
           'id',
           'source',
           'siteId',
+          'lat',
+          'lon',
           'admin1Name',
           ...H3_COLS,
         ]),
@@ -43,22 +45,35 @@ export const loadOccurrenceData = async () => {
 export const loadSingleSpeciesData = async (speciesID) => {
   const [detectorsTable, rawSpeciesTable] = await Promise.all([
     fetchFeather('/data/detectors.feather'),
-    fetchFeather(`/data/species/${speciesID}.feather`),
+    // fetchFeather(`/data/species/${speciesID}.feather`),
+    fetchFeather('/data/spp_detections.feather'),
   ])
 
-  const speciesTable = rawSpeciesTable.join(
-    detectorsTable.select([
-      'id',
-      'source',
-      'siteId',
-      'admin1Name',
-      'countType',
-      ...H3_COLS,
-    ]),
-    ['detId', 'id']
-  )
+  // join in species codes
+  const allSpeciesTable = rawSpeciesTable.derive({
+    species: escape((d) => SPECIES_ID[d.species]),
+  })
 
-  const { admin1Name: admin1Names, year: years } = speciesTable
+  // FIXME: remove
+  window.allSpeciesTable = allSpeciesTable
+
+  const selectedSpeciesTable = allSpeciesTable
+    .filter(escape((d) => d.species === speciesID))
+    .join(
+      detectorsTable.select([
+        'id',
+        'source',
+        'siteId',
+        'lat',
+        'lon',
+        'admin1Name',
+        'countType',
+        ...H3_COLS,
+      ]),
+      ['detId', 'id']
+    )
+
+  const { admin1Name: admin1Names, year: years } = selectedSpeciesTable
     .rollup({
       admin1Name: op.array_agg_distinct('admin1Name'),
       year: op.array_agg_distinct('year'),
@@ -117,10 +132,12 @@ export const loadSingleSpeciesData = async (speciesID) => {
     },
   ]
 
+  const detectors = detectorsTable.objects()
+
   return {
-    detectorsIndex: indexBy(detectorsTable.objects(), 'id'),
-    // TODO: create lookup table of detectors by siteID
-    speciesTable,
+    detectorsBySite: groupBy(detectors, 'siteId'),
+    allSpeciesTable,
+    selectedSpeciesTable,
     filters,
   }
 }

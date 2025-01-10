@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types'
+import { dequal } from 'dequal'
 
 /**
  * Generates an monotonically increasing array from start to stop.
@@ -258,3 +259,14 @@ export const GraphQLArrayPropType = (node) =>
   })
 
 export const extractNodes = ({ edges }) => edges.map(({ node }) => node)
+
+/**
+ * Tests if the left and right objects have the same values for props
+ *
+ * @param {Object} left
+ * @param {Object} right
+ * @param {Array} props - list of prop names to test for equality
+ */
+export const isEqual = (left, right, props) =>
+  props.filter((p) => left && right && dequal(left[p], right[p])).length ===
+  props.length
