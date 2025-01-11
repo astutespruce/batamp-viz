@@ -19,7 +19,7 @@ import { extractNodes } from 'util/data'
 export const useThumbnails = () => {
   const data = useStaticQuery(graphql`
     query ProfileThumbnailQuery {
-      allFile(filter: { relativeDirectory: { eq: "species" } }) {
+      allFile(filter: { relativeDirectory: { eq: "speciesProfiles" } }) {
         edges {
           node {
             id

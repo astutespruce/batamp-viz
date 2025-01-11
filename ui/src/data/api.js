@@ -1,7 +1,7 @@
 import { fromArrow, op, escape } from 'arquero'
 
 import { MONTHS, MONTH_LABELS, H3_COLS, SPECIES_ID, SPECIES } from 'config'
-import { indexBy, groupBy } from 'util/data'
+import { groupBy } from 'util/data'
 
 const fetchFeather = async (url) => {
   const response = await fetch(url)

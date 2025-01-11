@@ -52,14 +52,14 @@ module.exports = {
     },
     {
       resolve: `gatsby-transformer-json`,
-      options: {
-        // lump all the species JSON files into a single data structure,
-        // keep the others separate based on their filenames
-        typeName: ({ node }) =>
-          node.relativeDirectory === 'speciesTS'
-            ? 'speciesTSJson'
-            : `${node.name}Json`,
-      },
+      // options: {
+      //   // lump all the species JSON files into a single data structure,
+      //   // keep the others separate based on their filenames
+      //   typeName: ({ node }) =>
+      //     node.relativeDirectory === 'speciesTS'
+      //       ? 'speciesTSJson'
+      //       : `${node.name}Json`,
+      // },
     },
     `gatsby-plugin-catch-links`,
     `gatsby-plugin-sitemap`,

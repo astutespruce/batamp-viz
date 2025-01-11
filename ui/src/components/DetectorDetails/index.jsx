@@ -2,7 +2,6 @@ import React, { useState, useLayoutEffect, memo } from 'react'
 import PropTypes from 'prop-types'
 import { dequal } from 'dequal'
 import { escape } from 'arquero'
-
 import { Flex } from 'theme-ui'
 
 import Detector from './Detector'

@@ -56,35 +56,3 @@ exports.onCreateNode = ({ node, actions: { createNodeField } }) => {
     createNodeField({ node, name: 'title', value: title })
   }
 }
-
-exports.createPages = ({ graphql, actions: { createPage } }) =>
-  new Promise((resolve, reject) => {
-    resolve(
-      graphql(`
-        query {
-          summaryJson {
-            speciesTable {
-              speciesID: species
-            }
-          }
-        }
-      `).then((result) => {
-        if (result.errors) {
-          console.error(result.errors)
-          reject(result.errors)
-          return
-        }
-
-        const speciesTemplate = path.resolve(
-          `./src/components/Species/SpeciesTemplate.jsx`
-        )
-        result.data.summaryJson.speciesTable.speciesID.forEach((speciesID) => {
-          createPage({
-            path: `/species/${speciesID}`,
-            component: speciesTemplate,
-            context: { speciesID },
-          })
-        })
-      })
-    )
-  })

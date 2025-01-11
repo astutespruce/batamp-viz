@@ -6,7 +6,7 @@ import { Container, Heading } from 'theme-ui'
 
 import { Layout, SEO } from 'components/Layout'
 import { SubpageHeaderImage as HeaderImage } from 'components/Image'
-import { SpeciesList } from 'components/Species'
+import { SpeciesList } from 'components/SpeciesList'
 import { summaryStats, SPECIES } from 'config'
 
 const SpeciesListPage = ({ data: { headerImage } }) => {

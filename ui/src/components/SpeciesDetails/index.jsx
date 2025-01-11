@@ -4,20 +4,19 @@ import { Box, Flex, Spinner, Text } from 'theme-ui'
 import { useQuery } from '@tanstack/react-query'
 import { op } from 'arquero'
 
-import { Layout, PageErrorMessage, SEO } from 'components/Layout'
+import { Layout, PageErrorMessage } from 'components/Layout'
 import {
   Provider as CrossfilterProvider,
   ValueFieldSelector,
 } from 'components/Crossfilter'
 
-import { loadSingleSpeciesData } from 'api'
+import { loadSingleSpeciesData } from 'data/api'
 import Sidebar from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
-import { Map } from 'components/Species'
-import { SPECIES } from 'config'
+import Map from './Map'
 import SpeciesFilters from './SpeciesFilters'
 
-const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
+const SpeciesDetails = ({ speciesID }) => {
   const mapRef = useRef(null)
 
   const {
@@ -158,17 +157,8 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
   )
 }
 
-SpeciesTemplate.propTypes = {
-  pageContext: PropTypes.shape({
-    speciesID: PropTypes.string.isRequired,
-  }).isRequired,
+SpeciesDetails.propTypes = {
+  speciesID: PropTypes.string.isRequired,
 }
 
-export default SpeciesTemplate
-
-/* eslint-disable-next-line react/prop-types */
-export const Head = ({ pageContext: { speciesID } }) => {
-  const { commonName, sciName } = SPECIES[speciesID]
-
-  return <SEO title={`${commonName} (${sciName})`} />
-}
+export default SpeciesDetails

@@ -4,8 +4,8 @@ import { Box, Flex } from 'theme-ui'
 import * as aq from 'arquero'
 
 import { SortBar, SearchBar } from 'components/List'
-import { useThumbnails as useMapThumbnails } from 'components/Species/MapThumbnail'
-import { useThumbnails } from 'components/Species/Thumbnail'
+import { useThumbnails as useMapThumbnails } from './MapThumbnail'
+import { useThumbnails } from './Thumbnail'
 import ListItem from './ListItem'
 
 const sortOptions = [

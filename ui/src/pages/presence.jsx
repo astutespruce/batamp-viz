@@ -8,7 +8,7 @@ import { Layout, PageErrorMessage, SEO } from 'components/Layout'
 import { Provider as CrossfilterProvider } from 'components/Crossfilter'
 import Sidebar from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
-import { loadOccurrenceData } from 'api'
+import { loadOccurrenceData } from 'data/api'
 import { Map, PresenceFilters } from 'components/SpeciesPresence'
 
 const PresencePage = () => {

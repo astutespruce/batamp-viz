@@ -95,16 +95,6 @@ const DetectorMetadata = ({
         <br />
         This detector measured{' '}
         {countType === 'p' ? 'nightly presence only' : 'nightly activity'}.
-        {hasVaryingMonitoredSpecies ? (
-          <Flex sx={{ mt: '0.5rem', alignItems: 'center', gap: '0.25rem' }}>
-            <Box sx={{ color: 'grey.7', mt: '-3px' }}>
-              <ExclamationTriangle size="1em" />
-            </Box>
-            <Text>
-              Note: some species were not consistently reported for all nights.
-            </Text>
-          </Flex>
-        ) : null}
       </Field>
       <Field
         label={`${numDetected} of ${numMonitored} monitored species were detected:`}
@@ -183,21 +173,15 @@ const DetectorMetadata = ({
         </Box>
 
         {hasVaryingMonitoredSpecies ? (
-          <Flex sx={{ alignItems: 'center', gap: '0.25rem', mt: '1rem' }}>
-            <Box
-              sx={{
-                color: 'grey.7',
-                mt: '-3px',
-              }}
-            >
-              <ExclamationTriangle size="1em" />
-            </Box>
-            <Text>
-              species was not consistently reported for all nights. This may be
-              due to unreported absences or methods that did not consistently
-              monitor for all species above.
-            </Text>
-          </Flex>
+          <Text variant="help" sx={{ mt: '1rem' }}>
+            <ExclamationTriangle
+              size="1em"
+              style={{ marginTop: '-3px', marginRight: '0.25rem' }}
+            />
+            This species was not consistently reported for all monitored nights.
+            This may be due to unreported absences or methods that did not
+            consistently monitor for all species above.
+          </Text>
         ) : null}
       </Field>
 
