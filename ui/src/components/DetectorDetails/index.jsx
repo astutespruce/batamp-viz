@@ -8,13 +8,7 @@ import { Flex } from 'theme-ui'
 import Detector from './Detector'
 import Iterator from './Iterator'
 
-const DetectorDetails = ({
-  table,
-  detectors,
-  speciesID,
-  onSetDetectorIndex,
-  onClose,
-}) => {
+const DetectorDetails = ({ table, detectors, speciesID, map, onClose }) => {
   const [index, setIndex] = useState(0)
 
   useLayoutEffect(() => {
@@ -22,19 +16,10 @@ const DetectorDetails = ({
     setIndex(0)
   }, [detectors, detectors.length])
 
-  const handleIteratorChange = (newIndex) => {
-    setIndex(newIndex)
-    onSetDetectorIndex(newIndex)
-  }
-
   return (
     <Flex sx={{ flexDirection: 'column', height: '100%' }}>
       {detectors.length > 1 ? (
-        <Iterator
-          index={index}
-          onChange={handleIteratorChange}
-          count={detectors.length}
-        />
+        <Iterator index={index} onChange={setIndex} count={detectors.length} />
       ) : null}
 
       <Detector
@@ -43,6 +28,7 @@ const DetectorDetails = ({
           table: table.filter(escape((d) => d.detId === detectors[index].id)),
         }}
         speciesID={speciesID}
+        map={map}
         onClose={onClose}
       />
     </Flex>
@@ -56,13 +42,14 @@ DetectorDetails.propTypes = {
       id: PropTypes.number.isRequired,
     })
   ).isRequired,
-  onSetDetectorIndex: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
   speciesID: PropTypes.string,
+  map: PropTypes.object,
 }
 
 DetectorDetails.defaultProps = {
   speciesID: null,
+  map: null,
 }
 
 // only rerender on updates to detectors

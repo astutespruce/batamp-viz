@@ -22,7 +22,7 @@ const tabCSS = {
   overflowX: 'auto',
 }
 
-const Detector = ({ detector, speciesID, onClose }) => {
+const Detector = ({ detector, speciesID, map, onClose }) => {
   const {
     state: {
       metric: { field: valueField },
@@ -31,7 +31,7 @@ const Detector = ({ detector, speciesID, onClose }) => {
   } = useCrossfilter()
 
   const displayField =
-    valueField === 'detectors' || valueField === 'species'
+    valueField === 'detectors' || valueField === 'speciesCount'
       ? 'detectionNights'
       : valueField
   const metricLabel = METRIC_LABELS[displayField]
@@ -44,8 +44,16 @@ const Detector = ({ detector, speciesID, onClose }) => {
     detectorNights,
     countType,
     dateRange,
+    lat,
+    lon,
     table,
   } = detector
+
+  const handleZoomTo = () => {
+    if (map) {
+      map.flyTo({ center: [lon, lat], zoom: 17 })
+    }
+  }
 
   const { detections, years } = table
     .rollup({
@@ -148,12 +156,6 @@ const Detector = ({ detector, speciesID, onClose }) => {
             <Heading as="h1" sx={{ fontSize: '1.5rem', m: '0 0 0.25rem 0' }}>
               {siteName}
             </Heading>
-            <Text sx={{ fontSize: 1, color: 'grey.8' }}>
-              From:{' '}
-              {source === 'nabat'
-                ? 'North American Bat Monitoring Program (NABat)'
-                : 'Bat Acoustic Monitoring Portal (BatAMP)'}
-            </Text>
           </Box>
           <Box
             onClick={onClose}
@@ -168,6 +170,24 @@ const Detector = ({ detector, speciesID, onClose }) => {
           >
             <TimesCircle size="1.5em" />
           </Box>
+        </Flex>
+        <Flex sx={{ justifyContent: 'space-between', fontSize: 1 }}>
+          <Text sx={{ fontSize: 1, color: 'grey.8' }}>
+            From:{' '}
+            {source === 'nabat'
+              ? 'North American Bat Monitoring Program (NABat)'
+              : 'Bat Acoustic Monitoring Portal (BatAMP)'}
+          </Text>
+          <Text
+            onClick={handleZoomTo}
+            sx={{
+              color: 'link',
+              cursor: 'pointer',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            zoom to
+          </Text>
         </Flex>
 
         <Box
@@ -281,8 +301,11 @@ const Detector = ({ detector, speciesID, onClose }) => {
 Detector.propTypes = {
   detector: PropTypes.shape({
     id: PropTypes.number.isRequired,
+    source: PropTypes.string.isRequired,
     countType: PropTypes.string.isRequired,
     siteName: PropTypes.string.isRequired,
+    lon: PropTypes.number.isRequired,
+    lat: PropTypes.number.isRequired,
     detectorNights: PropTypes.number.isRequired,
     detectionNights: PropTypes.number.isRequired,
     dateRange: PropTypes.string.isRequired,
@@ -292,10 +315,12 @@ Detector.propTypes = {
   }).isRequired,
   speciesID: PropTypes.string,
   onClose: PropTypes.func.isRequired,
+  map: PropTypes.object,
 }
 
 Detector.defaultProps = {
   speciesID: null,
+  map: null,
 }
 
 export default memo(Detector)

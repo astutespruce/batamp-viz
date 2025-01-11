@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Box, Flex, Spinner, Text } from 'theme-ui'
 import { useQuery } from '@tanstack/react-query'
@@ -18,6 +18,8 @@ import { SPECIES } from 'config'
 import SpeciesFilters from './SpeciesFilters'
 
 const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
+  const mapRef = useRef(null)
+
   const {
     isLoading,
     error,
@@ -31,21 +33,17 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
     queryKey: [speciesID],
     queryFn: async () => loadSingleSpeciesData(speciesID),
 
-    // FIXME:
-    retry: false,
-    staleTime: 1, // use then reload to force refresh of underlying data during dev
-    // retry: true,
-    // stateTime: 60,
+    // retry: false,
+    // staleTime: 1, // use then reload to force refresh of underlying data during dev
+    retry: true,
+    stateTime: 60,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   })
 
-  window.detectorsBySite = detectorsBySite
-
   const [{ selectedFeature, selectedDetectors }, setState] = useState({
     selectedFeature: null,
     selectedDetectors: [],
-    selectedIndex: 0,
   })
 
   const handleSelectFeature = (feature) => {
@@ -54,28 +52,25 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
       setState(() => ({
         selectedFeature: null,
         selectedDetectors: [],
-        selectedIndex: 0,
       }))
     } else if (feature.sourceLayer === 'sites') {
       setState(() => ({
         selectedFeature: feature,
         selectedDetectors: detectorsBySite[feature.id],
-        selectedIndex: 0,
       }))
     }
-  }
-
-  const handleSetDetectorIndex = (newIndex) => {
-    console.log('update feature index', newIndex)
-    setState((prevState) => ({ ...prevState, selectedIndex: newIndex }))
+    // TODO: hexes
   }
 
   const handleDetailsClose = () => {
     setState(() => ({
       selectedFeature: null,
       selectedDetectors: [],
-      selectedIndex: 0,
     }))
+  }
+
+  const handleCreateMap = (map) => {
+    mapRef.current = map
   }
 
   if (isLoading) {
@@ -126,7 +121,7 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
                 table={allSpeciesTable}
                 speciesID={speciesID}
                 detectors={selectedDetectors}
-                onSetDetectorIndex={handleSetDetectorIndex}
+                map={mapRef.current}
                 onClose={handleDetailsClose}
               />
             ) : (
@@ -154,6 +149,7 @@ const SpeciesTemplate = ({ pageContext: { speciesID } }) => {
               speciesID={speciesID}
               selectedFeature={selectedFeature}
               onSelectFeature={handleSelectFeature}
+              onCreateMap={handleCreateMap}
             />
           </Box>
         </CrossfilterProvider>

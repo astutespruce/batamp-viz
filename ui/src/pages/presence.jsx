@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Box, Flex, Spinner, Text } from 'theme-ui'
 import { useQuery } from '@tanstack/react-query'
 import { op } from 'arquero'
@@ -9,53 +9,58 @@ import { Provider as CrossfilterProvider } from 'components/Crossfilter'
 import Sidebar from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
 import { loadOccurrenceData } from 'api'
-import { filters, Map, PresenceFilters } from 'components/SpeciesPresence'
+import { Map, PresenceFilters } from 'components/SpeciesPresence'
 
 const PresencePage = () => {
+  const mapRef = useRef(null)
+
   const {
     isLoading,
     error,
-    data: { detectorsIndex, occurrenceTable } = {},
+    data: { detectorsBySite, allSpeciesTable, filters } = {},
   } = useQuery({
     queryKey: ['occurrence'],
     queryFn: loadOccurrenceData,
 
-    // FIXME:
-    retry: false,
-    staleTime: 1, // use then reload to force refresh of underlying data during dev
-    // retry: true,
-    // stateTime: 60,
+    // retry: false,
+    // staleTime: 1, // use then reload to force refresh of underlying data during dev
+    retry: true,
+    stateTime: 60,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   })
 
-  const [selected, setSelected] = useState({ features: [], feature: null })
-  // const handleSelectFeatures = (ids) => {
-  //   const features = detectors
-  //     .filter(({ id }) => ids.has(id))
-  //     .map((d) => ({
-  //       ...d,
-  //       ts: detectorTS.filter(({ id }) => id === d.id),
-  //     }))
+  const [{ selectedFeature, selectedDetectors }, setState] = useState({
+    selectedFeature: null,
+    selectedDetectors: [],
+  })
 
-  //   console.log('selected features', features)
+  const handleSelectFeature = (feature) => {
+    console.log('select', feature)
+    if (feature === null) {
+      setState(() => ({
+        selectedFeature: null,
+        selectedDetectors: [],
+      }))
+    } else if (feature.sourceLayer === 'sites') {
+      setState(() => ({
+        selectedFeature: feature,
+        selectedDetectors: detectorsBySite[feature.id],
+      }))
+    }
+    // TODO: hexes
+  }
 
-  //   setSelected({
-  //     features,
-  //     feature: features.length ? features[0].id : null,
-  //   })
-  // }
+  const handleDetailsClose = () => {
+    setState(() => ({
+      selectedFeature: null,
+      selectedDetectors: [],
+    }))
+  }
 
-  // const handleSetFeature = (feature) => {
-  //   setSelected({
-  //     features: selected.features,
-  //     feature,
-  //   })
-  // }
-
-  // const handleDetailsClose = () => {
-  //   setSelected({ features: [], feature: null })
-  // }
+  const handleCreateMap = (map) => {
+    mapRef.current = map
+  }
 
   if (isLoading) {
     return (
@@ -90,19 +95,20 @@ const PresencePage = () => {
     <Layout>
       <Flex sx={{ height: '100%', width: '100%' }}>
         <CrossfilterProvider
-          table={occurrenceTable}
+          table={allSpeciesTable}
           filters={filters}
           valueField="speciesCount"
           aggFuncs={{ speciesCount: op.distinct('species') }}
           // for dimensions and totals, only aggregate records where species is detected
-          preFilter={(d) => d.detected}
+          preFilter={(d) => d.detections > 0}
         >
           <Sidebar allowScroll={false}>
-            {selected.features.length > 0 ? (
+            {selectedDetectors.length > 0 ? (
               <DetectorDetails
-                detectors={selected.features}
-                // onSetDetector={handleSetFeature}
-                // onClose={handleDetailsClose}
+                table={allSpeciesTable}
+                detectors={selectedDetectors}
+                map={mapRef.current}
+                onClose={handleDetailsClose}
               />
             ) : (
               <PresenceFilters filters={filters} />
@@ -111,8 +117,9 @@ const PresencePage = () => {
 
           <Box sx={{ position: 'relative', flex: '1 0 auto', height: '100%' }}>
             <Map
-              selectedFeature={selected.feature}
-              // onSelectFeatures={handleSelectFeatures}
+              selectedFeature={selectedFeature}
+              onSelectFeature={handleSelectFeature}
+              onCreateMap={handleCreateMap}
             />
           </Box>
         </CrossfilterProvider>

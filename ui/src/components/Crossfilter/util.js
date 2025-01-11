@@ -27,10 +27,6 @@ addFunction('hasAny', hasAny, { override: true })
  * @returns Object
  */
 export const createDimensions = (filters) => {
-  // FIXME:
-  window.op = op
-  window.escape = escape
-
   const dimensions = {}
   filters.forEach((filter) => {
     dimensions[filter.field] = filter

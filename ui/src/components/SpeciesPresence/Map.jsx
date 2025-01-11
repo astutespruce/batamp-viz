@@ -1,9 +1,11 @@
 // @refresh reset
 /* eslint-disable max-len,no-underscore-dangle,camelcase */
 import React, { useRef, useState, useCallback, useEffect } from 'react'
+import PropTypes from 'prop-types'
 
 import { useCrossfilter } from 'components/Crossfilter'
 import { H3_COLS } from 'config'
+import { isEqual } from 'util/data'
 
 import {
   layers,
@@ -14,13 +16,16 @@ import {
   Legend,
 } from 'components/Map'
 
-const SpeciesOccurrenceMap = () => {
+const SpeciesOccurrenceMap = ({
+  selectedFeature,
+  onSelectFeature,
+  onCreateMap,
+}) => {
   const mapRef = useRef(null)
 
   const [isLoaded, setIsLoaded] = useState(false)
   const hoverFeatureRef = useRef(null)
-  // TODO:
-  //   const selectedFeatureRef = useRef(selectedFeature)
+  const selectedFeatureRef = useRef(null)
 
   const {
     state: {
@@ -125,6 +130,11 @@ const SpeciesOccurrenceMap = () => {
       })
 
       map.on('mousemove', fillLayerId, ({ features: [feature], lngLat }) => {
+        // prevent hover when there is a selected feature
+        if (selectedFeatureRef.current !== null) {
+          return
+        }
+
         const zoom = map.getZoom()
 
         const {
@@ -177,6 +187,11 @@ const SpeciesOccurrenceMap = () => {
       })
 
       map.on('mouseout', fillLayerId, () => {
+        // prevent clear of highlight of selected feature
+        if (selectedFeatureRef.current !== null) {
+          return
+        }
+
         setFeatureHighlight(map, hoverFeatureRef.current, false)
         hoverFeatureRef.current = null
 
@@ -218,8 +233,15 @@ const SpeciesOccurrenceMap = () => {
         .addTo(map)
 
       if (hoverFeature !== hoverFeatureRef.current) {
-        // unhighlight previous
-        setFeatureHighlight(map, hoverFeatureRef.current, false)
+        if (
+          !isEqual(hoverFeatureRef.current, selectedFeatureRef.current, [
+            'sourceLayer',
+            'id',
+          ])
+        ) {
+          // unhighlight previous
+          setFeatureHighlight(map, hoverFeatureRef.current, false)
+        }
 
         hoverFeatureRef.current = hoverFeature
         setFeatureHighlight(map, hoverFeatureRef.current, true)
@@ -227,12 +249,47 @@ const SpeciesOccurrenceMap = () => {
     })
 
     map.on('mouseout', 'sites', () => {
-      setFeatureHighlight(map, hoverFeatureRef.current, false)
-      hoverFeatureRef.current = null
-
       /* eslint-disable-next-line no-param-reassign */
       map.getCanvas().style.cursor = ''
       tooltip.remove()
+
+      if (
+        isEqual(hoverFeatureRef.current, selectedFeatureRef.current, [
+          'sourceLayer',
+          'id',
+        ])
+      ) {
+        return
+      }
+
+      setFeatureHighlight(map, hoverFeatureRef.current, false)
+      hoverFeatureRef.current = null
+    })
+
+    const clickLayers = layers
+      .filter(({ id }) => id.endsWith('-fill') || id === 'sites')
+      .map(({ id }) => id)
+
+    map.on('click', ({ point }) => {
+      // always clear out prior selected feature and hover feature
+      setFeatureHighlight(map, selectedFeatureRef.current, false)
+      selectedFeatureRef.current = null
+      setFeatureHighlight(map, hoverFeatureRef.current, false)
+      hoverFeatureRef.current = null
+
+      const zoom = map.getZoom()
+      const features = map
+        .queryRenderedFeatures(point, {
+          layers: clickLayers,
+        })
+        // filter to those actually visible at zoom
+        .filter(({ layer: { id: layerId, minzoom, maxzoom = 21 } }) =>
+          layerId === 'sites' ? zoom >= 10 : zoom >= minzoom && zoom <= maxzoom
+        )
+
+      const [feature = null] = features
+
+      onSelectFeature(feature)
     })
 
     map.on('zoomend', () => {
@@ -266,6 +323,7 @@ const SpeciesOccurrenceMap = () => {
         }
       }
     })
+    onCreateMap(map)
   }, [])
 
   /**
@@ -334,6 +392,10 @@ const SpeciesOccurrenceMap = () => {
       )
     })
 
+    map.once('idle', () => {
+      map.triggerRepaint()
+    })
+
     const visibleLayers = getVisibleLayers()
     const newLegendEntries = []
     visibleLayers.forEach(({ id, source, getLegend }) => {
@@ -356,6 +418,20 @@ const SpeciesOccurrenceMap = () => {
     siteIds,
     siteTotals,
   ])
+
+  useEffect(() => {
+    if (selectedFeature === null) {
+      return
+    }
+
+    const { current: map } = mapRef
+    if (!map) {
+      return
+    }
+
+    selectedFeatureRef.current = selectedFeature
+    setFeatureHighlight(map, selectedFeatureRef.current, true)
+  }, [selectedFeature])
 
   /**
    * Reset feature state on basemap change
@@ -399,3 +475,13 @@ const SpeciesOccurrenceMap = () => {
 }
 
 export default SpeciesOccurrenceMap
+
+SpeciesOccurrenceMap.propTypes = {
+  selectedFeature: PropTypes.object,
+  onSelectFeature: PropTypes.func.isRequired,
+  onCreateMap: PropTypes.func.isRequired,
+}
+
+SpeciesOccurrenceMap.defaultProps = {
+  selectedFeature: null,
+}

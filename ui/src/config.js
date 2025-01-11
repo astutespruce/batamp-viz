@@ -281,8 +281,6 @@ export const SPECIES_ID = {
   46: 'tabr',
 }
 
-// TODO: handle plural vs singular
-// FIXME: remove
 export const METRIC_LABELS = {
   detections: 'detections',
   sppDetections: 'species detections',

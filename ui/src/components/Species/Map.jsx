@@ -18,7 +18,12 @@ import {
   Legend,
 } from 'components/Map'
 
-const SpeciesMap = ({ speciesID, selectedFeature, onSelectFeature }) => {
+const SpeciesMap = ({
+  speciesID,
+  selectedFeature,
+  onSelectFeature,
+  onCreateMap,
+}) => {
   const mapRef = useRef(null)
 
   const [isLoaded, setIsLoaded] = useState(false)
@@ -338,6 +343,8 @@ const SpeciesMap = ({ speciesID, selectedFeature, onSelectFeature }) => {
         }
       }
     })
+
+    onCreateMap(map)
   }, [])
 
   /**
@@ -361,7 +368,6 @@ const SpeciesMap = ({ speciesID, selectedFeature, onSelectFeature }) => {
       siteMax: Math.max(0, Math.max(...Object.values(siteTotals))),
     }
 
-    // map.setLayoutProperty('sites', 'visibility', 'none')
     map.setFilter('sites', ['in', ['id'], ['literal', siteIds]])
     Object.entries(siteTotals).forEach(([siteId, total = 0]) => {
       map.setFeatureState(
@@ -370,7 +376,7 @@ const SpeciesMap = ({ speciesID, selectedFeature, onSelectFeature }) => {
       )
     })
 
-    // update filter on layers
+    // update filter, data, and renderer on layers
     H3_COLS.forEach((col) => {
       const filterExpr = ['in', ['id'], ['literal', h3Ids[col]]]
       map.setFilter(`${col}-fill`, filterExpr)
@@ -389,7 +395,9 @@ const SpeciesMap = ({ speciesID, selectedFeature, onSelectFeature }) => {
       )
     })
 
-    map.triggerRepaint()
+    map.once('idle', () => {
+      map.triggerRepaint()
+    })
 
     const visibleLayers = getVisibleLayers()
 
@@ -491,6 +499,7 @@ SpeciesMap.propTypes = {
   speciesID: PropTypes.string.isRequired,
   selectedFeature: PropTypes.object,
   onSelectFeature: PropTypes.func.isRequired,
+  onCreateMap: PropTypes.func.isRequired,
 }
 
 SpeciesMap.defaultProps = {

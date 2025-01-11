@@ -630,31 +630,6 @@ write_feather(table, static_data_dir / "spp_detections.feather", compression="un
 
 
 ################################################################################
-### Bin species occurrences by detector, year, and month
-################################################################################
-
-# FIXME: this can use stacked above and just sum activity and clip to 0,1
-
-spp_occurrence = (
-    df.groupby(["det_id", "year", "month"])[activity_columns]
-    .max()
-    .stack(future_stack=True)
-    .dropna()
-    .rename("detected")
-    .reset_index()
-    .rename(columns={"level_3": "species"})
-)
-spp_occurrence["species"] = spp_occurrence.species.map(SPECIES_ID)
-spp_occurrence["detected"] = spp_occurrence.detected.clip(0, 1).astype(bool)
-
-for col in ["det_id", "year", "month", "species"]:
-    spp_occurrence[col] = spp_occurrence[col].astype("category")
-
-table = pa.Table.from_pandas(camelcase(spp_occurrence)).replace_schema_metadata()
-write_feather(table, static_data_dir / "spp_occurrence.feather", compression="uncompressed")
-
-
-################################################################################
 ### Calculate contributor statistics
 ################################################################################
 grouped = df.groupby("contributors")
