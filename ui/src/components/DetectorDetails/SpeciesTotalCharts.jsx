@@ -66,8 +66,17 @@ const SpeciesTotalCharts = ({
 
       {sppData
         .filter(({ id }) => id !== speciesID)
-        .map(({ id, ...rest }) => (
-          <SpeciesTotalChart key={id} {...rest} max={max} />
+        .map(({ id, detectorNights: sppDetectorNights, ...rest }) => (
+          <SpeciesTotalChart
+            key={id}
+            {...rest}
+            max={max}
+            note={
+              sppDetectorNights < detectorNights
+                ? `${countTypePrefix} reported on ${sppDetectorNights} of ${detectorNights} nights`
+                : ''
+            }
+          />
         ))}
     </Box>
   )

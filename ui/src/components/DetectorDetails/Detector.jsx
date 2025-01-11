@@ -154,7 +154,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
         <Flex sx={{ justifyContent: 'space-between' }}>
           <Box sx={{ flex: '1 1 auto' }}>
             <Heading as="h1" sx={{ fontSize: '1.5rem', m: '0 0 0.25rem 0' }}>
-              {siteName}
+              {siteName.split(',').join(', ')}
             </Heading>
           </Box>
           <Box

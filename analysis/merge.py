@@ -206,13 +206,13 @@ df["obs_id"] = df.point_id + "@" + df.mic_ht.astype("str") + "|" + df.night.asty
 nabat_pts = (
     df.loc[(df.source == "nabat") & (~df.at_grts_center)]
     .groupby("obs_id")
-    .agg({c: "first" for c in ["point_id", "mic_ht", "night", "pt_proj"]})
+    .agg({c: "first" for c in ["point_id", "mic_ht", "night", "pt_proj", "geometry"]})
     .reset_index()
 )
 batamp_pts = (
     df.loc[(df.source == "batamp") & (~df.at_grts_center) & ~df.obs_id.isin(nabat_pts.obs_id.unique())]
     .groupby("obs_id")
-    .agg({c: "first" for c in ["point_id", "mic_ht", "night", "pt_proj"]})
+    .agg({c: "first" for c in ["point_id", "mic_ht", "night", "pt_proj", "geometry"]})
     .reset_index()
 )
 
@@ -223,12 +223,14 @@ pairs = pd.DataFrame(
     {
         "batamp_obs_id": batamp_pts.obs_id.values.take(left),
         "batamp_pt_id": batamp_pts.point_id.values.take(left),
-        "batamp_pt": batamp_pts.pt_proj.values.take(left),
+        "batamp_pt_proj": batamp_pts.pt_proj.values.take(left),
+        "batamp_geometry": batamp_pts.geometry.values.take(left),
         "batamp_ht": batamp_pts.mic_ht.values.take(left),
         "batamp_night": batamp_pts.night.values.take(left),
         "nabat_obs_id": nabat_pts.obs_id.values.take(right),
         "nabat_point_id": nabat_pts.point_id.values.take(right),
-        "nabat_pt": nabat_pts.pt_proj.values.take(right),
+        "nabat_pt_proj": nabat_pts.pt_proj.values.take(right),
+        "nabat_geometry": nabat_pts.geometry.values.take(right),
         "nabat_ht": nabat_pts.mic_ht.values.take(right),
         "nabat_night": nabat_pts.night.values.take(right),
     }
@@ -237,7 +239,7 @@ pairs = pd.DataFrame(
 pairs = pairs.loc[
     (pairs.batamp_night == pairs.nabat_night) & ((pairs.batamp_ht - pairs.nabat_ht).abs() <= 1)
 ].reset_index(drop=True)
-pairs["dist"] = shapely.distance(pairs.batamp_pt.values, pairs.nabat_pt.values)
+pairs["dist"] = shapely.distance(pairs.batamp_pt_proj.values, pairs.nabat_pt_proj.values)
 pairs["ht_diff"] = (pairs.batamp_ht - pairs.nabat_ht).abs()
 
 if (pairs.dist == 0).any():
@@ -254,11 +256,14 @@ if (pairs.ht_diff > 0).any():
 
 # for those with exactly same height, update the BatAMP coordinate to match NABat
 loc_fixes = (
-    pairs.loc[pairs.ht_diff == 0].groupby("batamp_obs_id")[["nabat_obs_id", "nabat_point_id", "nabat_pt"]].first()
+    pairs.loc[pairs.ht_diff == 0]
+    .groupby("batamp_obs_id")[["nabat_obs_id", "nabat_point_id", "nabat_pt_proj", "nabat_geometry"]]
+    .first()
 )
 ix = df.obs_id.isin(loc_fixes.index.values)
 df.loc[ix, "point_id"] = df.loc[ix].obs_id.map(loc_fixes.nabat_point_id)
-df.loc[ix, "geometry"] = df.loc[ix].obs_id.map(loc_fixes.nabat_pt)
+df.loc[ix, "pt_proj"] = df.loc[ix].obs_id.map(loc_fixes.nabat_pt_proj)
+df.loc[ix, "geometry"] = df.loc[ix].obs_id.map(loc_fixes.nabat_geometry)
 df.loc[ix, "obs_id"] = df.loc[ix].obs_id.map(loc_fixes.nabat_obs_id)
 
 
