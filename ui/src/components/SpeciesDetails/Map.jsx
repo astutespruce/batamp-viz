@@ -144,19 +144,22 @@ const SpeciesMap = ({
       })
 
       map.on('mousemove', fillLayerId, ({ features: [feature], lngLat }) => {
-        // prevent hover when there is a selected feature
-        if (selectedFeatureRef.current !== null) {
-          return
-        }
-
-        const zoom = map.getZoom()
-
         const {
           source,
           sourceLayer,
           id: featureId,
           layer: { minzoom, maxzoom = 21 },
         } = feature
+
+        // prevent hover when there is a selected feature
+        if (
+          selectedFeatureRef.current !== null &&
+          selectedFeatureRef.current.sourceLayer === 'sites'
+        ) {
+          return
+        }
+
+        const zoom = map.getZoom()
         // make sure that layer is actually visible; not clear why the event
         // fires when features are not yet visible but appears related to
         // using floating point divisions between layers
@@ -190,8 +193,15 @@ const SpeciesMap = ({
         }
 
         if (hoverFeature !== hoverFeatureRef.current) {
-          // unhighlight previous
-          setFeatureHighlight(map, hoverFeatureRef.current, false)
+          if (
+            !isEqual(hoverFeatureRef.current, selectedFeatureRef.current, [
+              'sourceLayer',
+              'id',
+            ])
+          ) {
+            // unhighlight previous
+            setFeatureHighlight(map, hoverFeatureRef.current, false)
+          }
 
           hoverFeatureRef.current = hoverFeature
           setFeatureHighlight(map, hoverFeatureRef.current, true)
@@ -199,17 +209,22 @@ const SpeciesMap = ({
       })
 
       map.on('mouseout', fillLayerId, () => {
+        /* eslint-disable-next-line no-param-reassign */
+        map.getCanvas().style.cursor = ''
+        tooltip.remove()
+
         // prevent clear of highlight of selected feature
-        if (selectedFeatureRef.current !== null) {
+        if (
+          isEqual(hoverFeatureRef.current, selectedFeatureRef.current, [
+            'sourceLayer',
+            'id',
+          ])
+        ) {
           return
         }
 
         setFeatureHighlight(map, hoverFeatureRef.current, false)
         hoverFeatureRef.current = null
-
-        /* eslint-disable-next-line no-param-reassign */
-        map.getCanvas().style.cursor = ''
-        tooltip.remove()
       })
     })
 

@@ -88,10 +88,11 @@ SpeciesTotalCharts.propTypes = {
   speciesID: PropTypes.string, // NOTE: speciesID will always be present in data
   data: PropTypes.object.isRequired,
   max: PropTypes.number.isRequired,
-  detectorNights: PropTypes.number.isRequired,
+  detectorNights: PropTypes.number,
 }
 
 SpeciesTotalCharts.defaultProps = {
+  detectorNights: 0, // 0 will result in never showing error about missing detector nights
   speciesID: null,
 }
 

@@ -5,7 +5,14 @@ import { Box, Flex, Text } from 'theme-ui'
 
 import { formatNumber } from 'util/format'
 
-const BarChart = ({ commonName, sciName, note, months, scale, highlight }) => {
+const SpeciesMonthlyChart = ({
+  commonName,
+  sciName,
+  note,
+  months,
+  scale,
+  highlight,
+}) => {
   const max = Math.max(...months.map(({ total }) => total))
   const maxHeight = Math.max(scale(max), 32)
 
@@ -84,7 +91,7 @@ const BarChart = ({ commonName, sciName, note, months, scale, highlight }) => {
   )
 }
 
-BarChart.propTypes = {
+SpeciesMonthlyChart.propTypes = {
   commonName: PropTypes.string.isRequired,
   sciName: PropTypes.string.isRequired,
   note: PropTypes.string,
@@ -99,9 +106,9 @@ BarChart.propTypes = {
   highlight: PropTypes.bool,
 }
 
-BarChart.defaultProps = {
+SpeciesMonthlyChart.defaultProps = {
   note: null,
   highlight: false,
 }
 
-export default BarChart
+export default SpeciesMonthlyChart

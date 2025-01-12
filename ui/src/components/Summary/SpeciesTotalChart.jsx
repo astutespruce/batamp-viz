@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { Box, Flex, Text } from 'theme-ui'
 import { formatNumber } from 'util/format'
 
-const HorizontalBarChart = ({
+const SpeciesTotalChart = ({
   commonName,
   sciName,
   total,
@@ -77,7 +77,7 @@ const HorizontalBarChart = ({
   )
 }
 
-HorizontalBarChart.propTypes = {
+SpeciesTotalChart.propTypes = {
   commonName: PropTypes.string.isRequired,
   sciName: PropTypes.string.isRequired,
   total: PropTypes.number.isRequired,
@@ -86,9 +86,9 @@ HorizontalBarChart.propTypes = {
   note: PropTypes.string,
 }
 
-HorizontalBarChart.defaultProps = {
+SpeciesTotalChart.defaultProps = {
   highlight: false,
   note: null,
 }
 
-export default memo(HorizontalBarChart)
+export default memo(SpeciesTotalChart)

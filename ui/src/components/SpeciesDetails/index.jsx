@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Box, Flex, Spinner, Text } from 'theme-ui'
 import { useQuery } from '@tanstack/react-query'
-import { op } from 'arquero'
+import { escape, op } from 'arquero'
 
 import { Layout, PageErrorMessage } from 'components/Layout'
 import {
@@ -13,6 +13,7 @@ import {
 import { loadSingleSpeciesData } from 'data/api'
 import Sidebar from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
+import HexDetails from 'components/HexDetails'
 import Map from './Map'
 import SpeciesFilters from './SpeciesFilters'
 
@@ -23,7 +24,7 @@ const SpeciesDetails = ({ speciesID }) => {
     isLoading,
     error,
     data: {
-      detectorsBySite,
+      detectorsTable,
       allSpeciesTable,
       selectedSpeciesTable,
       filters,
@@ -40,31 +41,37 @@ const SpeciesDetails = ({ speciesID }) => {
     refetchOnMount: false,
   })
 
-  const [{ selectedFeature, selectedDetectors }, setState] = useState({
+  const [{ selectedFeature, selectedType }, setState] = useState({
     selectedFeature: null,
-    selectedDetectors: [],
+    selectedType: null,
   })
 
   const handleSelectFeature = (feature) => {
-    console.log('select', feature)
     if (feature === null) {
       setState(() => ({
         selectedFeature: null,
-        selectedDetectors: [],
+        selectedType: null,
       }))
-    } else if (feature.sourceLayer === 'sites') {
+      return
+    }
+
+    if (feature.sourceLayer === 'sites') {
       setState(() => ({
         selectedFeature: feature,
-        selectedDetectors: detectorsBySite[feature.id],
+        // selectedDetectors: detectorsBySite[feature.id],
+        selectedType: 'detector',
+      }))
+    } else if (feature.sourceLayer.startsWith('h3')) {
+      setState(() => ({
+        selectedFeature: feature,
+        selectedType: 'hex',
       }))
     }
-    // TODO: hexes
   }
 
   const handleDetailsClose = () => {
     setState(() => ({
       selectedFeature: null,
-      selectedDetectors: [],
     }))
   }
 
@@ -115,17 +122,42 @@ const SpeciesDetails = ({ speciesID }) => {
           }}
         >
           <Sidebar allowScroll={false}>
-            {selectedDetectors.length > 0 ? (
+            {selectedFeature === null ? (
+              <SpeciesFilters speciesID={speciesID} filters={filters} />
+            ) : null}
+
+            {selectedFeature !== null && selectedType === 'detector' ? (
               <DetectorDetails
                 table={allSpeciesTable}
-                speciesID={speciesID}
-                detectors={selectedDetectors}
+                detectors={detectorsTable
+                  .filter(escape((d) => d.siteId === selectedFeature.id))
+                  .objects()}
                 map={mapRef.current}
+                speciesID={speciesID}
                 onClose={handleDetailsClose}
               />
-            ) : (
-              <SpeciesFilters speciesID={speciesID} filters={filters} />
-            )}
+            ) : null}
+
+            {selectedFeature !== null && selectedType === 'hex' ? (
+              <HexDetails
+                id={selectedFeature.id}
+                level={selectedFeature.sourceLayer}
+                // filter tables to this hex
+                table={allSpeciesTable.filter(
+                  escape(
+                    (d) => d[selectedFeature.sourceLayer] === selectedFeature.id
+                  )
+                )}
+                detectorsTable={detectorsTable.filter(
+                  escape(
+                    (d) => d[selectedFeature.sourceLayer] === selectedFeature.id
+                  )
+                )}
+                map={mapRef.current}
+                speciesID={speciesID}
+                onClose={handleDetailsClose}
+              />
+            ) : null}
           </Sidebar>
 
           <Box sx={{ position: 'relative', flex: '1 0 auto', height: '100%' }}>

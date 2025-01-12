@@ -21,29 +21,29 @@ const loadData = async () => {
 
   return {
     detectorsTable,
-    // join in species codes
-    allSpeciesTable: rawSpeciesTable.derive({
-      species: escape((d) => SPECIES_ID[d.species]),
-    }),
+    // join in species codes and detector info
+    allSpeciesTable: rawSpeciesTable
+      .derive({
+        species: escape((d) => SPECIES_ID[d.species]),
+      })
+      .join(
+        detectorsTable.select([
+          'id',
+          'source',
+          'countType',
+          'siteId',
+          'lat',
+          'lon',
+          'admin1Name',
+          ...H3_COLS,
+        ]),
+        ['detId', 'id']
+      ),
   }
 }
 
 export const loadOccurrenceData = async () => {
-  const { detectorsTable, allSpeciesTable: rawSpeciesTable } = await loadData()
-
-  // join detector data to all records
-  const allSpeciesTable = rawSpeciesTable.join(
-    detectorsTable.select([
-      'id',
-      'source',
-      'siteId',
-      'lat',
-      'lon',
-      'admin1Name',
-      ...H3_COLS,
-    ]),
-    ['detId', 'id']
-  )
+  const { detectorsTable, allSpeciesTable } = await loadData()
 
   const {
     admin1Name: admin1Names,
@@ -121,7 +121,9 @@ export const loadOccurrenceData = async () => {
 
   return {
     // detectorsIndex: indexBy(detectors, 'id'),
+    // FIXME: remove grouping
     detectorsBySite: groupBy(detectors, 'siteId'),
+    detectorsTable,
     allSpeciesTable,
     filters,
   }
@@ -130,22 +132,9 @@ export const loadOccurrenceData = async () => {
 export const loadSingleSpeciesData = async (speciesID) => {
   const { detectorsTable, allSpeciesTable } = await loadData()
 
-  // join detector data only to selected species table
-  const selectedSpeciesTable = allSpeciesTable
-    .filter(escape((d) => d.species === speciesID))
-    .join(
-      detectorsTable.select([
-        'id',
-        'source',
-        'siteId',
-        'lat',
-        'lon',
-        'admin1Name',
-        'countType',
-        ...H3_COLS,
-      ]),
-      ['detId', 'id']
-    )
+  const selectedSpeciesTable = allSpeciesTable.filter(
+    escape((d) => d.species === speciesID)
+  )
 
   const { admin1Name: admin1Names, years } = selectedSpeciesTable
     .rollup({
@@ -210,6 +199,7 @@ export const loadSingleSpeciesData = async (speciesID) => {
 
   return {
     detectorsBySite: groupBy(detectors, 'siteId'),
+    detectorsTable,
     allSpeciesTable,
     selectedSpeciesTable,
     filters,

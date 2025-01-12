@@ -6,7 +6,7 @@ import {
   ExclamationTriangle,
   ExternalLinkAlt,
 } from '@emotion-icons/fa-solid'
-import { Box, Flex, Text } from 'theme-ui'
+import { Box, Text } from 'theme-ui'
 
 import { OutboundLink } from 'components/Link'
 import { SPECIES } from 'config'

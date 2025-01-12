@@ -1,13 +1,14 @@
 import React, { useRef, useState } from 'react'
 import { Box, Flex, Spinner, Text } from 'theme-ui'
 import { useQuery } from '@tanstack/react-query'
-import { op } from 'arquero'
+import { escape, op } from 'arquero'
 
 import { Layout, PageErrorMessage, SEO } from 'components/Layout'
 
 import { Provider as CrossfilterProvider } from 'components/Crossfilter'
 import Sidebar from 'components/Sidebar'
 import DetectorDetails from 'components/DetectorDetails'
+import HexDetails from 'components/HexDetails'
 import { loadOccurrenceData } from 'data/api'
 import { Map, PresenceFilters } from 'components/SpeciesPresence'
 
@@ -17,7 +18,7 @@ const PresencePage = () => {
   const {
     isLoading,
     error,
-    data: { detectorsBySite, allSpeciesTable, filters } = {},
+    data: { detectorsTable, allSpeciesTable, filters } = {},
   } = useQuery({
     queryKey: ['occurrence'],
     queryFn: loadOccurrenceData,
@@ -30,31 +31,36 @@ const PresencePage = () => {
     refetchOnMount: false,
   })
 
-  const [{ selectedFeature, selectedDetectors }, setState] = useState({
+  const [{ selectedFeature, selectedType }, setState] = useState({
     selectedFeature: null,
-    selectedDetectors: [],
+    selectedType: null,
   })
 
   const handleSelectFeature = (feature) => {
-    console.log('select', feature)
     if (feature === null) {
       setState(() => ({
         selectedFeature: null,
-        selectedDetectors: [],
+        selectedType: null,
       }))
-    } else if (feature.sourceLayer === 'sites') {
+      return
+    }
+
+    if (feature.sourceLayer === 'sites') {
       setState(() => ({
         selectedFeature: feature,
-        selectedDetectors: detectorsBySite[feature.id],
+        selectedType: 'detector',
+      }))
+    } else if (feature.sourceLayer.startsWith('h3')) {
+      setState(() => ({
+        selectedFeature: feature,
+        selectedType: 'hex',
       }))
     }
-    // TODO: hexes
   }
 
   const handleDetailsClose = () => {
     setState(() => ({
       selectedFeature: null,
-      selectedDetectors: [],
     }))
   }
 
@@ -103,16 +109,40 @@ const PresencePage = () => {
           preFilter={(d) => d.detections > 0}
         >
           <Sidebar allowScroll={false}>
-            {selectedDetectors.length > 0 ? (
+            {selectedFeature === null ? (
+              <PresenceFilters filters={filters} />
+            ) : null}
+
+            {selectedFeature !== null && selectedType === 'detector' ? (
               <DetectorDetails
                 table={allSpeciesTable}
-                detectors={selectedDetectors}
+                detectors={detectorsTable
+                  .filter(escape((d) => d.siteId === selectedFeature.id))
+                  .objects()}
                 map={mapRef.current}
                 onClose={handleDetailsClose}
               />
-            ) : (
-              <PresenceFilters filters={filters} />
-            )}
+            ) : null}
+
+            {selectedFeature !== null && selectedType === 'hex' ? (
+              <HexDetails
+                id={selectedFeature.id}
+                level={selectedFeature.sourceLayer}
+                // filter tables to this hex
+                table={allSpeciesTable.filter(
+                  escape(
+                    (d) => d[selectedFeature.sourceLayer] === selectedFeature.id
+                  )
+                )}
+                detectorsTable={detectorsTable.filter(
+                  escape(
+                    (d) => d[selectedFeature.sourceLayer] === selectedFeature.id
+                  )
+                )}
+                map={mapRef.current}
+                onClose={handleDetailsClose}
+              />
+            ) : null}
           </Sidebar>
 
           <Box sx={{ position: 'relative', flex: '1 0 auto', height: '100%' }}>

@@ -1,18 +1,42 @@
-import React, { memo } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { Box, Flex, Heading, Text } from 'theme-ui'
 import { TimesCircle, ExclamationTriangle } from '@emotion-icons/fa-solid'
-import { op } from 'arquero'
+import { escape, op } from 'arquero'
 
 import { METRIC_LABELS } from 'config'
 import { Tab, Tabs } from 'components/Tabs'
 import { useCrossfilter } from 'components/Crossfilter'
 import { SpeciesTotalCharts, SpeciesMonthlyCharts } from 'components/Summary'
+import { groupBy } from 'util/data'
 import { formatNumber, quantityLabel } from 'util/format'
 
-import DetectorMetadata from './DetectorMetadata'
+import DetectorsList from './DetectorsList'
 
-const Detector = ({ detector, speciesID, map, onClose }) => {
+const HexDetails = ({
+  id,
+  level,
+  table,
+  detectorsTable: rawDetectorsTable,
+  map,
+  speciesID,
+  onClose,
+}) => {
+  // if speciesID is set, need to filter detectorsTable to detectors that monitored this species
+  let detectorsTable = null
+  if (speciesID) {
+    const ids = table
+      .filter(escape((d) => d.species === speciesID))
+      .rollup({ detId: op.array_agg_distinct('detId') })
+      .array('detId')[0]
+
+    detectorsTable = rawDetectorsTable.filter(
+      escape((d) => op.includes(ids, d.id))
+    )
+  } else {
+    detectorsTable = rawDetectorsTable
+  }
+
   const {
     state: {
       metric: { field: valueField },
@@ -20,29 +44,13 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
     },
   } = useCrossfilter()
 
+  // TODO: apply all active filters except for species (we want all species)
+
   const displayField =
     valueField === 'detectors' || valueField === 'speciesCount'
       ? 'detectionNights'
       : valueField
   const metricLabel = METRIC_LABELS[displayField]
-
-  const {
-    source,
-    siteName,
-    admin1Name,
-    detectorNights,
-    countType,
-    dateRange,
-    lat,
-    lon,
-    table,
-  } = detector
-
-  const handleZoomTo = () => {
-    if (map) {
-      map.flyTo({ center: [lon, lat], zoom: 17 })
-    }
-  }
 
   const { detections, years } = table
     .rollup({
@@ -50,6 +58,31 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
       years: op.distinct('year'),
     })
     .objects()[0]
+
+  const { detectorNights, admin1Name } = detectorsTable
+    .rollup({
+      detectorNights: op.sum('detectorNights'),
+      admin1Name: op.array_agg_distinct('admin1Name'),
+    })
+    .objects()[0]
+
+  const presenceDetectors = detectorsTable.filter(
+    (d) => d.countType === 'p'
+  ).size
+
+  const detectorsBySource = groupBy(
+    detectorsTable
+      .join(
+        table
+          .derive({ ts: (d) => [d.year, d.month] })
+          .groupby('detId')
+          .rollup({ ts: op.min('ts'), [displayField]: op.sum(displayField) }),
+        ['id', 'detId']
+      )
+      .orderby('source', 'ts')
+      .objects(),
+    'source'
+  )
 
   // calculate total displayField and detector nights by species
   const sppTotals = Object.fromEntries(
@@ -80,21 +113,22 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
       .array('entries')[0]
   )
 
-  // If we are showing nights, we need to show the true effort which is
-  // number of detector nights
-  const max =
-    displayField === 'detectionNights'
-      ? detectorNights
-      : Math.max(
-          0,
-          ...Object.values(sppTotals).map(({ [displayField]: total }) => total)
-        )
+  // because we're pooling together multiple detecors, we need to take the max
+  const max = Math.max(
+    0,
+    ...Object.values(sppTotals).map(({ [displayField]: total }) => total)
+  )
 
   const presenceOnlyWarning =
-    countType === 'p' && displayField === 'detections' ? (
+    presenceDetectors > 0 && displayField === 'detections' ? (
       <Text variant="help" sx={{ mb: '2rem', fontSize: 1 }}>
-        Note: this detector monitored nightly occurrence instead of nightly
-        activity; only one detection was recorded per night for each species.
+        Note:{' '}
+        {presenceDetectors === detectorsTable.size
+          ? 'all'
+          : formatNumber(presenceDetectors)}{' '}
+        {quantityLabel('detectors', presenceDetectors)} in this area monitored
+        nightly occurrence instead of nightly activity; only one detection was
+        recorded per night for each species.
       </Text>
     ) : null
 
@@ -106,6 +140,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
       </Box>
     ) : null
 
+  // TODO: remove once filters are hooked up
   const filterNote = hasFilters ? (
     <Text variant="help" sx={{ mb: '1rem' }}>
       <ExclamationTriangle
@@ -137,7 +172,18 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
         <Flex sx={{ justifyContent: 'space-between' }}>
           <Box sx={{ flex: '1 1 auto' }}>
             <Heading as="h1" sx={{ fontSize: '1.5rem', m: '0 0 0.25rem 0' }}>
-              {siteName.split(',').join(', ')}
+              Selected area
+              <Text
+                sx={{
+                  fontSize: 1,
+                  display: 'inline',
+                  color: 'grey.8',
+                  ml: '0.5rem',
+                  fontWeight: 'normal',
+                }}
+              >
+                (hex {level.slice(-1)}:{id})
+              </Text>
             </Heading>
           </Box>
           <Box
@@ -154,24 +200,6 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
             <TimesCircle size="1.5em" />
           </Box>
         </Flex>
-        <Flex sx={{ justifyContent: 'space-between', fontSize: 1 }}>
-          <Text sx={{ fontSize: 1, color: 'grey.8' }}>
-            From:{' '}
-            {source === 'nabat'
-              ? 'North American Bat Monitoring Program (NABat)'
-              : 'Bat Acoustic Monitoring Portal (BatAMP)'}
-          </Text>
-          <Text
-            onClick={handleZoomTo}
-            sx={{
-              color: 'link',
-              cursor: 'pointer',
-              '&:hover': { textDecoration: 'underline' },
-            }}
-          >
-            zoom to
-          </Text>
-        </Flex>
 
         <Box
           sx={{
@@ -186,11 +214,12 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
             <Box sx={{ flex: '1 1 auto' }}>
               {admin1Name ? (
                 <>
-                  <b>{admin1Name}</b>
+                  <b>{admin1Name.join('; ')}</b>
                   <br />
                 </>
               ) : null}
-              {dateRange}
+              <b>{formatNumber(detectorsTable.size, 0)}</b>{' '}
+              {quantityLabel('detectors', detectorsTable.size)}
             </Box>
             <Box sx={{ flex: '0 0 auto', textAlign: 'right' }}>
               <b>{formatNumber(detections, 0)}</b> species{' '}
@@ -221,21 +250,24 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
               >
                 Total {metricLabel}
               </Heading>
+
               {presenceOnlyWarning}
+
               <SpeciesTotalCharts
                 displayField={displayField}
-                countType={countType}
+                countType={
+                  // show activity label when at least some of the detectors recorded activity
+                  presenceDetectors === detectorsTable.size ? 'p' : 'a'
+                }
                 speciesID={speciesID}
                 data={sppTotals}
                 max={max}
-                detectorNights={detectorNights}
               />
             </>
           )}
         </Tab>
         <Tab id="seasonality" label="Seasonality">
           {filterNote}
-
           {speciesWarning || (
             <>
               <Heading
@@ -268,12 +300,13 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
             </>
           )}
         </Tab>
-        <Tab id="overview" label="Detector Information">
-          <DetectorMetadata
-            {...detector}
+        <Tab id="detectors" label="Detectors">
+          {filterNote}
+
+          <DetectorsList
             displayField={displayField}
-            speciesTotals={sppTotals}
-            speciesID={speciesID}
+            detectors={detectorsBySource}
+            map={map}
           />
         </Tab>
       </Tabs>
@@ -281,29 +314,18 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
   )
 }
 
-Detector.propTypes = {
-  detector: PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    source: PropTypes.string.isRequired,
-    countType: PropTypes.string.isRequired,
-    siteName: PropTypes.string.isRequired,
-    lon: PropTypes.number.isRequired,
-    lat: PropTypes.number.isRequired,
-    detectorNights: PropTypes.number.isRequired,
-    detectionNights: PropTypes.number.isRequired,
-    dateRange: PropTypes.string.isRequired,
-    admin1Name: PropTypes.string.isRequired,
-    table: PropTypes.object.isRequired, // table filtered to this specific detector
-    // other props validated by subcomponents
-  }).isRequired,
+HexDetails.propTypes = {
+  id: PropTypes.number.isRequired,
+  level: PropTypes.string.isRequired,
+  table: PropTypes.object.isRequired,
+  detectorsTable: PropTypes.object.isRequired,
+  map: PropTypes.object.isRequired,
   speciesID: PropTypes.string,
   onClose: PropTypes.func.isRequired,
-  map: PropTypes.object,
 }
 
-Detector.defaultProps = {
+HexDetails.defaultProps = {
   speciesID: null,
-  map: null,
 }
 
-export default memo(Detector)
+export default HexDetails

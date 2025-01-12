@@ -7,7 +7,7 @@ import { MONTH_LABELS, SPECIES } from 'config'
 import SpeciesMonthlyChart from './SpeciesMonthlyChart'
 
 // TODO: add monthly detectorNights
-const SeasonalityCharts = ({ displayField, data, speciesID }) => {
+const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
   let max = 0
 
   // expand data to all months; backfill missing months with null
@@ -101,14 +101,14 @@ const SeasonalityCharts = ({ displayField, data, speciesID }) => {
   )
 }
 
-SeasonalityCharts.propTypes = {
+SpeciesMonthlyCharts.propTypes = {
   displayField: PropTypes.string.isRequired,
   data: PropTypes.object.isRequired,
   speciesID: PropTypes.string,
 }
 
-SeasonalityCharts.defaultProps = {
+SpeciesMonthlyCharts.defaultProps = {
   speciesID: null,
 }
 
-export default SeasonalityCharts
+export default SpeciesMonthlyCharts
