@@ -434,14 +434,12 @@ const SpeciesOccurrenceMap = ({
   ])
 
   useEffect(() => {
-    if (selectedFeature === null) {
-      return
-    }
-
     const { current: map } = mapRef
     if (!map) {
       return
     }
+
+    setFeatureHighlight(map, selectedFeatureRef.current, false)
 
     selectedFeatureRef.current = selectedFeature
     setFeatureHighlight(map, selectedFeatureRef.current, true)

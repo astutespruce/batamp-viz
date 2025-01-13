@@ -1,30 +1,44 @@
-import React, { useState, useLayoutEffect, memo } from 'react'
+import React, { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
-import { dequal } from 'dequal'
 import { escape } from 'arquero'
 import { Flex } from 'theme-ui'
 
 import Detector from './Detector'
 import Iterator from './Iterator'
 
-const DetectorDetails = ({ table, detectors, speciesID, map, onClose }) => {
+// IMPORTANT: the key param is used where this is called to force a complete
+// re-mount of this component on change to siteId
+const DetectorDetails = ({
+  siteId,
+  table,
+  detectorsTable,
+  speciesID,
+  map,
+  onClose,
+}) => {
   const [index, setIndex] = useState(0)
 
-  useLayoutEffect(() => {
-    // reset to first index on new set of detectors
-    setIndex(0)
-  }, [detectors, detectors.length])
+  const detectorIds = useMemo(
+    () => detectorsTable.filter(escape((d) => d.siteId === siteId)).array('id'),
+    [detectorsTable, siteId]
+  )
 
   return (
     <Flex sx={{ flexDirection: 'column', height: '100%' }}>
-      {detectors.length > 1 ? (
-        <Iterator index={index} onChange={setIndex} count={detectors.length} />
+      {detectorIds.length > 1 ? (
+        <Iterator
+          index={index}
+          onChange={setIndex}
+          count={detectorIds.length}
+        />
       ) : null}
 
       <Detector
         detector={{
-          ...detectors[index],
-          table: table.filter(escape((d) => d.detId === detectors[index].id)),
+          ...detectorsTable
+            .filter(escape((d) => d.id === detectorIds[index]))
+            .objects()[0],
+          table: table.filter(escape((d) => d.detId === detectorIds[index])),
         }}
         speciesID={speciesID}
         map={map}
@@ -35,12 +49,9 @@ const DetectorDetails = ({ table, detectors, speciesID, map, onClose }) => {
 }
 
 DetectorDetails.propTypes = {
+  siteId: PropTypes.number.isRequired,
   table: PropTypes.object.isRequired, // full table including all species for all detectors
-  detectors: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-    })
-  ).isRequired,
+  detectorsTable: PropTypes.object.isRequired,
   onClose: PropTypes.func.isRequired,
   speciesID: PropTypes.string,
   map: PropTypes.object,
@@ -51,9 +62,4 @@ DetectorDetails.defaultProps = {
   map: null,
 }
 
-// only rerender on updates to detectors
-export default memo(
-  DetectorDetails,
-  ({ detectors: prevDetectors }, { detectors: nextDetectors }) =>
-    dequal(prevDetectors, nextDetectors)
-)
+export default DetectorDetails

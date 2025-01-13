@@ -26,6 +26,8 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
       : valueField
   const metricLabel = METRIC_LABELS[displayField]
 
+  console.log('selected detector', detector)
+
   const {
     source,
     siteName,

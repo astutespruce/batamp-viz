@@ -45,6 +45,8 @@ const PresencePage = () => {
       return
     }
 
+    console.log('select', feature.sourceLayer, feature.id)
+
     if (feature.sourceLayer === 'sites') {
       setState(() => ({
         selectedFeature: feature,
@@ -61,6 +63,7 @@ const PresencePage = () => {
   const handleDetailsClose = () => {
     setState(() => ({
       selectedFeature: null,
+      selectedType: null,
     }))
   }
 
@@ -115,10 +118,10 @@ const PresencePage = () => {
 
             {selectedFeature !== null && selectedType === 'detector' ? (
               <DetectorDetails
+                key={selectedFeature.id}
+                siteId={selectedFeature.id}
                 table={allSpeciesTable}
-                detectors={detectorsTable
-                  .filter(escape((d) => d.siteId === selectedFeature.id))
-                  .objects()}
+                detectorsTable={detectorsTable}
                 map={mapRef.current}
                 onClose={handleDetailsClose}
               />

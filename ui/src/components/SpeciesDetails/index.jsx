@@ -55,10 +55,11 @@ const SpeciesDetails = ({ speciesID }) => {
       return
     }
 
+    console.log('select', feature.sourceLayer, feature.id)
+
     if (feature.sourceLayer === 'sites') {
       setState(() => ({
         selectedFeature: feature,
-        // selectedDetectors: detectorsBySite[feature.id],
         selectedType: 'detector',
       }))
     } else if (feature.sourceLayer.startsWith('h3')) {
@@ -72,6 +73,7 @@ const SpeciesDetails = ({ speciesID }) => {
   const handleDetailsClose = () => {
     setState(() => ({
       selectedFeature: null,
+      selectedType: null,
     }))
   }
 
@@ -128,10 +130,10 @@ const SpeciesDetails = ({ speciesID }) => {
 
             {selectedFeature !== null && selectedType === 'detector' ? (
               <DetectorDetails
+                key={selectedFeature.id}
+                siteId={selectedFeature.id}
                 table={allSpeciesTable}
-                detectors={detectorsTable
-                  .filter(escape((d) => d.siteId === selectedFeature.id))
-                  .objects()}
+                detectorsTable={detectorsTable}
                 map={mapRef.current}
                 speciesID={speciesID}
                 onClose={handleDetailsClose}
