@@ -25,12 +25,11 @@ const MAX_BINS = 7
 
 export const getHexRenderer = (values) => {
   let maxValue = 0
-  const nonzeroValues = values.filter((d) => {
-    if (d > 0) {
-      maxValue = Math.max(maxValue, d)
-      return true
-    }
-    return false
+
+  // extract all values >1 because 1 is always put in its own class
+  const gt1Values = values.filter((d) => {
+    maxValue = Math.max(maxValue, d)
+    return d > 1
   })
 
   const legendEntryStub = {
@@ -77,21 +76,28 @@ export const getHexRenderer = (values) => {
       })
     binColorExpr.push(defaultHexFillColor)
   } else {
-    const range = Array.from(Array(MAX_BINS)).map((d, i) => i + 1)
+    // NOTE: 1 is always assigned to its own category and not included in
+    // quantile calculations
+
+    const range = Array.from(Array(MAX_BINS - 1)).map((d, i) => i + 2)
     // round to integer, extract unique values, and make sure first bin starts at 1
     let quantiles = scaleQuantile()
-      .domain(nonzeroValues)
+      .domain(gt1Values)
       .range(range)
       .quantiles()
       .map(Math.round)
     quantiles = quantiles.filter((d, i) => i === 0 || d !== quantiles[i - 1])
-    if (quantiles[0] > 1) {
-      quantiles.unshift(1)
+    // make sure first quantile starts at 2
+    if (quantiles[0] > 2) {
+      quantiles.unshift(2)
     }
 
     const bins = quantiles.map((d, i) =>
       i < quantiles.length - 1 ? [d, quantiles[i + 1] - 1] : [d, maxValue]
     )
+
+    // make sure first bin is always 1
+    bins.unshift([1, 1])
 
     const colors = hexColorScheme[bins.length]
     binColorExpr = ['step', ['feature-state', 'total']]

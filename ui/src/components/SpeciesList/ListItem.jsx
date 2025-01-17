@@ -118,25 +118,10 @@ const ListItem = ({
             },
           }}
         >
-          {detections > 0 ? (
-            <li>
-              <Text
-                sx={{
-                  display: 'inline',
-                  fontWeight: metric === 'detections' ? 'bold' : 'normal',
-                  color: metric === 'detections' ? 'highlight.5' : 'inherit',
-                }}
-              >
-                {formatNumber(detections, 0)}
-              </Text>{' '}
-              detections
-            </li>
-          ) : null}
-
           <li>
             {detectionNights > 0 ? (
               <>
-                on{' '}
+                detected on{' '}
                 <Text
                   sx={{
                     display: 'inline',
@@ -154,6 +139,21 @@ const ListItem = ({
             )}
             of {formatNumber(detectorNights, 0)} nights monitored
           </li>
+
+          {detections > 0 ? (
+            <li>
+              <Text
+                sx={{
+                  display: 'inline',
+                  fontWeight: metric === 'detections' ? 'bold' : 'normal',
+                  color: metric === 'detections' ? 'highlight.5' : 'inherit',
+                }}
+              >
+                {formatNumber(detections, 0)}
+              </Text>{' '}
+              total detections
+            </li>
+          ) : null}
 
           <li>
             <Text

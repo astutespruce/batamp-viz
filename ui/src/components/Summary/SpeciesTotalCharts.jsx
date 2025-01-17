@@ -1,11 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Box } from 'theme-ui'
+import { Box, Text } from 'theme-ui'
 
 import { SPECIES } from 'config'
+import { formatNumber, quantityLabel } from 'util/format'
 import SpeciesTotalChart from './SpeciesTotalChart'
 
 const SpeciesTotalCharts = ({
+  type,
   displayField,
   countType,
   speciesID,
@@ -30,8 +32,6 @@ const SpeciesTotalCharts = ({
         }
       }
     )
-    // only show nonzero values unless selected species
-    .filter(({ id, total }) => total > 0 || id === speciesID)
     .sort(
       (
         { commonName: leftName, total: leftTotal },
@@ -46,6 +46,10 @@ const SpeciesTotalCharts = ({
       }
     )
 
+  const nondetectedSpp = sppData.filter(
+    ({ id, total }) => total === 0 && id !== speciesID
+  )
+
   // always show selected species at the top, if specified
   const selectedSppData = sppData.find(({ id }) => id === speciesID)
 
@@ -56,33 +60,68 @@ const SpeciesTotalCharts = ({
           {...selectedSppData}
           max={max}
           note={
-            selectedSppData.detectorNights < detectorNights
-              ? `${countTypePrefix} reported on ${selectedSppData.detectorNights} of ${detectorNights} nights`
-              : ''
+            type === 'hex'
+              ? `monitored on ${formatNumber(selectedSppData.detectorNights)} ${quantityLabel('nights', selectedSppData.detectorNights)}`
+              : null
           }
           highlight
         />
       ) : null}
 
       {sppData
-        .filter(({ id }) => id !== speciesID)
+        // only show nonzero values unless selected species
+        .filter(({ id, total }) => total > 0 && id !== speciesID)
         .map(({ id, detectorNights: sppDetectorNights, ...rest }) => (
           <SpeciesTotalChart
             key={id}
             {...rest}
             max={max}
             note={
-              sppDetectorNights < detectorNights
-                ? `${countTypePrefix} reported on ${sppDetectorNights} of ${detectorNights} nights`
-                : ''
+              type === 'hex'
+                ? `monitored on ${formatNumber(sppDetectorNights)} ${quantityLabel('nights', sppDetectorNights)}`
+                : null
             }
           />
         ))}
+
+      {nondetectedSpp.length > 0 ? (
+        <Box sx={{ mt: '2rem' }}>
+          <Text sx={{ fontWeight: 'bold' }}>
+            Species monitored but not detected on any night:
+          </Text>
+
+          <Box
+            as="ul"
+            sx={{
+              lineHeight: 1.2,
+              mt: '0.5rem',
+              'li+li': {
+                mt: '0.5rem',
+              },
+            }}
+          >
+            {nondetectedSpp.map(
+              ({ commonName, sciName, detectorNights: sppDetectorNights }) => (
+                <li>
+                  {commonName} ({sciName})
+                  {type === 'hex' ? (
+                    <Text variant="help" sx={{ fontSize: 0 }}>
+                      monitored on {formatNumber(sppDetectorNights)}{' '}
+                      {quantityLabel('nights', sppDetectorNights)}
+                    </Text>
+                  ) : null}
+                </li>
+              )
+            )}
+          </Box>
+        </Box>
+      ) : null}
     </Box>
   )
 }
 
 SpeciesTotalCharts.propTypes = {
+  type: PropTypes.string.isRequired,
   displayField: PropTypes.string.isRequired,
   countType: PropTypes.string.isRequired,
   speciesID: PropTypes.string, // NOTE: speciesID will always be present in data

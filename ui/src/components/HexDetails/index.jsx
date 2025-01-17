@@ -46,12 +46,15 @@ const HexDetails = ({
 
   // TODO: apply all active filters except for species (we want all species)
 
+  // the only valid fields we summarize at this level are detections or detectionNights
   const displayField =
     valueField === 'detectors' || valueField === 'speciesCount'
       ? 'detectionNights'
       : valueField
   const metricLabel = METRIC_LABELS[displayField]
 
+  // calculate total detections (used in header) and number of distinct years
+  // across all sites and detectors
   const { detections, years } = table
     .rollup({
       detections: op.sum('detections'),
@@ -59,6 +62,7 @@ const HexDetails = ({
     })
     .objects()[0]
 
+  // calculate total detector nights and unique admin1 units (used in header)
   const { detectorNights, admin1Name } = detectorsTable
     .rollup({
       detectorNights: op.sum('detectorNights'),
@@ -66,10 +70,12 @@ const HexDetails = ({
     })
     .objects()[0]
 
+  // count number of presence-only detectors
   const presenceDetectors = detectorsTable.filter(
     (d) => d.countType === 'p'
   ).size
 
+  // build list of detectors by source, sorted from oldest first year / month
   const detectorsBySource = groupBy(
     detectorsTable
       .join(
@@ -97,7 +103,8 @@ const HexDetails = ({
       .array('entries')[0]
   )
 
-  // aggregate to nested object of totals by month per species
+  // aggregate to nested object of totals of displayField and detectorNights by
+  // month per species
   const sppByMonth = Object.fromEntries(
     table
       .groupby('species', 'month')
@@ -113,12 +120,15 @@ const HexDetails = ({
       .array('entries')[0]
   )
 
-  // because we're pooling together multiple detecors, we need to take the max
+  // because we're pooling together multiple detectors, we need to take the max
+  // NOTE: this is different than for a single detector, where we use the
+  // number of unique detector nights for that detector calculated in merge.py
   const max = Math.max(
     0,
     ...Object.values(sppTotals).map(({ [displayField]: total }) => total)
   )
 
+  // show warning if there are any presence-only detectors
   const presenceOnlyWarning =
     presenceDetectors > 0 && displayField === 'detections' ? (
       <Text variant="help" sx={{ mb: '2rem', fontSize: 1 }}>
@@ -132,14 +142,17 @@ const HexDetails = ({
       </Text>
     ) : null
 
+  // show warning if there were no species detected on any night
   const speciesWarning =
-    table.size === 0 ? (
+    max === 0 ? (
       <Box sx={{ color: 'highlight.5', mb: '2rem' }}>
         <ExclamationTriangle size="1.5em" />
         No species were detected on any night.
       </Box>
     ) : null
 
+  // show warning if user applied filters to species or occurrences because
+  // these filters are not applied to the hex-level data shown here
   // TODO: remove once filters are hooked up
   const filterNote = hasFilters ? (
     <Text variant="help" sx={{ mb: '1rem' }}>
@@ -210,7 +223,7 @@ const HexDetails = ({
             lineHeight: 1.5,
           }}
         >
-          <Flex sx={{ justifyContent: 'space-between' }}>
+          <Flex sx={{ justifyContent: 'space-between', gap: '1rem' }}>
             <Box sx={{ flex: '1 1 auto' }}>
               {admin1Name ? (
                 <>
@@ -254,6 +267,7 @@ const HexDetails = ({
               {presenceOnlyWarning}
 
               <SpeciesTotalCharts
+                type="hex"
                 displayField={displayField}
                 countType={
                   // show activity label when at least some of the detectors recorded activity
@@ -317,8 +331,8 @@ const HexDetails = ({
 HexDetails.propTypes = {
   id: PropTypes.number.isRequired,
   level: PropTypes.string.isRequired,
-  table: PropTypes.object.isRequired,
-  detectorsTable: PropTypes.object.isRequired,
+  table: PropTypes.object.isRequired, // table filtered to this specific hex
+  detectorsTable: PropTypes.object.isRequired, // table filtered to this specific hex
   map: PropTypes.object.isRequired,
   speciesID: PropTypes.string,
   onClose: PropTypes.func.isRequired,

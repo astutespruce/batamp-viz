@@ -20,6 +20,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
     },
   } = useCrossfilter()
 
+  // the only valid fields we summarize at this level are detections or detectionNights
   const displayField =
     valueField === 'detectors' || valueField === 'speciesCount'
       ? 'detectionNights'
@@ -40,12 +41,8 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
     table,
   } = detector
 
-  const handleZoomTo = () => {
-    if (map) {
-      map.flyTo({ center: [lon, lat], zoom: 17 })
-    }
-  }
-
+  // calculate total detections (used in header) and number of distinct years
+  // across all sites and detectors
   const { detections, years } = table
     .rollup({
       detections: op.sum('detections'),
@@ -83,7 +80,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
   )
 
   // If we are showing nights, we need to show the true effort which is
-  // number of detector nights
+  // number of detector nights calculated for this detector in merge.py
   const max =
     displayField === 'detectionNights'
       ? detectorNights
@@ -92,6 +89,14 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
           ...Object.values(sppTotals).map(({ [displayField]: total }) => total)
         )
 
+  const handleZoomTo = () => {
+    if (map) {
+      map.flyTo({ center: [lon, lat], zoom: 17 })
+    }
+  }
+
+  // show warning if this is a presence-only detector and we're showing detections
+  // (not needed for detectionNights because that isn't impacted by countType)
   const presenceOnlyWarning =
     countType === 'p' && displayField === 'detections' ? (
       <Text variant="help" sx={{ mb: '2rem', fontSize: 1 }}>
@@ -100,14 +105,17 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
       </Text>
     ) : null
 
+  // show warning if there were no species detected on any night
   const speciesWarning =
-    table.size === 0 ? (
+    max === 0 ? (
       <Box sx={{ color: 'highlight.5', mb: '2rem' }}>
         <ExclamationTriangle size="1.5em" />
         No species were detected on any night.
       </Box>
     ) : null
 
+  // show warning if user applied filters to species or occurrences because
+  // these filters are not applied to the detector-level data shown here
   const filterNote = hasFilters ? (
     <Text variant="help" sx={{ mb: '1rem' }}>
       <ExclamationTriangle
@@ -225,6 +233,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
               </Heading>
               {presenceOnlyWarning}
               <SpeciesTotalCharts
+                type="detector"
                 displayField={displayField}
                 countType={countType}
                 speciesID={speciesID}

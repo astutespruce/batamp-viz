@@ -39,12 +39,13 @@ export const createDimensions = (filters) => {
 }
 
 /**
- * Apply aggFuncs to each group
+ * Apply aggFuncs to each value of groupByField and return
  * TODO: this does not handle isArray type dimensions!
  * @param {Object} table - arquero table
  * @param {String} groupByField - field to group table by
  * @param {Function} aggFunc - aggregation function passed to rolloup to calculate total
- * @returns Number
+ * @returns Object
+ * {<groupByField value>: {<aggFunc key>: aggregated value, ...}}
  */
 export const aggregateByGroup = (table, groupByField, aggFuncs) => {
   const outFields = Object.keys(aggFuncs)
@@ -61,7 +62,7 @@ export const aggregateByGroup = (table, groupByField, aggFuncs) => {
 }
 
 /**
- * Aggregate each dimension according to aggFuncs
+ * Apply aggFuncs to each value within each dimension
  * @param {Object} table - arquero table
  * @param {Object} dimensions - object of dimension objects by ID
  * @param {Function} aggFuncs - object of aggregation functions passed to table rollup

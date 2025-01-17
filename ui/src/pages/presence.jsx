@@ -108,7 +108,8 @@ const PresencePage = () => {
           filters={filters}
           valueField="speciesCount"
           aggFuncs={{ speciesCount: op.distinct('species') }}
-          // for dimensions and totals, only aggregate records where species is detected
+          // for dimensions and totals, only aggregate records where species was
+          // actually detected
           preFilter={(d) => d.detections > 0}
         >
           <Sidebar allowScroll={false}>

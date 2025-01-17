@@ -50,23 +50,22 @@ export const Provider = ({
     if (isDebug) {
       window.table = table
       console.time('initialize state')
+      console.time('aggregate stats')
     }
 
     const prefilteredTable = preFilter ? table.filter(preFilter) : table
 
-    if (isDebug) {
-      console.time('aggregate stats')
-    }
-
     // aggregate by aggFuncs at all levels; these all use preFilter when provided
     const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
 
+    // calculate stats per dimension for each aggFunc
     const dimensionStats = aggregateByDimension(
       prefilteredTable,
       dimensions,
       aggFuncs
     )
 
+    // calculate stats per hex level and hex ID for each aggFunc
     const h3Stats = Object.fromEntries(
       H3_COLS.map((col) => [
         col,
@@ -74,6 +73,7 @@ export const Provider = ({
       ])
     )
 
+    // calculate stats per site for each aggFunc
     const siteStats = aggregateByGroup(prefilteredTable, 'siteId', aggFuncs)
 
     if (isDebug) {
@@ -81,17 +81,21 @@ export const Provider = ({
       console.time('aggregate locations')
     }
 
-    // aggregate location IDs that were surveyed
+    // calculate location IDs that were surveyed
+    // NOTE: any location that was not surveyed is not present in the source data
     const h3Ids = Object.fromEntries(
       H3_COLS.map((col) => [col, getDistinctValues(table, col)])
     )
 
+    // calculate uniqe siteIDs that were surveyed
     const siteIds = getDistinctValues(table, 'siteId')
 
     if (isDebug) {
       console.timeEnd('aggregate locations')
     }
 
+    // extract totals for valueField from the statistics above, backfilling with
+    // 0 where the hex / site is not present in stats
     const { total, dimensionTotals, h3Totals, siteTotals } = getTotals({
       topLevelStats,
       dimensionStats,
@@ -103,14 +107,14 @@ export const Provider = ({
     })
 
     const initialState = {
-      // original stats do not change
+      // save the original stats, which do not change based on filters or valueField
       initialTopLevelStats: topLevelStats,
 
       // metric changes when valueField changes
       metric: {
         field: initValueField,
         label: METRIC_LABELS[initValueField],
-        total,
+        total, // store to display as the total possible for this field
       },
 
       // following values are updated when filters change
@@ -163,11 +167,13 @@ export const Provider = ({
 
         const newFilters = { ...prevFilters }
 
-        // only set if filter is non-empty
+        // only set filter if filter is non-empty
         if (filterValue && filterValue.size) {
           newFilters[filterField] = filterValue
         }
 
+        // recalculate table, pre-filtered table, and stats by dimension based
+        // on the updated filters
         const {
           table: filteredTable,
           prefilteredTable,
@@ -184,7 +190,10 @@ export const Provider = ({
           window.filteredTable = filteredTable
         }
 
+        // recalculate top-level stats for each aggFunc based on updated filters
         const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
+
+        // recalculate hex and site stats for each aggFunc based on updated filters
         const h3Stats = Object.fromEntries(
           H3_COLS.map((col) => [
             col,
@@ -193,10 +202,13 @@ export const Provider = ({
         )
         const siteStats = aggregateByGroup(prefilteredTable, 'siteId', aggFuncs)
 
+        // extract the hex and site IDs present after applying filters
         const h3Ids = Object.fromEntries(
           H3_COLS.map((col) => [col, getDistinctValues(filteredTable, col)])
         )
         const siteIds = getDistinctValues(filteredTable, 'siteId')
+
+        // recalculate the totals based on the stats for the updated filters
         const { total, dimensionTotals, h3Totals, siteTotals } = getTotals({
           topLevelStats,
           dimensionStats,
@@ -340,6 +352,8 @@ export const Provider = ({
           siteIds,
         } = prevState
 
+        // extract totals for the new value field; these stats were pre-calculated
+        // based on the current filters and don't need to be recalculated here
         const { total, dimensionTotals, h3Totals, siteTotals } = getTotals({
           topLevelStats,
           dimensionStats,
@@ -397,10 +411,14 @@ Provider.propTypes = {
   table: PropTypes.object.isRequired,
   filters: PropTypes.array.isRequired,
   valueField: PropTypes.string.isRequired,
+  // aggFuncs is a mapping of output key to the aggregation applied to the input field
+  // these will be recalculated on every change to the filter state
   aggFuncs: PropTypes.objectOf(
     PropTypes.oneOfType([PropTypes.func, PropTypes.object])
   ).isRequired,
-  // used to pre-filter table before calculating dimension totals
+  // preFilter is used to pre-filter table before calculating dimension totals
+  // this is only used from the occurrence map where the statistic is number of
+  // species
   preFilter: PropTypes.func,
   children: PropTypes.oneOfType([
     PropTypes.node,

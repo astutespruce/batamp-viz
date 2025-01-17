@@ -116,7 +116,7 @@ const SpeciesDetails = ({ speciesID }) => {
         <CrossfilterProvider
           table={selectedSpeciesTable}
           filters={filters}
-          valueField="detections"
+          valueField="detectionNights"
           aggFuncs={{
             detections: op.sum('detections'),
             detectionNights: op.sum('detectionNights'),

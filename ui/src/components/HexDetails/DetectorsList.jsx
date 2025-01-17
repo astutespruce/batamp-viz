@@ -45,7 +45,6 @@ const DetectorsList = ({ displayField, detectors, map }) => {
               ({
                 id: detId,
                 siteName,
-                [displayField]: total,
                 detectorNights: detDetectorNights,
                 dateRange,
                 lon,

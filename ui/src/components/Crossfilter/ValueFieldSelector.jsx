@@ -13,7 +13,7 @@ const ValueFieldSelector = () => {
     },
   } = useCrossfilter()
 
-  const fields = ['detections', 'detectionNights', 'detectors']
+  const fields = ['detectionNights', 'detections', 'detectors']
 
   const options = fields.map((value) => ({
     value,

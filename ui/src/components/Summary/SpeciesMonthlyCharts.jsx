@@ -16,6 +16,7 @@ const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
       const { commonName, sciName } = SPECIES[id]
 
       let sppMax = 0
+      let sppTotal = 0
       const months = MONTH_LABELS.map((label, i) => {
         const {
           // adjust 1-based indexing in data to 0-based indexing in MONTH_LABELS
@@ -29,6 +30,7 @@ const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
         } = obs
         max = Math.max(max, total || 0)
         sppMax = Math.max(sppMax, total || 0)
+        sppTotal += total || 0
 
         return {
           label: label.slice(0, 3),
@@ -42,13 +44,14 @@ const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
         sciName,
         months,
         max: sppMax,
+        total: sppTotal,
       }
     })
     // only show nonzero values unless selected species
     .filter(({ id, max: sppMax }) => sppMax > 0 || id === speciesID)
-    .sort(({ commonName: leftName }, { commonName: rightName }) =>
-      // sort alphabetically on name
-      leftName < rightName ? -1 : 1
+    .sort(({ total: leftTotal }, { total: rightTotal }) =>
+      // sort by descending total
+      leftTotal > rightTotal ? -1 : 1
     )
 
   const chartScale = scaleLinear().domain([0, max]).range([2, 100])

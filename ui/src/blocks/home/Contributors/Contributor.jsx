@@ -17,7 +17,7 @@ const donutLabels = {
 }
 
 const Contributor = ({
-  contributor,
+  contributors,
   sppDetections,
   detectorNights,
   detectors,
@@ -43,7 +43,7 @@ const Contributor = ({
         borderBottomColor: 'grey.4',
       }}
     >
-      {contributor}
+      {contributors.split(',').join(', ')}
     </Box>
 
     <Flex sx={{ justifyContent: 'space-between' }}>
@@ -105,7 +105,7 @@ const Contributor = ({
 )
 
 Contributor.propTypes = {
-  contributor: PropTypes.string.isRequired,
+  contributors: PropTypes.string.isRequired,
   detectorNights: PropTypes.number.isRequired,
   sppDetections: PropTypes.number.isRequired,
   detectors: PropTypes.number.isRequired,
