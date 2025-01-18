@@ -144,7 +144,7 @@ const HexDetails = ({
 
   // show warning if there were no species detected on any night
   const speciesWarning =
-    max === 0 ? (
+    detections === 0 ? (
       <Box sx={{ color: 'highlight.5', mb: '2rem' }}>
         <ExclamationTriangle size="1.5em" />
         No species were detected on any night.

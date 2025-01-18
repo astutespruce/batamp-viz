@@ -131,7 +131,7 @@ for col in ["wthr_prof", "refl_type"]:
 ### Merge data
 ################################################################################
 
-# merge BatAMP and NABat
+# merge BatAMP and NABat and drop any records that are truly duplicates across all fields
 df = pd.concat([batamp, nabat], ignore_index=True).sort_values(
     # sort so that NABat records are favored over BatAMP and activity preferred
     # over presence
@@ -139,23 +139,107 @@ df = pd.concat([batamp, nabat], ignore_index=True).sort_values(
     ascending=[True, True, True, False, True],
 )
 
-# save record ID to be able to remove individual records
-df["record_id"] = df.index.values.astype("uint")
-
 # update activity columns based on ones that are actually present in the data
 # drop any activity columns that are completely null
 df = df.dropna(axis=1, how="all")
 activity_columns = [c for c in ACTIVITY_COLUMNS if c in df.columns]
+
+orig_count = len(df)
+df = df.drop_duplicates()
+print(f"Dropped {orig_count - len(df):,} completely duplicate records")
+
+# group on all non-activity columns and take the highest value to remove repeated
+# but possibly non-identical rows
+orig_count = len(df)
+nonactivity_cols = [c for c in df.columns if c not in activity_columns]
+df = gp.GeoDataFrame(
+    df.groupby(nonactivity_cols, dropna=False)[activity_columns].max().reset_index(), geometry="geometry", crs=df.crs
+)
+print(f"Dropped {orig_count - len(df):,} records that are duplicates except for varying activity levels")
+
+
+################ IN PROGRESS
+time_cols = ["night", "year", "month", "week", "dayofyear"]
+group_cols = [c for c in nonactivity_cols if c not in time_cols]
+
+# assign a group ID for easier indexing below
+# NOTE: this is roughly equivalent to a "raw" detector as it is coming in from the
+# raw data
+tmp = df[group_cols].groupby(group_cols, dropna=False)[[]].first()
+tmp["group_id"] = np.arange(len(tmp), dtype="uint32")
+df = df.join(tmp, on=group_cols)
+
+# extract first and last nights where species were reported (>= 0 activity)
+df["spp_surveyed"] = (df[activity_columns] >= 0).sum(axis=1).astype("uint8")
+df["min_activity"] = df[activity_columns].min(axis=1)
+
+df = (
+    df.drop(columns=["min_activity"])
+    # calculate min activity when at least one species was reported
+    .join(
+        df.loc[df.spp_surveyed > 0].groupby("group_id", dropna=False).min_activity.min(),
+        on="group_id",
+    )
+    # calculate annual max per species per group
+    .join(
+        df.groupby(["group_id", "year"])[activity_columns]
+        .max()
+        .rename(columns={c: f"{c}_annual_max" for c in activity_columns}),
+        on=["group_id", "year"],
+    )
+    # calculate monthly max per species per group
+    .join(
+        df.groupby(["group_id", "year", "month"])[activity_columns]
+        .max()
+        .rename(columns={c: f"{c}_monthly_max" for c in activity_columns}),
+        on=["group_id", "year", "month"],
+    )
+)
+
+
+# drop any where none of the nights for the group reported >= activity for any one species
+orig_count = len(df)
+df = df.loc[df.min_activity.notnull()].copy()
+print(
+    f"Dropped {orig_count - len(df):,} records from the same dataset / detector that did not record activity for any night"
+)
+
+
+print("backfilling nulls with 0's for species that were otherwise surveyed at the detector")
+for col in activity_columns:
+    # some detectors did not report nondetections; these will only have activity values >0
+    # backfill these when the species was otherwise surveyed in the same year
+    ix = (df.min_activity > 0) & (df[f"{col}_annual_max"] > 0)
+    df.loc[ix, col] = df.loc[ix, col].fillna(0)
+
+    # fill remaining nights for detectors that surveyed species when the species
+    # was surveyed in the same month
+    ix = df[f"{col}_monthly_max"] > 0
+    df.loc[ix, col] = df.loc[ix, col].fillna(0)
+
+
+df = df.drop(
+    columns=["group_id", "min_activity"]
+    + [f"{c}_monthly_max" for c in activity_columns]
+    + [f"{c}_annual_max" for c in activity_columns]
+)
+
 
 # count species present and surveyed
 df["spp_present"] = (df[activity_columns] > 0).sum(axis=1).astype("uint8")
 df["spp_surveyed"] = (df[activity_columns] >= 0).sum(axis=1).astype("uint8")
 df["spp_detections"] = df[activity_columns].sum(axis=1).astype("uint32")
 
-# drop records that did not survey any species; these are not useful
+
+# save record ID to be able to remove individual records
+df["record_id"] = df.index.values.astype("uint")
+
+
+# drop records that did not survey (report as >= 0) any species; these are not useful
 df = df.loc[df.spp_surveyed > 0].reset_index(drop=True)
 
-# IMPORTANT: fill null counts with -1 for deduplication, then reset to null later
+# IMPORTANT: fill null counts with -1 for deduplication (because nan != nan),
+# then reset to null later
 for col in activity_columns:
     df[col] = df[col].astype("Int32").fillna(-1)
 

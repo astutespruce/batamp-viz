@@ -102,7 +102,7 @@ const SpeciesTotalCharts = ({
           >
             {nondetectedSpp.map(
               ({ commonName, sciName, detectorNights: sppDetectorNights }) => (
-                <li>
+                <li key={commonName}>
                   {commonName} ({sciName})
                   {type === 'hex' ? (
                     <Text variant="help" sx={{ fontSize: 0 }}>
