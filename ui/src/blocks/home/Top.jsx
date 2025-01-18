@@ -19,7 +19,7 @@ const Top = () => {
           )
         }
       }
-      speciesScreenshot: file(relativePath: { eq: "explore_species.jpg" }) {
+      speciesScreenshot: file(relativePath: { eq: "explore_species.png" }) {
         childImageSharp {
           gatsbyImageData(
             width: 550
@@ -30,7 +30,7 @@ const Top = () => {
         }
       }
       occurrenceScreenshot: file(
-        relativePath: { eq: "explore_occurrences.jpg" }
+        relativePath: { eq: "explore_occurrences.png" }
       ) {
         childImageSharp {
           gatsbyImageData(
@@ -122,7 +122,7 @@ const Top = () => {
       </Paragraph>
 
       <Box>
-        <Grid columns={[0, '2fr 1fr']} gap={5}>
+        <Grid columns={[0, '1fr 1fr']} gap={5} sx={{ mt: '1rem' }}>
           <Box as="ul" sx={{ mb: 0, color: 'grey.9', fontSize: 3 }}>
             <li>
               explore seasonal trends in activity or detections for different
@@ -155,7 +155,7 @@ const Top = () => {
           Explore occurrence data aggregated across all species within this
           application. This allows you to:
         </Paragraph>
-        <Grid columns={[0, '2fr 1fr']} gap={5}>
+        <Grid columns={[0, '1fr 1fr']} gap={5} sx={{ mt: '1rem' }}>
           <Box as="ul" sx={{ mb: 0, color: 'grey.9', fontSize: 3 }}>
             <li>explore trends in species co-occurrence.</li>
             <li>
@@ -163,8 +163,10 @@ const Top = () => {
               on sampling effort.
             </li>
             <li>
-              explore which species are detected in particular regions simply by
-              zooming the map to the area you are interested in.
+              filter the data to explore trends in co-occurrence for a given
+              state or province as well as a given time period or season. You
+              are able to combine multiple filters for season, year, state /
+              province, and more.
             </li>
             <li>identify species mis-identification and information gaps.</li>
           </Box>
