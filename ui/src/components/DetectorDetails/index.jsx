@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
-import { escape } from 'arquero'
+import { escape, op } from 'arquero'
 import { Flex } from 'theme-ui'
 
+import { useCrossfilter } from 'components/Crossfilter'
 import Detector from './Detector'
 import Iterator from './Iterator'
 
@@ -16,11 +17,20 @@ const DetectorDetails = ({
   map,
   onClose,
 }) => {
+  const {
+    state: { filteredTable },
+  } = useCrossfilter()
+
   const [index, setIndex] = useState(0)
 
+  // filter detectors based on current state of filters
   const detectorIds = useMemo(
-    () => detectorsTable.filter(escape((d) => d.siteId === siteId)).array('id'),
-    [detectorsTable, siteId]
+    () =>
+      filteredTable
+        .filter(escape((d) => d.siteId === siteId))
+        .rollup({ detId: op.array_agg_distinct('detId') })
+        .array('detId')[0],
+    [filteredTable, siteId]
   )
 
   return (

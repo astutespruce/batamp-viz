@@ -1,7 +1,6 @@
 import { fromArrow, op, escape } from 'arquero'
 
 import { MONTHS, MONTH_LABELS, H3_COLS, SPECIES_ID, SPECIES } from 'config'
-import { groupBy } from 'util/data'
 
 const fetchFeather = async (url) => {
   const response = await fetch(url)
@@ -117,12 +116,7 @@ export const loadOccurrenceData = async () => {
     },
   ]
 
-  const detectors = detectorsTable.objects()
-
   return {
-    // detectorsIndex: indexBy(detectors, 'id'),
-    // FIXME: remove grouping
-    detectorsBySite: groupBy(detectors, 'siteId'),
     detectorsTable,
     allSpeciesTable,
     filters,
@@ -130,10 +124,19 @@ export const loadOccurrenceData = async () => {
 }
 
 export const loadSingleSpeciesData = async (speciesID) => {
-  const { detectorsTable, allSpeciesTable } = await loadData()
+  const { detectorsTable: rawDetectorsTable, allSpeciesTable } =
+    await loadData()
 
   const selectedSpeciesTable = allSpeciesTable.filter(
     escape((d) => d.species === speciesID)
+  )
+
+  // only show detectors that monitored this species
+  const detIds = selectedSpeciesTable
+    .rollup({ detId: op.array_agg_distinct('detId') })
+    .array('detId')[0]
+  const detectorsTable = rawDetectorsTable.filter(
+    escape((d) => op.includes(detIds, d.id))
   )
 
   const { admin1Name: admin1Names, years } = selectedSpeciesTable
@@ -195,10 +198,7 @@ export const loadSingleSpeciesData = async (speciesID) => {
     },
   ]
 
-  const detectors = detectorsTable.objects()
-
   return {
-    detectorsBySite: groupBy(detectors, 'siteId'),
     detectorsTable,
     allSpeciesTable,
     selectedSpeciesTable,

@@ -133,7 +133,7 @@ export const getTotals = ({
  * dimension.
  * @returns Object with filtered table, preFilteredTable, and dimension stats according to aggFuncs
  */
-export const applyFilters = ({
+export const applyFiltersAndAggregate = ({
   table: rawTable,
   dimensions,
   filters: rawFilters,
@@ -210,4 +210,45 @@ export const applyFilters = ({
     prefilteredTable,
     dimensionStats,
   }
+}
+
+/**
+ * Apply filters to table and return filtered table
+ * @returns filteredTable
+ */
+export const filterTable = ({
+  table: rawTable,
+  dimensions,
+  filters: rawFilters,
+}) => {
+  let table = rawTable
+
+  // do a first pass and apply all filters into derived columns so that these
+  // can be used later in a filter expression
+  const filters = Object.entries(rawFilters)
+    /* eslint-disable-next-line no-unused-vars */
+    .filter(([field, values]) => values && values.size > 0)
+    .map(([field, values]) => {
+      if (dimensions[field].isArray) {
+        table = table.derive({
+          [`${field}_filter`]: escape((d) => op.hasAny([...values], d[field])),
+        })
+      } else {
+        table = table.derive({
+          [`${field}_filter`]: escape((d) => op.has(values, d[field])),
+        })
+      }
+
+      return field
+    })
+
+  // apply all filters using AND logic based on columns created above
+  const fields = filters.map((field) => `${field}_filter`)
+  if (fields.length > 0) {
+    table = table.filter(
+      escape((d) => fields.filter((f) => d[f]).length === fields.length)
+    )
+  }
+
+  return table
 }

@@ -41,7 +41,21 @@ const Contributors = () => {
     .derive({ percent: aq.escape((d) => (100 * d[metric]) / total) })
     .objects()
 
-  const remainder = contributorsTable.slice(6).array('contributors')
+  // split contributors into a unique list of names after splitting out the first
+  // contributor for each topN contributor (which may be multiple people)
+  const contributorsArray = contributorsTable.array('contributors')
+  const topContributors = new Set(
+    contributorsArray.slice(0, 6).map((c) => c.split(',')[0])
+  )
+  const remainingContributors = new Set()
+  contributorsArray.slice(6).forEach((c) => {
+    c.split(',').forEach((indiv) => {
+      if (!topContributors.has(indiv)) {
+        remainingContributors.add(indiv)
+      }
+    })
+  })
+  const sortedRemainingContributors = [...remainingContributors].sort()
 
   return (
     <Box sx={{ py: '3rem' }}>
@@ -75,12 +89,12 @@ const Contributors = () => {
           <Contributor key={row.contributors} metric={metric} {...row} />
         ))}
       </Grid>
-      {remainder.length > 0 && (
+      {sortedRemainingContributors.length > 0 && (
         <ExpandableParagraph
           sx={{ mt: '1rem', '& p': { fontSize: 2 } }}
-          snippet={`And ${remainder.slice(0, 32).join(', ')}...`}
+          snippet={`And ${sortedRemainingContributors.slice(0, 32).join(', ')}...`}
         >
-          and {remainder.join(', ')}.
+          and {sortedRemainingContributors.join(', ')}.
         </ExpandableParagraph>
       )}
     </Box>

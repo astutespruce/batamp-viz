@@ -72,8 +72,7 @@ const DetectorsList = ({ displayField, detectors, map }) => {
                 >
                   <Flex
                     sx={{
-                      gap: '0.5rem',
-                      flexWrap: 'wrap',
+                      gap: '1rem',
                       justifyContent: 'space-between',
                     }}
                   >
@@ -83,8 +82,8 @@ const DetectorsList = ({ displayField, detectors, map }) => {
                         handleZoomTo(detId, lon, lat)
                       }}
                       sx={{
-                        fontSize: 1,
                         flex: '0 0 auto',
+                        fontSize: 1,
                         color: 'link',
                         cursor: 'pointer',
                         '&:hover': { textDecoration: 'underline' },

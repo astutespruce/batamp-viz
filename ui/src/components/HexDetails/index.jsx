@@ -6,7 +6,7 @@ import { escape, op } from 'arquero'
 
 import { METRIC_LABELS } from 'config'
 import { Tab, Tabs } from 'components/Tabs'
-import { useCrossfilter } from 'components/Crossfilter'
+import { useCrossfilter, filterTable } from 'components/Crossfilter'
 import { SpeciesTotalCharts, SpeciesMonthlyCharts } from 'components/Summary'
 import { groupBy } from 'util/data'
 import { formatNumber, quantityLabel } from 'util/format'
@@ -16,35 +16,40 @@ import DetectorsList from './DetectorsList'
 const HexDetails = ({
   id,
   level,
-  table,
-  detectorsTable: rawDetectorsTable,
+  table: unfilteredTable,
+  detectorsTable: unfilteredDetectorsTable,
   map,
   speciesID,
   onClose,
 }) => {
-  // if speciesID is set, need to filter detectorsTable to detectors that monitored this species
-  let detectorsTable = null
-  if (speciesID) {
-    const ids = table
-      .filter(escape((d) => d.species === speciesID))
-      .rollup({ detId: op.array_agg_distinct('detId') })
-      .array('detId')[0]
-
-    detectorsTable = rawDetectorsTable.filter(
-      escape((d) => op.includes(ids, d.id))
-    )
-  } else {
-    detectorsTable = rawDetectorsTable
-  }
-
   const {
     state: {
       metric: { field: valueField },
+      dimensions,
+      filters,
       hasFilters,
     },
   } = useCrossfilter()
 
-  // TODO: apply all active filters except for species (we want all species)
+  let table = unfilteredTable
+  let detectorsTable = unfilteredDetectorsTable
+
+  // apply all active filters
+  // show only detectors with sites that are visible on the map
+  if (hasFilters) {
+    table = filterTable({ table: unfilteredTable, dimensions, filters })
+
+    const detIds = table
+      .rollup({ detId: op.array_agg_distinct('detId') })
+      .array('detId')[0]
+
+    detectorsTable = detectorsTable.filter(
+      escape((d) => op.includes(detIds, d.id))
+    )
+  }
+
+  const showFilterWarning = unfilteredTable.size - table.size
+  const hiddenDetectors = unfilteredDetectorsTable.size - detectorsTable.size
 
   // the only valid fields we summarize at this level are detections or detectionNights
   const displayField =
@@ -152,15 +157,14 @@ const HexDetails = ({
     ) : null
 
   // show warning if user applied filters to species or occurrences because
-  // these filters are not applied to the hex-level data shown here
-  // TODO: remove once filters are hooked up
-  const filterNote = hasFilters ? (
+  // these filters are pplied to the hex-level data shown here
+  const filterNote = showFilterWarning ? (
     <Text variant="help" sx={{ mb: '1rem' }}>
       <ExclamationTriangle
         size="1em"
         style={{ marginTop: '-3px', marginRight: '0.25em' }}
       />
-      Note: your filters are not applied to the following data.
+      Note: your filters are applied to the following data.
     </Text>
   ) : null
 
@@ -315,7 +319,19 @@ const HexDetails = ({
           )}
         </Tab>
         <Tab id="detectors" label="Detectors">
-          {filterNote}
+          {hiddenDetectors ? (
+            <Text variant="help" sx={{ mb: '1rem' }}>
+              <ExclamationTriangle
+                size="1em"
+                style={{ marginTop: '-3px', marginRight: '0.25em' }}
+              />
+              Note: only the detectors that meet your filters are included
+              below.
+              <br /> {formatNumber(hiddenDetectors)}{' '}
+              {quantityLabel('detectors', hiddenDetectors)} in this area{' '}
+              {hiddenDetectors === 1 ? 'does' : 'do'} not meet your filters.
+            </Text>
+          ) : null}
 
           <DetectorsList
             displayField={displayField}

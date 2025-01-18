@@ -27,21 +27,24 @@ const SummaryStats = () => {
       <Container sx={{ my: 0, p: 0 }}>
         <Grid
           columns={3}
+          gap={0}
           sx={{
             fontSize: 3,
             py: '0.5rem',
             '&>div': {
-              px: '0.5rem',
               py: '0.5rem',
             },
             '&>div+div': {
               ml: '0.5rem',
               borderLeft: '1px solid #FFF',
+              pl: '2rem',
             },
           }}
         >
           <Box>
-            <Flex sx={{ alignItems: 'baseline', gap: '0.4rem' }}>
+            <Flex
+              sx={{ alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' }}
+            >
               <Text sx={{ fontSize: 5, fontWeight: 'bold', display: 'inline' }}>
                 {formatNumber(sppDetections, 0)}
               </Text>
@@ -50,7 +53,9 @@ const SummaryStats = () => {
             of <b>{species}</b> species out of <b>{speciesSurveyed}</b> surveyed
           </Box>
           <Box>
-            <Flex sx={{ alignItems: 'baseline', gap: '0.4rem' }}>
+            <Flex
+              sx={{ alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' }}
+            >
               <Text sx={{ fontSize: 5, fontWeight: 'bold', display: 'inline' }}>
                 {formatNumber(detectorNights, 0)}
               </Text>
@@ -59,7 +64,9 @@ const SummaryStats = () => {
             monitored during <b>{years.length}</b> years
           </Box>
           <Box>
-            <Flex sx={{ alignItems: 'baseline', gap: '0.4rem' }}>
+            <Flex
+              sx={{ alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' }}
+            >
               <Text sx={{ fontSize: 5, fontWeight: 'bold', display: 'inline' }}>
                 {formatNumber(detectors, 0)}
               </Text>

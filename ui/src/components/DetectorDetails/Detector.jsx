@@ -122,7 +122,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
         size="1em"
         style={{ marginTop: '-3px', marginRight: '0.25em' }}
       />
-      Note: your filters are not applied to the following data.
+      Note: your filters are NOT applied to the following data.
     </Text>
   ) : null
 

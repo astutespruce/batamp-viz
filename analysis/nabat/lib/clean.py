@@ -136,7 +136,9 @@ def clean_nabat(df):
     # drop any with missing height (these seem to be all missing activity values anyway)
     ix = df.mic_ht.isnull()
     if ix.any():
-        warnings.warn(f"WARNING: {ix.sum():,} NABat records are missing mic_ht and will be dropped")
+        warnings.warn(
+            f"WARNING: {ix.sum():,} NABat records are missing mic_ht and will be dropped (most of these are missing activity values anyway)"
+        )
         df = df.loc[~ix].copy()
 
     return df

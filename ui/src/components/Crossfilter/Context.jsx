@@ -14,7 +14,7 @@ import { isDebug } from 'util/dom'
 
 import {
   aggregateByDimension,
-  applyFilters,
+  applyFiltersAndAggregate,
   createDimensions,
   getDistinctValues,
   aggregateByGroup,
@@ -107,6 +107,9 @@ export const Provider = ({
     })
 
     const initialState = {
+      // save the original dimensions for other consumers
+      dimensions,
+
       // save the original stats, which do not change based on filters or valueField
       initialTopLevelStats: topLevelStats,
 
@@ -178,7 +181,7 @@ export const Provider = ({
           table: filteredTable,
           prefilteredTable,
           dimensionStats,
-        } = applyFilters({
+        } = applyFiltersAndAggregate({
           table,
           dimensions,
           filters: newFilters,
