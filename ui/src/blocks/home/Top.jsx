@@ -99,7 +99,31 @@ const Top = () => {
         </Paragraph>
       </Grid>
 
-      <Heading as="h2" sx={{ mt: '5rem' }}>
+      <Box sx={{ bg: 'primary.1', p: '1rem', mt: '4rem' }}>
+        <Heading as="h2" sx={{ mt: 0 }}>
+          North American Bat Monitoring Program
+        </Heading>
+        <Paragraph>
+          This application now includes stationary acoustic monitoring data from
+          the{' '}
+          <OutboundLink to="https://www.nabatmonitoring.org/">
+            North American Bat Monitoring Program
+          </OutboundLink>{' '}
+          (NABat) that have been shared with BatAMP. NABat is a collaborative
+          bat monitoring effort that integrates data collected by multiple
+          organizations across North America, with a specific focus on
+          aggregating bat monitoring data to inform population status and
+          trends.
+          <br />
+          <br />
+          To share your data on NABat with BatAMP, simply login to NABat and
+          navigate to your project, edit project details, and add BatAMP as a
+          collaborating organization. You don&apos;t need to upload your data
+          again to BatAMP.
+        </Paragraph>
+      </Box>
+
+      <Heading as="h2" sx={{ mt: '4rem' }}>
         Bat Acoustic Monitoring Visualization Tool
       </Heading>
       <Paragraph>
