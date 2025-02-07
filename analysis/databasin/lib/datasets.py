@@ -106,9 +106,14 @@ def download_dataset(client, id):
     ]:
         if col in df.columns:
             df[col] = df[col].fillna("").str.strip()
-            df.loc[df[col].str.lower() == "none", [col]] = ""
+
+            if col != "refl_type":
+                # none has special meaning for refl_type but indicates missing data for the rest
+                df.loc[df[col].str.lower() == "none", [col]] = ""
         else:
             df[col] = ""
+
+    df["ref_type"]
 
     df["contributors"] = (df.first_name + " " + df.last_name).str.strip()
 

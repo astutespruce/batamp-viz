@@ -84,17 +84,36 @@ def clean_batamp(df, admin_df):
     ix = df.site_name.str.startswith("Stantec Offshore")
     df.loc[ix, "site_name"] = "Stantec Offshore"
 
-    # Cleanup call IDs for known issues
+    ### Cleanup call IDs for known issues
+    # some datasets have auto-increment issues from Excel; override their values
+    df.loc[
+        df.dataset.isin(
+            [
+                "457eba95878349f9bfdfc1385184f194",
+                "fd96521df507498eb1aedbbfba386290",
+                "0eeca952d4704b06b48905a152570f78",
+                # NOTE: this one has values for Sonobat 2 and Sonobat 3, which are valid, but they appear to fall in a series which suggests auto increment issues; Sonobat is used for nearly all other records in this dataset
+                "d4cce5c5faed441baf99ec27f45b05c9",
+            ]
+        ),
+        "call_id_1",
+    ] = "SonoBat 4"
+
     for col in ["call_id_1", "call_id_2"]:
         df[col] = (
             df[col]
             .replace("Sonobat30", "SonoBat 30")
+            .str.replace("SonoBat 4.2", "SonoBat 4", regex=False, case=False)
             .str.replace("sonobat", "SonoBat", regex=False, case=False)
+            .replace("Kaleidoscope Analysis Software", "Kaleidoscope")
             .str.replace("Experience", "experience")
             .str.replace("Previous", "Personal")
             .str.replace("Filters", "filters")
-            .str.replace("Other Custom Quantitative Method", "Other custom quantitative method")
-            .str.replace("Visual Comparison to Call Library", "Visual comparison to call library")
+            .str.replace("Other Custom Quantitative Method", "Manual vetting", regex=False, case=False)
+            .str.replace("Visual Comparison to Call Library", "Manual vetting", regex=False, case=False)
+            .str.replace("Personal Experience", "Manual vetting", regex=False, case=False)
+            .str.replace("Previous experience", "Manual vetting", regex=False, case=False)
+            .replace("Echoclean/Manual", "Manual vetting")
         )
 
     # Coalesce call ids into single comma-delimited field
@@ -128,7 +147,53 @@ def clean_batamp(df, admin_df):
 
     df["det_mfg"] = df.det_mfg.replace("Sonobat", "SonoBat").replace("WILDLIFE ACOUSTICS", "Wildlife Acoustics")
 
-    # strip manufacturer because it is merged in from above
+    ### strip manufacturer because it is merged in from above
+    # Fix invalid values that result from Excel auto-increment
+    df.loc[df.dataset == "9cdf366e2d3b4e018ba2dd944d3a7f3b", "det_model"] = "SD2"
+    df.loc[
+        (df.dataset == "4826c07604084155a80b607d97077160")
+        & (
+            df.det_model.isin(
+                [
+                    "SD3",
+                    "SD4",
+                    "SD5",
+                    "SD6",
+                    "SD7",
+                    "SD8",
+                    "SD9",
+                    "SD10",
+                    "SD11",
+                    "SD12",
+                    "SD13",
+                    "SD14",
+                    "SD15",
+                    "SD16",
+                    "SD17",
+                    "SD18",
+                    "SD19",
+                    "SD20",
+                    "SD21",
+                    "SD22",
+                    "SD23",
+                    "SD24",
+                    "SD25",
+                    "SD26",
+                    "SD27",
+                    "SD28",
+                    "SD29",
+                    "SD30",
+                ]
+            )
+        ),
+        "det_model",
+    ] = "SD2"
+
+    df.loc[
+        (df.dataset == "dc5d4686e8824594899a593deeb24467") & df.det_model.isin(["Song Meter 5", "Song Meter 6"]),
+        "det_model",
+    ] = "Song Meter 4"
+
     df["det_model"] = (
         df.det_model.str.replace("SM4BAT-FS", "SM4Bat-FS", case=False, regex=False)
         .str.replace("SM4BAT-ZC", "SM4Bat-ZC", case=False, regex=False)
