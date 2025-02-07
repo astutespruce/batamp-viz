@@ -480,11 +480,6 @@ df["spp_present"] = (df[activity_columns] > 0).sum(axis=1).astype("uint8")
 df["spp_surveyed"] = (df[activity_columns] >= 0).sum(axis=1).astype("uint8")
 df["spp_detections"] = df[activity_columns][df[activity_columns] > 0].sum(axis=1).astype("uint32")
 
-
-### Save merged data
-df.to_feather(derived_dir / "merged.feather")
-
-
 ### convert missing values back to null
 for col in activity_columns:
     df[col] = df[col].replace(-1, np.nan)
@@ -546,11 +541,14 @@ for entry, col in zip(hex_levels, H3_COLS):
     # use smaller index values to avoid BigInt issues in UI (can currently fit all values into uint16)
     index_values = (index_values + 1).astype("uint16")
     sites[col] = pd.Series(index_values, dtype="category")
+
     hexes = gp.GeoDataFrame(
         {"id": np.arange(1, len(ids) + 1, dtype="uint16")},
         geometry=shapely.from_wkb(cells_to_wkb_polygons(ids)),
         crs="EPSG:4326",
     )
+    hexes.to_feather(derived_dir / f"{col}.feather")
+
     outfilename = tmp_dir / f"{col}.pmtiles"
     tilesets.append(outfilename)
     create_tileset(hexes, outfilename, layer=col, minzoom=entry["minzoom"], maxzoom=entry["maxzoom"])
@@ -624,7 +622,9 @@ detectors = detectors.drop(columns=["det_id"])
 
 # set contributors and datasets to comma-delimited list
 for col in ["dataset", "organization", "contributors", "site_name"]:
-    detectors[col] = detectors[col].apply(",".join).apply(lambda x: ",".join(sorted(set(x.split(",")))))
+    detectors[col] = (
+        detectors[col].apply(",".join).apply(lambda x: ",".join([x for x in sorted(set(x.split(","))) if x != ""]))
+    )
 
 # calculate date range and number of nights
 detectors["date_range"] = detectors.detector_nights.apply(sorted).apply(
@@ -847,3 +847,8 @@ summary = {
 
 with open(json_dir / "summary.json", "w") as outfile:
     outfile.write(json.dumps(summary, ensure_ascii=False))
+
+################################################################################
+### Save merged data
+################################################################################
+df.to_feather(derived_dir / "merged.feather")

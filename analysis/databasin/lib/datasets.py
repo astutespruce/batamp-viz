@@ -113,7 +113,7 @@ def download_dataset(client, id):
         else:
             df[col] = ""
 
-    df["ref_type"]
+    df["refl_type"] = df.refl_type.replace("Nothing", "none")
 
     df["contributors"] = (df.first_name + " " + df.last_name).str.strip()
 

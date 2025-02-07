@@ -28,7 +28,7 @@ const VerticalBars = ({ data, max, onToggleFilter }) => {
           lineHeight: 1,
           fontSize: '0.6rem',
           textAlign: 'right',
-          width: scale.domain()[1] > 1000 ? '3em' : '1rem',
+          width: scale.domain()[1] > 1000 ? '3.5em' : '1.5rem',
         }}
       >
         {scale.ticks(3).map((d) => (
@@ -37,7 +37,7 @@ const VerticalBars = ({ data, max, onToggleFilter }) => {
             sx={{
               lineHeight: 1,
               position: 'absolute',
-              right: 0,
+              right: '4px',
               bottom: `calc(${scale(d)}px - 0.25rem)`,
             }}
           >
@@ -47,24 +47,26 @@ const VerticalBars = ({ data, max, onToggleFilter }) => {
       </Box>
       <Box
         sx={{
+          position: 'absolute',
           ml: '2px',
           bottom: '1rem',
+          top: 0,
+          right: 0,
+          left: scale.domain()[1] >= 1000 ? '2rem' : '1.4rem',
           height: '100px',
-          flex: '0 0 auto',
-          borderRight: '1px solid',
-          borderRightColor: 'grey.2',
-          width: '0.5rem',
         }}
       >
         {scale.ticks(3).map((d) => (
           <Box
             key={d}
             sx={{
+              zIndex: 0,
               position: 'absolute',
               bottom: `${scale(d)}px`,
-              width: '0.5rem',
-              height: '1px',
-              bg: 'grey.5',
+              left: 0,
+              right: 0,
+              borderBottom: '1px dotted',
+              borderBottomColor: 'grey.2',
             }}
           />
         ))}
@@ -73,6 +75,10 @@ const VerticalBars = ({ data, max, onToggleFilter }) => {
       <Flex
         sx={{
           flex: '1 1 auto',
+          borderRight: '1px solid',
+          borderRightColor: 'grey.2',
+          borderLeft: '1px solid',
+          borderLeftColor: 'grey.2',
         }}
       >
         {data.map(({ value, ...props }, i) => (

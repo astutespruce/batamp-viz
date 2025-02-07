@@ -7,9 +7,7 @@ from dotenv import load_dotenv, find_dotenv
 
 from analysis.databasin.lib import download_datasets
 
-warnings.filterwarnings(
-    "ignore", message=".*this will no longer exclude empty.*", category=FutureWarning
-)
+warnings.filterwarnings("ignore", message=".*this will no longer exclude empty.*", category=FutureWarning)
 
 
 # these are known IDs added manually
@@ -35,6 +33,7 @@ ACTIVITY_DATASET_IDS = [
     "3ea9c142b25f4b2b811daa2d7e69275e",  # 2022
     "4a9472ff64d34fa68d8c4f8454b74716",  # 2023
     "6cd66af96cc046ea97f1515684b11dd5",  # 2024
+    "b425fd275564499cb624c897f44c2ab4",  # 2025
 ]
 
 PRESENCE_DATASET_IDS = [

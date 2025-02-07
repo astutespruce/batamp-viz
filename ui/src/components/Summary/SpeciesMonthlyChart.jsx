@@ -46,7 +46,7 @@ const SpeciesMonthlyChart = ({
           lineHeight: 1,
           fontSize: '0.6rem',
           textAlign: 'right',
-          width: scale.domain()[1] > 1000 ? '3em' : '1rem',
+          width: scale.domain()[1] >= 1000 ? '3em' : '1.5rem',
         }}
       >
         {scale.ticks(4).map((d) => (
@@ -55,7 +55,7 @@ const SpeciesMonthlyChart = ({
             sx={{
               lineHeight: 1,
               position: 'absolute',
-              right: 0,
+              right: '4px',
               bottom: `calc(${scale(d)}px - 0.25rem)`,
             }}
           >
@@ -65,13 +65,13 @@ const SpeciesMonthlyChart = ({
       </Box>
       <Box
         sx={{
+          position: 'absolute',
+          zIndex: 0,
           ml: '2px',
-          bottom: '1rem',
+          top: 0,
           height: '100px',
-          flex: '0 0 auto',
-          borderRight: '1px solid',
-          borderRightColor: 'grey.2',
-          width: '0.5rem',
+          right: 0,
+          left: scale.domain()[1] >= 1000 ? '2rem' : '1.4rem',
         }}
       >
         {scale.ticks(4).map((d) => (
@@ -80,9 +80,10 @@ const SpeciesMonthlyChart = ({
             sx={{
               position: 'absolute',
               bottom: `${scale(d)}px`,
-              width: '0.5rem',
-              height: '1px',
-              bg: 'grey.5',
+              left: 0,
+              right: 0,
+              borderBottom: '1px dotted',
+              borderBottomColor: 'grey.2',
             }}
           />
         ))}
@@ -93,6 +94,10 @@ const SpeciesMonthlyChart = ({
           flex: '1 1 auto',
           flexWrap: 'no-wrap',
           justifyContent: 'space-evenly',
+          borderLeft: '1px solid',
+          borderLeftColor: 'grey.2',
+          borderRight: '1px solid',
+          borderRightColor: 'grey.2',
         }}
       >
         {months.map(({ label, total }) => (

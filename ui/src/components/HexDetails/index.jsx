@@ -229,35 +229,27 @@ const HexDetails = ({
           </Box>
         </Flex>
 
-        <Box
+        <Flex
           sx={{
             pt: '0.5rem',
             mt: '0.25rem',
             borderTop: '1px solid #FFF',
             color: 'grey.9',
             lineHeight: 1.5,
+            justifyContent: admin1Name ? 'space-between' : 'flex-end',
+            gap: '1rem',
           }}
         >
-          <Flex sx={{ justifyContent: 'space-between', gap: '1rem' }}>
+          {admin1Name ? (
             <Box sx={{ flex: '1 1 auto' }}>
-              {admin1Name ? (
-                <>
-                  <b>{admin1Name.join('; ')}</b>
-                  <br />
-                </>
-              ) : null}
-              <b>{formatNumber(detectorsTable.size, 0)}</b>{' '}
-              {quantityLabel('detectors', detectorsTable.size)}
+              <b>{admin1Name.join('; ')}</b>
             </Box>
-            <Box sx={{ flex: '0 0 auto', textAlign: 'right' }}>
-              species detected on <b>{formatNumber(totalDetectionNights, 0)}</b>{' '}
-              {quantityLabel('nights', totalDetectionNights)}
-              <br />
-              <b>{formatNumber(totalDetectorNights, 0)}</b>{' '}
-              {quantityLabel('nights', totalDetectorNights)} monitored
-            </Box>
-          </Flex>
-        </Box>
+          ) : null}
+          <Box sx={{ flex: '0 0 auto' }}>
+            <b>{formatNumber(detectorsTable.size, 0)}</b>{' '}
+            {quantityLabel('detectors', detectorsTable.size)}
+          </Box>
+        </Flex>
       </Box>
 
       <Tabs sx={{ flex: '1 1 auto', overflow: 'hidden' }}>
