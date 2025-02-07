@@ -12,6 +12,7 @@ const HorizontalBar = ({
   quantity,
   max,
   showCount,
+  valueType,
   onClick,
 }) => {
   const position = quantity / max
@@ -45,6 +46,7 @@ const HorizontalBar = ({
         {showCount && (
           <Box sx={{ flex: '0 0 auto', fontSize: 1 }}>
             {formatNumber(quantity)}
+            {valueType === 'percent' ? '%' : ''}
           </Box>
         )}
       </Flex>
@@ -89,6 +91,7 @@ HorizontalBar.propTypes = {
   quantity: PropTypes.number.isRequired,
   max: PropTypes.number.isRequired,
   showCount: PropTypes.bool,
+  valueType: PropTypes.string,
   onClick: PropTypes.func.isRequired,
 }
 
@@ -96,6 +99,7 @@ HorizontalBar.defaultProps = {
   isFiltered: false,
   isExcluded: false,
   showCount: true,
+  valueType: 'count',
 }
 
 // TODO: optimize for changes to the callback

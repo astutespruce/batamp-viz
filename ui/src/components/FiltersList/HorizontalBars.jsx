@@ -4,7 +4,13 @@ import { dequal } from 'dequal'
 
 import Bar from './HorizontalBar'
 
-const HorizontalBars = ({ data, max, showCount, onToggleFilter }) => (
+const HorizontalBars = ({
+  data,
+  max,
+  showCount,
+  valueType,
+  onToggleFilter,
+}) => (
   <>
     {data.map(({ value, ...props }) => (
       <Bar
@@ -13,6 +19,7 @@ const HorizontalBars = ({ data, max, showCount, onToggleFilter }) => (
         {...props}
         max={max}
         showCount={showCount}
+        valueType={valueType}
         onClick={onToggleFilter}
       />
     ))}
@@ -27,11 +34,13 @@ HorizontalBars.propTypes = {
   ).isRequired,
   max: PropTypes.number.isRequired,
   showCount: PropTypes.bool,
+  valueType: PropTypes.string,
   onToggleFilter: PropTypes.func.isRequired,
 }
 
 HorizontalBars.defaultProps = {
   showCount: true,
+  valueType: 'count',
 }
 
 // Memoize as a function of data

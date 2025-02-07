@@ -11,8 +11,12 @@ export const formatNumber = (number, decimals = null) => {
       targetDecimals = 2
     }
   }
-  // override targetDecimals for integer values
-  if (Math.round(absNumber) === absNumber) {
+  // override targetDecimals for (effectively) integer values
+  if (
+    Math.round(absNumber) === absNumber ||
+    Math.round(number * 10 ** targetDecimals) / 10 ** targetDecimals ===
+      Math.round(number)
+  ) {
     targetDecimals = 0
   }
 
@@ -31,7 +35,7 @@ export const formatNumber = (number, decimals = null) => {
  * @param {*} quantity
  */
 export const quantityLabel = (label, quantity) => {
-  if (quantity === 1 && label.endsWith('s')) {
+  if (quantity === 1 && !label.endsWith('species') && label.endsWith('s')) {
     return label.slice(0, label.length - 1)
   }
   return label

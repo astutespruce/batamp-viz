@@ -46,7 +46,10 @@ const SpeciesMap = ({
     metric,
     h3Totals,
     h3Renderer: Object.fromEntries(
-      H3_COLS.map((col) => [col, getHexRenderer(Object.values(h3Totals[col]))])
+      H3_COLS.map((col) => [
+        col,
+        getHexRenderer(Object.values(h3Totals[col]), metric.type),
+      ])
     ),
     siteTotals,
     siteMax: Math.max(0, Math.max(...Object.values(siteTotals))),
@@ -178,13 +181,13 @@ const SpeciesMap = ({
           },
         } = curStateRef
 
-        // tooltip position follows mouse cursor
-        tooltip
-          .setLngLat(lngLat)
-          .setHTML(
-            `<b>${formatNumber(total)}</b> ${quantityLabel(curStateRef.current.metric.label, total)}<br/>in this area`
-          )
-          .addTo(map)
+        const html =
+          curStateRef.current.metric.field === 'detectionRate'
+            ? `<b>${formatNumber(total)}</b>% of monitored nights detected ${SPECIES[speciesID].commonName}s in this area`
+            : `<b>${formatNumber(total)}</b> ${quantityLabel(curStateRef.current.metric.label, total)}<br /> in this area`
+
+        // NOTE: tooltip position follows mouse cursor
+        tooltip.setLngLat(lngLat).setHTML(html).addTo(map)
 
         const hoverFeature = {
           source,
@@ -249,13 +252,12 @@ const SpeciesMap = ({
         },
       } = curStateRef
 
-      // tooltip position follows mouse cursor
-      tooltip
-        .setLngLat(lngLat)
-        .setHTML(
-          `<b>${formatNumber(total)}</b> ${quantityLabel(curStateRef.current.metric.label, total)}<br/>at this site`
-        )
-        .addTo(map)
+      const html =
+        curStateRef.current.metric.field === 'detectionRate'
+          ? `<b>${formatNumber(total)}</b>% of monitored nights detected ${SPECIES[speciesID].commonName}s at this site`
+          : `<b>${formatNumber(total)}</b> ${quantityLabel(curStateRef.current.metric.label, total)}<br /> at this site`
+
+      tooltip.setLngLat(lngLat).setHTML(html).addTo(map)
 
       if (hoverFeature !== hoverFeatureRef.current) {
         if (
@@ -336,7 +338,7 @@ const SpeciesMap = ({
             entries = entries.slice(0, -1) // remove 0 value
           }
           newLegendEntries.push(...entries)
-        } else if (getLegend) {
+        } else if (source === 'sites' && zoom > 7) {
           newLegendEntries.push(...getLegend(valueField, metricLabel))
         }
       })
@@ -376,7 +378,7 @@ const SpeciesMap = ({
       h3Renderer: Object.fromEntries(
         H3_COLS.map((col) => [
           col,
-          getHexRenderer(Object.values(h3Totals[col])),
+          getHexRenderer(Object.values(h3Totals[col]), metric.type),
         ])
       ),
       siteTotals,
@@ -433,7 +435,7 @@ const SpeciesMap = ({
           entries = entries.slice(0, -1)
         }
         newLegendEntries.push(...entries)
-      } else if (getLegend) {
+      } else if (source === 'sites' && map.getZoom() > 7) {
         newLegendEntries.push(...getLegend(valueField, metricLabel))
       }
     })
@@ -496,7 +498,11 @@ const SpeciesMap = ({
     <Map onCreateMap={handleCreateMap} onBasemapChange={handleBasemapChange}>
       <Legend
         entries={legendEntries}
-        title={`Number of ${curStateRef.current.metric.label}`}
+        title={
+          curStateRef.current.metric.field === 'detectionRate'
+            ? `Percent of monitored nights that detected ${SPECIES[speciesID].commonName}s`
+            : `Number of ${curStateRef.current.metric.label}`
+        }
         note={
           curStateRef.current.metric.field === 'detectors'
             ? `limited to detectors that surveyed for ${SPECIES[speciesID].commonName}`

@@ -1,6 +1,6 @@
 import React, { memo } from 'react'
 import PropTypes from 'prop-types'
-import { Box, Flex, Text } from 'theme-ui'
+import { Box, Text } from 'theme-ui'
 
 import { formatNumber } from 'util/format'
 
@@ -10,12 +10,13 @@ const VerticalBar = ({
   label,
   quantity,
   scale,
+  valueType,
+  showLabel,
   onClick,
 }) => (
-  <Flex
+  <Box
     sx={{
-      flexDirection: 'column',
-      flex: '1 1 auto',
+      flex: '1 1 3rem',
       height: '100%',
       transition: 'opacity 300ms',
       opacity: isExcluded ? 0.25 : 1,
@@ -29,6 +30,7 @@ const VerticalBar = ({
         cursor: 'pointer',
         height: '100%',
         position: 'relative',
+        bottom: 0,
         borderBottom: '1px solid',
         borderBottomColor: 'grey.2',
         '&:hover': {
@@ -66,17 +68,18 @@ const VerticalBar = ({
       <Text
         className="tooltip"
         sx={{
-          fontSize: '0.8rem',
+          fontSize: '0.7rem',
           color: 'grey.8',
           position: 'absolute',
           textAlign: 'center',
-          top: '-1.25rem',
+          top: '-0.9rem',
           left: '-2rem',
           right: '-2rem',
           display: 'none',
         }}
       >
         {formatNumber(quantity)}
+        {valueType === 'percent' ? '%' : ''}
       </Text>
       <Box
         className="tooltip-leader"
@@ -93,17 +96,20 @@ const VerticalBar = ({
       />
     </Box>
 
-    <Text
-      sx={{
-        textAlign: 'center',
-        color: isFiltered ? 'highlight.5' : 'grey.8',
-        fontWeight: isFiltered ? 'bold' : 'normal',
-        fontSize: '0.7rem',
-      }}
-    >
-      {label}
-    </Text>
-  </Flex>
+    {showLabel ? (
+      <Text
+        sx={{
+          textAlign: 'center',
+          color: isFiltered ? 'highlight.5' : 'grey.8',
+          fontWeight: isFiltered ? 'bold' : 'normal',
+          fontSize: '0.7rem',
+          lineHeight: 1,
+        }}
+      >
+        {label}
+      </Text>
+    ) : null}
+  </Box>
 )
 
 VerticalBar.propTypes = {}
@@ -114,12 +120,16 @@ VerticalBar.propTypes = {
   label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   quantity: PropTypes.number.isRequired,
   scale: PropTypes.func.isRequired,
+  valueType: PropTypes.string,
+  showLabel: PropTypes.bool,
   onClick: PropTypes.func.isRequired,
 }
 
 VerticalBar.defaultProps = {
   isFiltered: false,
   isExcluded: false,
+  showLabel: true,
+  valueType: 'count',
 }
 
 // TODO: optimize for changes to the callback

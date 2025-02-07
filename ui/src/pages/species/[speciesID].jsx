@@ -12,9 +12,6 @@ const SpeciesRoute = ({ params: { speciesID } }) => (
 )
 
 SpeciesRoute.propTypes = {
-  //   pageContext: PropTypes.shape({
-  //     speciesID: PropTypes.string.isRequired,
-  //   }).isRequired,
   params: PropTypes.shape({ speciesID: PropTypes.string.isRequired })
     .isRequired,
 }

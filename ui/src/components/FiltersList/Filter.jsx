@@ -23,8 +23,14 @@ const Filter = ({
   const [isOpen, setIsOpen] = useState(initIsOpen)
   const {
     setFilter,
-    state: { valueField, filters, dimensionTotals },
+    state: {
+      metric: { field: valueField },
+      filters,
+      dimensionTotals,
+    },
   } = useCrossfilter()
+
+  const valueType = valueField === 'detectionRate' ? 'percent' : 'count'
 
   const filterValues = filters[field] || new Set()
   const totals = dimensionTotals[field] || {}
@@ -139,13 +145,17 @@ const Filter = ({
                 <VerticalBars
                   data={data}
                   max={max}
+                  valueType={valueType}
                   onToggleFilter={handleFilterToggle}
                 />
               ) : (
                 <HorizontalBars
                   data={data}
                   max={max}
-                  showCount={!(field === 'species' && valueField === 'species')}
+                  showCount={
+                    !(field === 'species' && valueField === 'speciesCount')
+                  }
+                  valueType={valueType}
                   onToggleFilter={handleFilterToggle}
                 />
               )}

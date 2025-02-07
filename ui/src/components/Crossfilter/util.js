@@ -43,16 +43,25 @@ export const createDimensions = (filters) => {
  * TODO: this does not handle isArray type dimensions!
  * @param {Object} table - arquero table
  * @param {String} groupByField - field to group table by
- * @param {Function} aggFunc - aggregation function passed to rolloup to calculate total
+ * @param {Object} aggFuncs - object containing aggregation functions passed to rolloup to calculate total
+ * @param {Object} deriveFuncs - object containing derive functions passed to table.derive() method after applying rollup
  * @returns Object
  * {<groupByField value>: {<aggFunc key>: aggregated value, ...}}
  */
-export const aggregateByGroup = (table, groupByField, aggFuncs) => {
-  const outFields = Object.keys(aggFuncs)
+export const aggregateByGroup = (
+  table,
+  groupByField,
+  aggFuncs,
+  deriveFuncs
+) => {
+  const outFields = new Set(
+    Object.keys(aggFuncs).concat(Object.keys(deriveFuncs))
+  )
   return Object.fromEntries(
     table
       .groupby(groupByField)
       .rollup(aggFuncs)
+      .derive(deriveFuncs)
       .derive({ row: op.row_object(...outFields) })
       .derive({
         entries: escape((d) => [d[groupByField], d.row]),
@@ -66,12 +75,18 @@ export const aggregateByGroup = (table, groupByField, aggFuncs) => {
  * @param {Object} table - arquero table
  * @param {Object} dimensions - object of dimension objects by ID
  * @param {Function} aggFuncs - object of aggregation functions passed to table rollup
+ * @param {Object} deriveFuncs - object containing derive functions passed to table.derive() method after applying rollup
  */
-export const aggregateByDimension = (table, dimensions, aggFuncs) =>
+export const aggregateByDimension = (
+  table,
+  dimensions,
+  aggFuncs,
+  deriveFuncs
+) =>
   Object.fromEntries(
     Object.values(dimensions).map(({ field }) => [
       field,
-      aggregateByGroup(table, field, aggFuncs),
+      aggregateByGroup(table, field, aggFuncs, deriveFuncs),
     ])
   )
 
@@ -138,6 +153,7 @@ export const applyFiltersAndAggregate = ({
   dimensions,
   filters: rawFilters,
   aggFuncs,
+  deriveFuncs,
   preFilter,
 }) => {
   let table = rawTable
@@ -178,7 +194,8 @@ export const applyFiltersAndAggregate = ({
     dimensionStats[field] = aggregateByGroup(
       preFilter ? filteredTable.filter(preFilter) : filteredTable,
       field,
-      aggFuncs
+      aggFuncs,
+      deriveFuncs
     )
   })
 
@@ -201,7 +218,8 @@ export const applyFiltersAndAggregate = ({
       dimensionStats[field] = aggregateByGroup(
         prefilteredTable,
         field,
-        aggFuncs
+        aggFuncs,
+        deriveFuncs
       )
     })
 

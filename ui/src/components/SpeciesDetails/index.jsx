@@ -120,7 +120,15 @@ const SpeciesDetails = ({ speciesID }) => {
           aggFuncs={{
             detections: op.sum('detections'),
             detectionNights: op.sum('detectionNights'),
+            detectorNights: op.sum('detectorNights'),
             detectors: op.distinct('detId'),
+          }}
+          deriveFuncs={{
+            // calculate detection rate as percent of detector nights that detected species
+            detectionRate: escape(
+              // prevent divide by 0
+              (d) => (100 * d.detectionNights) / (d.detectorNights || 1)
+            ),
           }}
         >
           <Sidebar allowScroll={false}>

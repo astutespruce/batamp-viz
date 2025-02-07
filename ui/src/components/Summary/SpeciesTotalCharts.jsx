@@ -6,32 +6,19 @@ import { SPECIES } from 'config'
 import { formatNumber, quantityLabel } from 'util/format'
 import SpeciesTotalChart from './SpeciesTotalChart'
 
-const SpeciesTotalCharts = ({
-  type,
-  displayField,
-  countType,
-  speciesID,
-  data,
-  max,
-  detectorNights,
-}) => {
-  const countTypePrefix =
-    countType === 'p' ? 'presence/absence' : 'activity/absence'
-
+const SpeciesTotalCharts = ({ type, speciesID, data, max }) => {
   const sppData = Object.entries(data)
-    .map(
-      ([id, { [displayField]: total, detectorNights: sppDetectorNights }]) => {
-        const { commonName, sciName } = SPECIES[id]
+    .map(([id, { total, detectorNights: sppDetectorNights }]) => {
+      const { commonName, sciName } = SPECIES[id]
 
-        return {
-          id,
-          commonName,
-          sciName,
-          total,
-          detectorNights: sppDetectorNights,
-        }
+      return {
+        id,
+        commonName,
+        sciName,
+        total,
+        detectorNights: sppDetectorNights,
       }
-    )
+    })
     .sort(
       (
         { commonName: leftName, total: leftTotal },
@@ -122,16 +109,12 @@ const SpeciesTotalCharts = ({
 
 SpeciesTotalCharts.propTypes = {
   type: PropTypes.string.isRequired,
-  displayField: PropTypes.string.isRequired,
-  countType: PropTypes.string.isRequired,
   speciesID: PropTypes.string, // NOTE: speciesID will always be present in data
   data: PropTypes.object.isRequired,
   max: PropTypes.number.isRequired,
-  detectorNights: PropTypes.number,
 }
 
 SpeciesTotalCharts.defaultProps = {
-  detectorNights: 0, // 0 will result in never showing error about missing detector nights
   speciesID: null,
 }
 

@@ -21,18 +21,14 @@ const SpeciesFilters = ({ speciesID, filters }) => {
           px: '1rem',
           py: '0.75rem',
           lineHeight: 1.2,
-          bg: 'grey.2',
-          borderBottom: '1px solid',
-          borderBottomColor: 'grey.3',
         }}
       >
         <Box>
-          <Heading as="h1" sx={{ fontSize: 5, m: 0, fontWeight: 'normal' }}>
+          <Heading as="h1" sx={{ fontSize: 5, m: 0, lineHeight: 1.2 }}>
             {commonName}
           </Heading>
           <Flex
             sx={{
-              mt: '0.25rem',
               gap: '1rem',
             }}
           >
@@ -43,6 +39,7 @@ const SpeciesFilters = ({ speciesID, filters }) => {
                 fontWeight: 'normal',
                 fontStyle: 'italic',
                 fontSize: 3,
+                lineHeight: 1.2,
               }}
             >
               {sciName}
@@ -62,11 +59,11 @@ const SpeciesFilters = ({ speciesID, filters }) => {
         </Box>
       </Box>
 
-      <Box sx={{ mx: '1rem', mt: '1rem', mb: '0.5rem' }}>
+      <Box sx={{ mx: '1rem', mb: '0.5rem' }}>
         <ExpandableParagraph
           sx={{
             '& p': {
-              fontSize: 2,
+              fontSize: 1,
               color: 'grey.8',
               lineHeight: 1.3,
             },
@@ -80,7 +77,7 @@ const SpeciesFilters = ({ speciesID, filters }) => {
         </ExpandableParagraph>
       </Box>
 
-      <FiltersList filters={filters} />
+      <FiltersList filters={filters} speciesID={speciesID} />
     </Flex>
   )
 }

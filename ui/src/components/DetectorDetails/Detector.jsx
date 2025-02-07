@@ -2,9 +2,9 @@ import React, { memo } from 'react'
 import PropTypes from 'prop-types'
 import { Box, Flex, Heading, Text } from 'theme-ui'
 import { TimesCircle, ExclamationTriangle } from '@emotion-icons/fa-solid'
-import { op } from 'arquero'
+import { escape, op } from 'arquero'
 
-import { METRIC_LABELS } from 'config'
+import { METRICS } from 'config'
 import { Tab, Tabs } from 'components/Tabs'
 import { useCrossfilter } from 'components/Crossfilter'
 import { SpeciesTotalCharts, SpeciesMonthlyCharts } from 'components/Summary'
@@ -15,17 +15,21 @@ import DetectorMetadata from './DetectorMetadata'
 const Detector = ({ detector, speciesID, map, onClose }) => {
   const {
     state: {
-      metric: { field: valueField },
+      metric: { field: valueField, type: valueType },
       hasFilters,
     },
   } = useCrossfilter()
 
-  // the only valid fields we summarize at this level are detections or detectionNights
+  // the only valid fields we summarize at this level are detections, detectionNights, or detectionRate
   const displayField =
     valueField === 'detectors' || valueField === 'speciesCount'
       ? 'detectionNights'
       : valueField
-  const metricLabel = METRIC_LABELS[displayField]
+
+  const metricLabel =
+    displayField === 'detectionRate'
+      ? '% of Nights With Detections'
+      : `Total ${METRICS[displayField].label}`
 
   console.log('selected detector', detector)
 
@@ -33,6 +37,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
     source,
     siteName,
     admin1Name,
+    detectionNights,
     detectorNights,
     countType,
     dateRange,
@@ -41,24 +46,33 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
     table,
   } = detector
 
-  // calculate total detections (used in header) and number of distinct years
-  // across all sites and detectors
+  // calculate number of distinct years across all sites and detectors (used in header)
   const { detections, years } = table
-    .rollup({
-      detections: op.sum('detections'),
-      years: op.distinct('year'),
-    })
+    .rollup({ years: op.distinct('year') })
     .objects()[0]
+
+  // NOTE: we always sum detector nights
+  const aggFuncs = { detectorNights: op.sum('detectorNights') }
+  const deriveFunc = {}
+
+  if (displayField === 'detectionRate') {
+    aggFuncs.detectionNights = op.sum('detectionNights')
+    // calculate detection rate as percent of detector nights with detections
+    deriveFunc.total = escape(
+      // prevent divide by 0
+      (d) => (100 * d.detectionNights) / (d.detectorNights || 1)
+    )
+  } else {
+    aggFuncs.total = op.sum(displayField)
+  }
 
   // calculate total displayField and detector nights by species
   const sppTotals = Object.fromEntries(
     table
       .groupby('species')
-      .rollup({
-        [displayField]: op.sum(displayField),
-        detectorNights: op.sum('detectorNights'),
-      })
-      .derive({ row: op.row_object(displayField, 'detectorNights') })
+      .rollup(aggFuncs)
+      .derive(deriveFunc)
+      .derive({ row: op.row_object('total', 'detectorNights') })
       .rollup({ entries: op.entries_agg('species', 'row') })
       .array('entries')[0]
   )
@@ -67,12 +81,10 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
   const sppByMonth = Object.fromEntries(
     table
       .groupby('species', 'month')
-      .rollup({
-        [displayField]: op.sum(displayField),
-        detectorNights: op.sum('detectorNights'),
-      })
+      .rollup(aggFuncs)
+      .derive(deriveFunc)
       .groupby('species')
-      .derive({ row: op.row_object(displayField, 'detectorNights') })
+      .derive({ row: op.row_object('total', 'detectorNights') })
       .rollup({ monthEntries: op.entries_agg('month', 'row') })
       .derive({ byMonth: (d) => op.object(d.monthEntries) })
       .rollup({ entries: op.entries_agg('species', 'byMonth') })
@@ -84,10 +96,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
   const max =
     displayField === 'detectionNights'
       ? detectorNights
-      : Math.max(
-          0,
-          ...Object.values(sppTotals).map(({ [displayField]: total }) => total)
-        )
+      : Math.max(0, ...Object.values(sppTotals).map(({ total }) => total))
 
   const handleZoomTo = () => {
     if (map) {
@@ -203,8 +212,8 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
               {dateRange}
             </Box>
             <Box sx={{ flex: '0 0 auto', textAlign: 'right' }}>
-              <b>{formatNumber(detections, 0)}</b> species{' '}
-              {quantityLabel('detections', detections)}
+              species detected on <b>{formatNumber(detectionNights, 0)}</b>{' '}
+              {quantityLabel('nights', detectionNights)}
               <br />
               <b>{formatNumber(detectorNights, 0)}</b>{' '}
               {quantityLabel('nights', detectorNights)} monitored
@@ -229,7 +238,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
                   textTransform: 'capitalize',
                 }}
               >
-                Total {metricLabel}
+                {metricLabel}
               </Heading>
               {presenceOnlyWarning}
               <SpeciesTotalCharts
@@ -260,7 +269,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
                   textTransform: 'capitalize',
                 }}
               >
-                {metricLabel} by month
+                {metricLabel}
               </Heading>
 
               {years > 1 && (
@@ -275,6 +284,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
                 displayField={displayField}
                 data={sppByMonth}
                 speciesID={speciesID}
+                valueType={valueType}
               />
             </>
           )}

@@ -4,13 +4,13 @@ import * as aq from 'arquero'
 
 import { ExpandableParagraph } from 'components/Text'
 import { SortBar } from 'components/List'
-import { summaryStats, METRIC_LABELS } from 'config'
+import { summaryStats, METRICS } from 'config'
 import { formatNumber } from 'util/format'
 import Contributor from './Contributor'
 
 const metrics = ['sppDetections', 'detectorNights', 'detectors', 'species']
 
-const sortOptions = metrics.map((m) => METRIC_LABELS[m] || m)
+const sortOptions = metrics.map((m) => METRICS[m].label || m)
 
 const Contributors = () => {
   const {

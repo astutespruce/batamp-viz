@@ -2,10 +2,9 @@ import React, { useState, useLayoutEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Box, Flex, Text } from 'theme-ui'
 
-// import { METRIC_LABELS } from 'config'
 import { formatNumber, quantityLabel } from 'util/format'
 
-const DetectorsList = ({ displayField, detectors, map }) => {
+const DetectorsList = ({ detectors, map }) => {
   const [highlightedId, setHighlightedId] = useState(null)
 
   const handleZoomTo = (id, lon, lat) => {
@@ -17,10 +16,6 @@ const DetectorsList = ({ displayField, detectors, map }) => {
   useLayoutEffect(() => {
     setHighlightedId(null)
   }, [detectors])
-
-  // TODO: bring in stats for selected species
-
-  //   const metricLabel = METRIC_LABELS[displayField]
 
   return (
     <Box>
@@ -117,7 +112,6 @@ const DetectorsList = ({ displayField, detectors, map }) => {
 }
 
 DetectorsList.propTypes = {
-  displayField: PropTypes.string.isRequired,
   detectors: PropTypes.object.isRequired,
   map: PropTypes.object.isRequired,
 }

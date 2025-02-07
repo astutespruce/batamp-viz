@@ -29,7 +29,11 @@ const SpeciesOccurrenceMap = ({
 
   const {
     state: {
-      metric: { field: valueField, label: metricLabel },
+      metric: {
+        field: valueField,
+        type: valueType = 'count',
+        label: metricLabel,
+      },
       hasFilters,
       filters,
       h3Totals,
@@ -42,7 +46,10 @@ const SpeciesOccurrenceMap = ({
   const curStateRef = useRef({
     h3Totals,
     h3Renderer: Object.fromEntries(
-      H3_COLS.map((col) => [col, getHexRenderer(Object.values(h3Totals[col]))])
+      H3_COLS.map((col) => [
+        col,
+        getHexRenderer(Object.values(h3Totals[col]), valueType),
+      ])
     ),
     siteTotals,
     siteMax: Math.max(0, Math.max(...Object.values(siteTotals))),
@@ -169,7 +176,7 @@ const SpeciesOccurrenceMap = ({
         tooltip
           .setLngLat(lngLat)
           .setHTML(
-            `<b>${total}</b> ${metricLabel}<br/>in this area${hasSpeciesFilter ? '<br/>(of the selected species)' : ''}`
+            `<b>${total}</b> ${metricLabel} in this area${hasSpeciesFilter ? ' (of the selected species)' : ''}`
           )
           .addTo(map)
 
@@ -315,7 +322,7 @@ const SpeciesOccurrenceMap = ({
         if (source === 'h3') {
           const col = id.split('-')[0]
           newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
-        } else if (getLegend) {
+        } else if (source === 'sites' && zoom > 7) {
           newLegendEntries.push(...getLegend(valueField, metricLabel))
         }
       })
@@ -416,7 +423,7 @@ const SpeciesOccurrenceMap = ({
       if (source === 'h3') {
         const col = id.split('-')[0]
         newLegendEntries.push(...curStateRef.current.h3Renderer[col].legend)
-      } else if (getLegend) {
+      } else if (source === 'sites' && map.getZoom() > 7) {
         newLegendEntries.push(...getLegend(valueField, metricLabel))
       }
     })
@@ -424,6 +431,7 @@ const SpeciesOccurrenceMap = ({
   }, [
     isLoaded,
     valueField,
+    valueType,
     metricLabel,
     hasFilters,
     filters,

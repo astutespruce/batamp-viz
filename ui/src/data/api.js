@@ -166,7 +166,7 @@ export const loadSingleSpeciesData = async (speciesID) => {
       vertical: true,
       values: years,
       labels:
-        years.length > 6
+        years.length >= 10
           ? years.map((y) => `'${y.toString().slice(2)}`)
           : years,
     },

@@ -9,7 +9,7 @@ import React, {
 } from 'react'
 import PropTypes from 'prop-types'
 
-import { H3_COLS, METRIC_LABELS } from 'config'
+import { H3_COLS, METRICS } from 'config'
 import { isDebug } from 'util/dom'
 
 import {
@@ -33,7 +33,8 @@ export const Provider = ({
   filters: filterConfig,
   valueField: initValueField,
   aggFuncs,
-  preFilter,
+  deriveFuncs = {},
+  preFilter = null,
   children,
 }) => {
   const dimensions = useMemo(
@@ -56,25 +57,34 @@ export const Provider = ({
     const prefilteredTable = preFilter ? table.filter(preFilter) : table
 
     // aggregate by aggFuncs at all levels; these all use preFilter when provided
-    const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
+    const topLevelStats = prefilteredTable
+      .rollup(aggFuncs)
+      .derive(deriveFuncs)
+      .objects()[0]
 
     // calculate stats per dimension for each aggFunc
     const dimensionStats = aggregateByDimension(
       prefilteredTable,
       dimensions,
-      aggFuncs
+      aggFuncs,
+      deriveFuncs
     )
 
     // calculate stats per hex level and hex ID for each aggFunc
     const h3Stats = Object.fromEntries(
       H3_COLS.map((col) => [
         col,
-        aggregateByGroup(prefilteredTable, col, aggFuncs),
+        aggregateByGroup(prefilteredTable, col, aggFuncs, deriveFuncs),
       ])
     )
 
     // calculate stats per site for each aggFunc
-    const siteStats = aggregateByGroup(prefilteredTable, 'siteId', aggFuncs)
+    const siteStats = aggregateByGroup(
+      prefilteredTable,
+      'siteId',
+      aggFuncs,
+      deriveFuncs
+    )
 
     if (isDebug) {
       console.timeEnd('aggregate stats')
@@ -116,8 +126,8 @@ export const Provider = ({
       // metric changes when valueField changes
       metric: {
         field: initValueField,
-        label: METRIC_LABELS[initValueField],
         total, // store to display as the total possible for this field
+        ...METRICS[initValueField],
       },
 
       // following values are updated when filters change
@@ -186,6 +196,7 @@ export const Provider = ({
           dimensions,
           filters: newFilters,
           aggFuncs,
+          deriveFuncs,
           preFilter,
         })
 
@@ -194,16 +205,24 @@ export const Provider = ({
         }
 
         // recalculate top-level stats for each aggFunc based on updated filters
-        const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
+        const topLevelStats = prefilteredTable
+          .rollup(aggFuncs)
+          .derive(deriveFuncs)
+          .objects()[0]
 
         // recalculate hex and site stats for each aggFunc based on updated filters
         const h3Stats = Object.fromEntries(
           H3_COLS.map((col) => [
             col,
-            aggregateByGroup(prefilteredTable, col, aggFuncs),
+            aggregateByGroup(prefilteredTable, col, aggFuncs, deriveFuncs),
           ])
         )
-        const siteStats = aggregateByGroup(prefilteredTable, 'siteId', aggFuncs)
+        const siteStats = aggregateByGroup(
+          prefilteredTable,
+          'siteId',
+          aggFuncs,
+          deriveFuncs
+        )
 
         // extract the hex and site IDs present after applying filters
         const h3Ids = Object.fromEntries(
@@ -275,19 +294,28 @@ export const Provider = ({
         const prefilteredTable = preFilter ? table.filter(preFilter) : table
 
         // aggregate by aggFuncs at all levels; these all use preFilter when provided
-        const topLevelStats = prefilteredTable.rollup(aggFuncs).objects()[0]
+        const topLevelStats = prefilteredTable
+          .rollup(aggFuncs)
+          .derive(deriveFuncs)
+          .objects()[0]
         const dimensionStats = aggregateByDimension(
           prefilteredTable,
           dimensions,
-          aggFuncs
+          aggFuncs,
+          deriveFuncs
         )
         const h3Stats = Object.fromEntries(
           H3_COLS.map((col) => [
             col,
-            aggregateByGroup(prefilteredTable, col, aggFuncs),
+            aggregateByGroup(prefilteredTable, col, aggFuncs, deriveFuncs),
           ])
         )
-        const siteStats = aggregateByGroup(prefilteredTable, 'siteId', aggFuncs)
+        const siteStats = aggregateByGroup(
+          prefilteredTable,
+          'siteId',
+          aggFuncs,
+          deriveFuncs
+        )
 
         // aggregate location IDs that were surveyed
         const h3Ids = Object.fromEntries(
@@ -375,8 +403,8 @@ export const Provider = ({
           siteTotals,
           metric: {
             field: newValueField,
-            label: METRIC_LABELS[newValueField],
             total: initialTopLevelStats[newValueField] || 0,
+            ...METRICS[newValueField],
           },
         }
 
@@ -419,6 +447,11 @@ Provider.propTypes = {
   aggFuncs: PropTypes.objectOf(
     PropTypes.oneOfType([PropTypes.func, PropTypes.object])
   ).isRequired,
+  // deriveFuncs is a mapping of output key to the derived method applied to the
+  // data table after applying aggFuncs
+  deriveFuncs: PropTypes.objectOf(
+    PropTypes.oneOfType([PropTypes.func, PropTypes.object])
+  ),
   // preFilter is used to pre-filter table before calculating dimension totals
   // this is only used from the occurrence map where the statistic is number of
   // species
@@ -431,6 +464,7 @@ Provider.propTypes = {
 }
 
 Provider.defaultProps = {
+  deriveFuncs: {},
   preFilter: null,
 }
 

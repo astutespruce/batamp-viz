@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Flex } from 'theme-ui'
 
 import { ToggleButton } from 'components/Button'
-import { METRIC_LABELS } from 'config'
+import { METRICS } from 'config'
 import { useCrossfilter } from './Context'
 
 const ValueFieldSelector = () => {
@@ -13,11 +13,11 @@ const ValueFieldSelector = () => {
     },
   } = useCrossfilter()
 
-  const fields = ['detectionNights', 'detections', 'detectors']
+  const fields = ['detectionNights', 'detectionRate', 'detections', 'detectors']
 
   const options = fields.map((value) => ({
     value,
-    label: METRIC_LABELS[value],
+    label: METRICS[value].label,
   }))
 
   return (

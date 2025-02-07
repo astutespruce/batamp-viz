@@ -7,6 +7,13 @@ import { getHighlightExpr } from './style'
 export const defaultHexFillColor = '#AAAAAA'
 export const defaultHexOutlineColor = '#333333'
 
+const hexLegendEntryStub = {
+  type: 'fill',
+  borderColor: `${defaultHexOutlineColor}33`,
+  borderWidth: 1,
+  opacity: 0.75,
+}
+
 // fill missing color ramps so that we can do this for
 const hexColorScheme =
   structuredClone !== undefined
@@ -23,32 +30,19 @@ hexColorScheme[3][0] = hexColorScheme[5][0]
 // maximum number of color bins allowed in legend
 const MAX_BINS = 7
 
-export const getHexRenderer = (values) => {
-  let maxValue = 0
-
-  // extract all values >1 because 1 is always put in its own class
-  const gt1Values = values.filter((d) => {
-    maxValue = Math.max(maxValue, d)
-    return d > 1
-  })
-
-  const legendEntryStub = {
-    type: 'fill',
-    borderColor: `${defaultHexOutlineColor}33`,
-    borderWidth: 1,
-    opacity: 0.75,
-  }
+export const getHexRenderer = (values, valueType = 'count') => {
+  const maxValue = Math.max(...values)
 
   const legendElements = [
     {
-      ...legendEntryStub,
+      ...hexLegendEntryStub,
       id: 'value0',
       label: `0`,
       color: defaultHexFillColor,
     },
   ]
 
-  if (maxValue === 0) {
+  if (maxValue === 0 || values.length === 0) {
     return {
       // only value is 0, render as grey
       fillExpr: defaultHexFillColor,
@@ -56,8 +50,26 @@ export const getHexRenderer = (values) => {
     }
   }
 
+  let bins = []
   let binColorExpr = []
-  if (maxValue <= MAX_BINS) {
+
+  if (valueType === 'percent') {
+    const range = Array.from(Array(MAX_BINS - 1)).map((d, i) => i + 1)
+    let quantiles = scaleQuantile()
+      // use only nonzero values
+      .domain(values.filter((d) => d > 0))
+      .range(range)
+      .quantiles()
+    // .map(Math.round)
+    quantiles = quantiles.filter((d, i) => i === 0 || d !== quantiles[i - 1])
+    // make sure first quantile starts at effectively >0
+    if (quantiles[0] > 1e-9) {
+      quantiles.unshift(1e-9)
+    }
+    bins = quantiles.map((d, i) =>
+      i < quantiles.length - 1 ? [d, quantiles[i + 1] - 1] : [d, maxValue]
+    )
+  } else if (maxValue <= MAX_BINS) {
     const numBins = maxValue
     const colors = hexColorScheme[numBins]
     // use match expr to match values exactly
@@ -68,7 +80,7 @@ export const getHexRenderer = (values) => {
         binColorExpr.push(bin + 1)
         binColorExpr.push(colors[bin])
         legendElements.unshift({
-          ...legendEntryStub,
+          ...hexLegendEntryStub,
           id: `value${bin + 1}`,
           label: `${formatNumber(bin + 1)}`,
           color: colors[bin],
@@ -78,11 +90,10 @@ export const getHexRenderer = (values) => {
   } else {
     // NOTE: 1 is always assigned to its own category and not included in
     // quantile calculations
-
     const range = Array.from(Array(MAX_BINS - 1)).map((d, i) => i + 2)
-    // round to integer, extract unique values, and make sure first bin starts at 1
     let quantiles = scaleQuantile()
-      .domain(gt1Values)
+      // use only values >1
+      .domain(values.filter((d) => d > 1))
       .range(range)
       .quantiles()
       .map(Math.round)
@@ -92,13 +103,16 @@ export const getHexRenderer = (values) => {
       quantiles.unshift(2)
     }
 
-    const bins = quantiles.map((d, i) =>
+    bins = quantiles.map((d, i) =>
       i < quantiles.length - 1 ? [d, quantiles[i + 1] - 1] : [d, maxValue]
     )
 
     // make sure first bin is always 1
     bins.unshift([1, 1])
+  }
 
+  // only calculate if not already calculated above
+  if (binColorExpr.length === 0) {
     const colors = hexColorScheme[bins.length]
     binColorExpr = ['step', ['feature-state', 'total']]
     bins.forEach(([min, max], i) => {
@@ -106,12 +120,19 @@ export const getHexRenderer = (values) => {
         binColorExpr.push(min)
       }
       binColorExpr.push(colors[i])
-      const label =
-        max > min
-          ? `${formatNumber(min)} to ${formatNumber(max)}`
-          : formatNumber(min)
+
+      let label = ''
+      if (i === 0 && valueType === 'percent') {
+        label = `>0 to ${formatNumber(max)}`
+      } else {
+        label =
+          max > min
+            ? `${formatNumber(min)} to ${formatNumber(max)}`
+            : formatNumber(min)
+      }
+
       legendElements.unshift({
-        ...legendEntryStub,
+        ...hexLegendEntryStub,
         id: `value${i + 1}`,
         label,
         color: colors[i],
@@ -330,6 +351,22 @@ export const layers = [
         ]
       }
 
+      if (valueField === 'detectionRate') {
+        return [
+          {
+            ...legendStub,
+            id: 'detectorWithValue',
+            color: '#c51b8a',
+            label: 'detector with >=1 nights detected',
+          },
+          {
+            ...legendStub,
+            id: 'detector0Value',
+            color: '#000000',
+            label: 'detector with no nights detected',
+          },
+        ]
+      }
       return [
         {
           ...legendStub,

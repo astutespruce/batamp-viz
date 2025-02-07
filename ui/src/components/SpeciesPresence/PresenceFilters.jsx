@@ -8,14 +8,14 @@ import { ExpandableParagraph } from 'components/Text'
 
 const PresenceFilters = ({ filters }) => (
   <>
-    <Box flex="0 0 auto">
+    <Box sx={{ flex: '0 0 auto', mb: '1rem' }}>
       <SidebarHeader title="Species Occurrences" />
 
       <ExpandableParagraph
         sx={{
           px: '1rem',
           '& p': {
-            fontSize: 2,
+            fontSize: 1,
             color: 'grey.8',
             lineHeight: 1.3,
           },

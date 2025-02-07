@@ -4,7 +4,7 @@ import { Box, Flex, Heading, Text } from 'theme-ui'
 import { TimesCircle, ExclamationTriangle } from '@emotion-icons/fa-solid'
 import { escape, op } from 'arquero'
 
-import { METRIC_LABELS } from 'config'
+import { METRICS } from 'config'
 import { Tab, Tabs } from 'components/Tabs'
 import { useCrossfilter, filterTable } from 'components/Crossfilter'
 import { SpeciesTotalCharts, SpeciesMonthlyCharts } from 'components/Summary'
@@ -24,7 +24,7 @@ const HexDetails = ({
 }) => {
   const {
     state: {
-      metric: { field: valueField },
+      metric: { field: valueField, type: valueType },
       dimensions,
       filters,
       hasFilters,
@@ -51,25 +51,28 @@ const HexDetails = ({
   const showFilterWarning = unfilteredTable.size - table.size
   const hiddenDetectors = unfilteredDetectorsTable.size - detectorsTable.size
 
-  // the only valid fields we summarize at this level are detections or detectionNights
+  // the only valid fields we summarize at this level are detections, detectionNights, or detectionRate
   const displayField =
     valueField === 'detectors' || valueField === 'speciesCount'
       ? 'detectionNights'
       : valueField
-  const metricLabel = METRIC_LABELS[displayField]
 
-  // calculate total detections (used in header) and number of distinct years
-  // across all sites and detectors
-  const { detections, years } = table
-    .rollup({
-      detections: op.sum('detections'),
-      years: op.distinct('year'),
-    })
-    .objects()[0]
+  const metricLabel =
+    displayField === 'detectionRate'
+      ? '% of Nights With Detections'
+      : `Total ${METRICS[displayField].label}`
+
+  // calculate number of distinct years across all sites and detectors (used in header)
+  const { years } = table.rollup({ years: op.distinct('year') }).objects()[0]
 
   // calculate total detector nights and unique admin1 units (used in header)
-  const { detectorNights, admin1Name } = detectorsTable
+  const {
+    detectionNights: totalDetectionNights,
+    detectorNights: totalDetectorNights,
+    admin1Name,
+  } = detectorsTable
     .rollup({
+      detectionNights: op.sum('detectionNights'),
       detectorNights: op.sum('detectorNights'),
       admin1Name: op.array_agg_distinct('admin1Name'),
     })
@@ -87,7 +90,7 @@ const HexDetails = ({
         table
           .derive({ ts: (d) => [d.year, d.month] })
           .groupby('detId')
-          .rollup({ ts: op.min('ts'), [displayField]: op.sum(displayField) }),
+          .rollup({ ts: op.min('ts') }),
         ['id', 'detId']
       )
       .orderby('source', 'ts')
@@ -95,15 +98,28 @@ const HexDetails = ({
     'source'
   )
 
+  // NOTE: we always sum detector nights
+  const aggFuncs = { detectorNights: op.sum('detectorNights') }
+  const deriveFunc = {}
+
+  if (displayField === 'detectionRate') {
+    aggFuncs.detectionNights = op.sum('detectionNights')
+    // calculate detection rate as percent of detector nights with detections
+    deriveFunc.total = escape(
+      // prevent divide by 0
+      (d) => (100 * d.detectionNights) / (d.detectorNights || 1)
+    )
+  } else {
+    aggFuncs.total = op.sum(displayField)
+  }
+
   // calculate total displayField and detector nights by species
   const sppTotals = Object.fromEntries(
     table
       .groupby('species')
-      .rollup({
-        [displayField]: op.sum(displayField),
-        detectorNights: op.sum('detectorNights'),
-      })
-      .derive({ row: op.row_object(displayField, 'detectorNights') })
+      .rollup(aggFuncs)
+      .derive(deriveFunc)
+      .derive({ row: op.row_object('total', 'detectorNights') })
       .rollup({ entries: op.entries_agg('species', 'row') })
       .array('entries')[0]
   )
@@ -113,12 +129,10 @@ const HexDetails = ({
   const sppByMonth = Object.fromEntries(
     table
       .groupby('species', 'month')
-      .rollup({
-        [displayField]: op.sum(displayField),
-        detectorNights: op.sum('detectorNights'),
-      })
+      .rollup(aggFuncs)
+      .derive(deriveFunc)
       .groupby('species')
-      .derive({ row: op.row_object(displayField, 'detectorNights') })
+      .derive({ row: op.row_object('total', 'detectorNights') })
       .rollup({ monthEntries: op.entries_agg('month', 'row') })
       .derive({ byMonth: (d) => op.object(d.monthEntries) })
       .rollup({ entries: op.entries_agg('species', 'byMonth') })
@@ -128,10 +142,7 @@ const HexDetails = ({
   // because we're pooling together multiple detectors, we need to take the max
   // NOTE: this is different than for a single detector, where we use the
   // number of unique detector nights for that detector calculated in merge.py
-  const max = Math.max(
-    0,
-    ...Object.values(sppTotals).map(({ [displayField]: total }) => total)
-  )
+  const max = Math.max(0, ...Object.values(sppTotals).map(({ total }) => total))
 
   // show warning if there are any presence-only detectors
   const presenceOnlyWarning =
@@ -149,7 +160,7 @@ const HexDetails = ({
 
   // show warning if there were no species detected on any night
   const speciesWarning =
-    detections === 0 ? (
+    totalDetectionNights === 0 ? (
       <Box sx={{ color: 'highlight.5', mb: '2rem' }}>
         <ExclamationTriangle size="1.5em" />
         No species were detected on any night.
@@ -239,11 +250,11 @@ const HexDetails = ({
               {quantityLabel('detectors', detectorsTable.size)}
             </Box>
             <Box sx={{ flex: '0 0 auto', textAlign: 'right' }}>
-              <b>{formatNumber(detections, 0)}</b> species{' '}
-              {quantityLabel('detections', detections)}
+              species detected on <b>{formatNumber(totalDetectionNights, 0)}</b>{' '}
+              {quantityLabel('nights', totalDetectionNights)}
               <br />
-              <b>{formatNumber(detectorNights, 0)}</b>{' '}
-              {quantityLabel('nights', detectorNights)} monitored
+              <b>{formatNumber(totalDetectorNights, 0)}</b>{' '}
+              {quantityLabel('nights', totalDetectorNights)} monitored
             </Box>
           </Flex>
         </Box>
@@ -252,6 +263,7 @@ const HexDetails = ({
       <Tabs sx={{ flex: '1 1 auto', overflow: 'hidden' }}>
         <Tab id="species" label="Species Detected">
           {filterNote}
+
           {speciesWarning || (
             <>
               <Heading
@@ -265,18 +277,13 @@ const HexDetails = ({
                   textTransform: 'capitalize',
                 }}
               >
-                Total {metricLabel}
+                {metricLabel}
               </Heading>
 
               {presenceOnlyWarning}
 
               <SpeciesTotalCharts
                 type="hex"
-                displayField={displayField}
-                countType={
-                  // show activity label when at least some of the detectors recorded activity
-                  presenceDetectors === detectorsTable.size ? 'p' : 'a'
-                }
                 speciesID={speciesID}
                 data={sppTotals}
                 max={max}
@@ -299,7 +306,7 @@ const HexDetails = ({
                   textTransform: 'capitalize',
                 }}
               >
-                {metricLabel} by month
+                {metricLabel}
               </Heading>
 
               {years > 1 && (
@@ -311,9 +318,9 @@ const HexDetails = ({
               {presenceOnlyWarning}
 
               <SpeciesMonthlyCharts
-                displayField={displayField}
                 data={sppByMonth}
                 speciesID={speciesID}
+                valueType={valueType}
               />
             </>
           )}
@@ -333,11 +340,7 @@ const HexDetails = ({
             </Text>
           ) : null}
 
-          <DetectorsList
-            displayField={displayField}
-            detectors={detectorsBySource}
-            map={map}
-          />
+          <DetectorsList detectors={detectorsBySource} map={map} />
         </Tab>
       </Tabs>
     </Flex>

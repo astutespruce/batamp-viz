@@ -281,39 +281,37 @@ export const SPECIES_ID = {
   46: 'tabr',
 }
 
-export const METRIC_LABELS = {
-  detections: 'detections',
-  sppDetections: 'species detections',
-  detectionNights: 'nights detected',
-  detectorNights: 'nights monitored',
-  detectors: 'detectors',
-  speciesCount: 'species detected',
-}
-
 export const METRICS = {
   detections: {
     label: 'detections',
+    type: 'count',
   },
   sppDetections: {
     label: 'species detections',
+    type: 'count',
   },
   detectionNights: {
     label: 'nights detected',
+    type: 'count',
   },
   detectorNights: {
     label: 'nights monitored',
+    type: 'count',
+  },
+  // only applies to species view
+  detectionRate: {
+    label: '% of nights',
+    type: 'percent',
   },
   detectors: {
     label: 'detectors',
+    legendLabel: 'Number of detectors',
+    type: 'count',
   },
-  // // used on occurrence page
-  // species: {
-  //   label: 'species detected',
-  //   // count unique species
-  //   aggFunc: op.distinct('species'),
-  //   // for dimensions and totals, only aggregate records where species is detected
-  //   prefilter: (d) => d.detected,
-  // },
+  speciesCount: {
+    label: 'species detected',
+    type: 'count',
+  },
 }
 
 export const H3_LEVELS = [3, 4, 5, 6, 7, 8]

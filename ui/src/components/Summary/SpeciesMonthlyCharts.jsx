@@ -7,7 +7,7 @@ import { MONTH_LABELS, SPECIES } from 'config'
 import SpeciesMonthlyChart from './SpeciesMonthlyChart'
 
 // TODO: add monthly detectorNights
-const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
+const SpeciesMonthlyCharts = ({ data, speciesID, valueType }) => {
   let max = 0
 
   // expand data to all months; backfill missing months with null
@@ -20,11 +20,8 @@ const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
       const months = MONTH_LABELS.map((label, i) => {
         const {
           // adjust 1-based indexing in data to 0-based indexing in MONTH_LABELS
-          [i + 1]: {
-            [displayField]: total,
-            detectorNights: sppDetectorNights,
-          } = {
-            [displayField]: null,
+          [i + 1]: { total, detectorNights: sppDetectorNights } = {
+            total: null,
             detectorNights: 0,
           },
         } = obs
@@ -54,7 +51,10 @@ const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
       leftTotal > rightTotal ? -1 : 1
     )
 
-  const chartScale = scaleLinear().domain([0, max]).range([2, 100])
+  // const max = Math.ceil(max / 2) * 2
+
+  const chartScale = scaleLinear().domain([0, max]).range([0, 100]).nice()
+  window.scale = chartScale
 
   // always show selected species at the top, if specified
   const selectedSppData = sppData.find(({ id }) => id === speciesID)
@@ -76,6 +76,7 @@ const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
             {...selectedSppData}
             scale={chartScale}
             highlight
+            valueType={valueType}
             note={
               selectedSppData.max === 0 ? '(not detected on any night)' : ''
             }
@@ -97,7 +98,11 @@ const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
               },
             }}
           >
-            <SpeciesMonthlyChart {...rest} scale={chartScale} />
+            <SpeciesMonthlyChart
+              {...rest}
+              scale={chartScale}
+              valueType={valueType}
+            />
           </Box>
         ))}
     </Box>
@@ -105,13 +110,14 @@ const SpeciesMonthlyCharts = ({ displayField, data, speciesID }) => {
 }
 
 SpeciesMonthlyCharts.propTypes = {
-  displayField: PropTypes.string.isRequired,
   data: PropTypes.object.isRequired,
   speciesID: PropTypes.string,
+  valueType: PropTypes.string,
 }
 
 SpeciesMonthlyCharts.defaultProps = {
   speciesID: null,
+  valueType: 'count',
 }
 
 export default SpeciesMonthlyCharts
