@@ -8,9 +8,9 @@ const SummaryStats = () => {
   const {
     detectors,
     contributors,
-    sppDetections,
+    speciesDetections,
     detectorNights,
-    species,
+    speciesDetected,
     speciesSurveyed,
     years,
     admin1,
@@ -46,11 +46,12 @@ const SummaryStats = () => {
               sx={{ alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' }}
             >
               <Text sx={{ fontSize: 5, fontWeight: 'bold', display: 'inline' }}>
-                {formatNumber(sppDetections, 0)}
+                {formatNumber(speciesDetections, 0)}
               </Text>
               <Text sx={{ display: 'inline' }}>detections</Text>
             </Flex>
-            of <b>{species}</b> species out of <b>{speciesSurveyed}</b> surveyed
+            of <b>{speciesDetected}</b> species out of <b>{speciesSurveyed}</b>{' '}
+            surveyed
           </Box>
           <Box>
             <Flex

@@ -106,8 +106,8 @@ const PresencePage = () => {
         <CrossfilterProvider
           table={allSpeciesTable}
           filters={filters}
-          valueField="speciesCount"
-          aggFuncs={{ speciesCount: op.distinct('species') }}
+          valueField="speciesDetected"
+          aggFuncs={{ speciesDetected: op.distinct('species') }}
           // for dimensions and totals, only aggregate records where species was
           // actually detected
           preFilter={(d) => d.detections > 0}

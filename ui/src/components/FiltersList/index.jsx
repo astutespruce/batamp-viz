@@ -62,7 +62,9 @@ const FiltersList = ({ filters, speciesID }) => {
           textTransform: 'capitalize',
         }}
       >
-        {field === 'speciesCount' ? 'Number of Species Detected' : metricLabel}
+        {field === 'speciesDetected'
+          ? 'Number of Species Detected'
+          : metricLabel}
       </Heading>
 
       <Box

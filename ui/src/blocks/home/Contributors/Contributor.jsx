@@ -11,17 +11,17 @@ const activeLabelCSS = {
 }
 
 const donutLabels = {
-  sppDetections: 'detections',
+  speciesDetections: 'detections',
   detectorNights: 'nights',
-  speciesSurveyed: 'species',
+  speciesDetected: 'species',
 }
 
 const Contributor = ({
   contributors,
-  sppDetections,
+  speciesDetections,
   detectorNights,
   detectors,
-  species,
+  speciesDetected,
   percent,
   metric,
 }) => {
@@ -56,10 +56,10 @@ const Contributor = ({
             <Text
               sx={{
                 display: 'inline',
-                ...(metric === 'sppDetections' ? activeLabelCSS : {}),
+                ...(metric === 'speciesDetections' ? activeLabelCSS : {}),
               }}
             >
-              {formatNumber(sppDetections, 0)} detections
+              {formatNumber(speciesDetections, 0)} detections
             </Text>
             <br />
             on{' '}
@@ -90,7 +90,7 @@ const Contributor = ({
                 ...(metric === 'species' ? activeLabelCSS : {}),
               }}
             >
-              {species} species
+              {speciesDetected} species
             </Text>{' '}
             detected.
           </Box>
@@ -112,9 +112,9 @@ const Contributor = ({
 Contributor.propTypes = {
   contributors: PropTypes.string.isRequired,
   detectorNights: PropTypes.number.isRequired,
-  sppDetections: PropTypes.number.isRequired,
+  speciesDetections: PropTypes.number.isRequired,
   detectors: PropTypes.number.isRequired,
-  species: PropTypes.number.isRequired,
+  speciesDetected: PropTypes.number.isRequired,
   percent: PropTypes.number.isRequired,
   metric: PropTypes.string.isRequired,
 }

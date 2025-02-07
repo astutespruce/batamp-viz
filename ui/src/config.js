@@ -286,7 +286,7 @@ export const METRICS = {
     label: 'detections',
     type: 'count',
   },
-  sppDetections: {
+  speciesDetections: {
     label: 'species detections',
     type: 'count',
   },
@@ -308,7 +308,7 @@ export const METRICS = {
     legendLabel: 'Number of detectors',
     type: 'count',
   },
-  speciesCount: {
+  speciesDetected: {
     label: 'species detected',
     type: 'count',
   },

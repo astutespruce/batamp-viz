@@ -153,7 +153,7 @@ const Filter = ({
                   data={data}
                   max={max}
                   showCount={
-                    !(field === 'species' && valueField === 'speciesCount')
+                    !(field === 'species' && valueField === 'speciesDetected')
                   }
                   valueType={valueType}
                   onToggleFilter={handleFilterToggle}

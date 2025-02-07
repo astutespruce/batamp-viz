@@ -22,7 +22,7 @@ const Detector = ({ detector, speciesID, map, onClose }) => {
 
   // the only valid fields we summarize at this level are detections, detectionNights, or detectionRate
   const displayField =
-    valueField === 'detectors' || valueField === 'speciesCount'
+    valueField === 'detectors' || valueField === 'speciesDetected'
       ? 'detectionNights'
       : valueField
 

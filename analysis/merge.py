@@ -738,7 +738,7 @@ stacked = (
     .rename(columns={"level_1": "spp"})
 )
 # only keep species where there was > 0 activity detected
-contributor_species = stacked[stacked.detections > 0].groupby("contributors").spp.nunique().rename("species")
+contributor_species = stacked[stacked.detections > 0].groupby("contributors").spp.nunique().rename("speciesDetected")
 
 contributor_stats = (
     pd.DataFrame(contributor_spp_detections)
@@ -827,13 +827,13 @@ spp_stats = (
 
 summary = {
     "admin1": sorted(sites.admin1_name.unique().astype(str).tolist()),
-    "species": (df[activity_columns] > 0).max().sum().item(),
+    "speciesDetected": (df[activity_columns] > 0).max().sum().item(),
     "speciesSurveyed": len(activity_columns),
     "contributors": len(contributor_stats),
     "detectors": len(detectors),
     "activityDetectors": (detectors.count_type == "a").sum().item(),
     "presenceDetectors": (detectors.count_type == "p").sum().item(),
-    "sppDetections": df[activity_columns].sum().sum().item(),
+    "speciesDetections": df[activity_columns].sum().sum().item(),
     # detector_nights are sampling activity
     "detectorNights": len(df),
     "activityDetectorNights": (df.count_type == "a").sum().item(),

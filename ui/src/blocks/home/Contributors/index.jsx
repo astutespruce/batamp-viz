@@ -8,14 +8,19 @@ import { summaryStats, METRICS } from 'config'
 import { formatNumber } from 'util/format'
 import Contributor from './Contributor'
 
-const metrics = ['sppDetections', 'detectorNights', 'detectors', 'species']
+const metrics = [
+  'speciesDetections',
+  'detectorNights',
+  'detectors',
+  'speciesDetected',
+]
 
-const sortOptions = metrics.map((m) => METRICS[m].label || m)
+const sortOptions = metrics.map((m) => METRICS[m].label)
 
 const Contributors = () => {
   const {
-    species: totalSpp,
-    sppDetections,
+    speciesDetected,
+    speciesDetections,
     detectors,
     detectorNights,
     contributors,
@@ -64,9 +69,10 @@ const Contributors = () => {
         This application leverages the combined efforts of <b>{contributors}</b>{' '}
         contributors and would not be possible without their hard work.
         Together, these contributors have collected over{' '}
-        <b>{formatNumber(sppDetections, 0)}</b> detections of at least{' '}
-        <b>{totalSpp}</b> species on <b>{formatNumber(detectorNights, 0)}</b>{' '}
-        nights using <b>{formatNumber(detectors, 0)}</b> detectors.
+        <b>{formatNumber(speciesDetections, 0)}</b> detections of at least{' '}
+        <b>{speciesDetected}</b> species on{' '}
+        <b>{formatNumber(detectorNights, 0)}</b> nights using{' '}
+        <b>{formatNumber(detectors, 0)}</b> detectors.
       </Paragraph>
 
       <Flex
