@@ -722,7 +722,7 @@ write_feather(table, static_data_dir / "spp_detections.feather", compression="un
 ### Calculate contributor statistics
 ################################################################################
 grouped = df.groupby("contributors")
-contributor_spp_detections = grouped[activity_columns].sum().sum(axis=1).astype("uint").rename("spp_detections")
+contributor_spp_detections = grouped[activity_columns].sum().sum(axis=1).astype("uint").rename("speciesDetections")
 # detector nights - total sampling effort
 contributor_nights = grouped.size().astype("uint").rename("detector_nights")
 contributor_detectors = grouped.det_id.nunique().rename("detectors")
