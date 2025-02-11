@@ -35,27 +35,25 @@ const DetectorMetadata = ({
   let numDetected = 0
   let hasVaryingMonitoredSpecies = false
   const monitoredSpp = Object.entries(speciesTotals)
-    .map(
-      ([id, { [displayField]: total, detectorNights: sppDetectorNights }]) => {
-        const { commonName, sciName } = SPECIES[id]
+    .map(([id, { total, detectorNights: sppDetectorNights }]) => {
+      const { commonName, sciName } = SPECIES[id]
 
-        if (total > 0) {
-          numDetected += 1
-        }
-
-        if (sppDetectorNights < detectorNights) {
-          hasVaryingMonitoredSpecies = true
-        }
-
-        return {
-          species: id,
-          commonName,
-          sciName,
-          detected: total > 0,
-          detectorNights: sppDetectorNights,
-        }
+      if (total > 0) {
+        numDetected += 1
       }
-    )
+
+      if (sppDetectorNights < detectorNights) {
+        hasVaryingMonitoredSpecies = true
+      }
+
+      return {
+        species: id,
+        commonName,
+        sciName,
+        detected: total > 0,
+        detectorNights: sppDetectorNights,
+      }
+    })
     .sort((a, b) => (a.commonName < b.commonName ? -1 : 1))
 
   const numMonitored = monitoredSpp.length
@@ -85,7 +83,9 @@ const DetectorMetadata = ({
       <Field label="Location:">
         {formatNumber(lat, 5)}° North / {formatNumber(lon, 5)}° East
       </Field>
-      <Field label="Microphone height:">{micHt} meters</Field>
+      <Field label="Microphone height:">
+        {formatNumber(micHt)} {quantityLabel('meters', micHt)}
+      </Field>
       <Field label="Detector effort:">
         Operated for {formatNumber(detectorNights, 0)} nights.
         <br />
