@@ -16,7 +16,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -61,6 +60,7 @@ venv.bak/
 
 node_modules/
 
+/data/source/
 /data/src/
 /data/derived/
 /data/boundaries

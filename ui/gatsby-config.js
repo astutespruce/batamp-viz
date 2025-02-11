@@ -52,14 +52,14 @@ module.exports = {
     },
     {
       resolve: `gatsby-transformer-json`,
-      options: {
-        // lump all the species JSON files into a single data structure,
-        // keep the others separate based on their filenames
-        typeName: ({ node }) =>
-          node.relativeDirectory === 'speciesTS'
-            ? 'speciesTSJson'
-            : `${node.name}Json`,
-      },
+      // options: {
+      //   // lump all the species JSON files into a single data structure,
+      //   // keep the others separate based on their filenames
+      //   typeName: ({ node }) =>
+      //     node.relativeDirectory === 'speciesTS'
+      //       ? 'speciesTSJson'
+      //       : `${node.name}Json`,
+      // },
     },
     `gatsby-plugin-catch-links`,
     `gatsby-plugin-sitemap`,
@@ -76,23 +76,6 @@ module.exports = {
           head: true,
           respectDNT: true,
         },
-      },
-    },
-    {
-      resolve: `@gatsby-contrib/gatsby-plugin-elasticlunr-search`,
-      options: {
-        // Fields to index
-        fields: [`path`, `commonName`, `sciName`, `species`],
-        resolvers: {
-          speciesJson: {
-            commonName: ({ commonName }) => commonName,
-            sciName: ({ sciName }) => sciName,
-            species: ({ species }) => species,
-            path: ({ species }) => `/species/${species}`,
-          },
-        },
-        // only include species
-        filter: (node) => node.species,
       },
     },
   ],

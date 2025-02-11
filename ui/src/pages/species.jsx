@@ -1,19 +1,32 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
+import * as aq from 'arquero'
 import { Container, Heading } from 'theme-ui'
 
 import { Layout, SEO } from 'components/Layout'
 import { SubpageHeaderImage as HeaderImage } from 'components/Image'
-import { SpeciesList } from 'components/Species'
-import { extractNodes } from 'util/data'
-import { SPECIES } from '../../config/constants'
+import { SpeciesList } from 'components/SpeciesList'
+import { summaryStats, SPECIES } from 'config'
 
-const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
-  const species = extractNodes(allSpeciesJson).map((d) => ({
-    ...d,
-    ...SPECIES[d.species],
-  }))
+const SpeciesListPage = ({ data: { headerImage } }) => {
+  const speciesTable = aq
+    .table(summaryStats.speciesTable)
+    .rename({ species: 'speciesID' })
+    .join(
+      aq.from(
+        Object.entries(SPECIES).map(
+          ([speciesID, { sciName, commonName, ...rest }]) => ({
+            speciesID,
+            sciName,
+            commonName,
+            searchKey: `${speciesID} ${commonName.toLowerCase()} ${sciName.toLowerCase()}`,
+            ...rest,
+          })
+        )
+      ),
+      'speciesID'
+    )
 
   return (
     <Layout>
@@ -31,32 +44,15 @@ const SpeciesPage = ({ data: { headerImage, allSpeciesJson } }) => {
         <Heading as="h1" sx={{ fontSize: '3rem', mb: '3rem', lineHeight: 1.2 }}>
           Explore Data for North American Bat Species
         </Heading>
-        <SpeciesList species={species} />
+        <SpeciesList speciesTable={speciesTable} />
       </Container>
     </Layout>
   )
 }
 
-SpeciesPage.propTypes = {
+SpeciesListPage.propTypes = {
   data: PropTypes.shape({
     headerImage: PropTypes.object.isRequired,
-    allSpeciesJson: PropTypes.shape({
-      edges: PropTypes.arrayOf(
-        PropTypes.shape({
-          node: PropTypes.shape({
-            species: PropTypes.string.isRequired,
-            detectors: PropTypes.number.isRequired,
-            presenceOnlyDetectors: PropTypes.number,
-            detections: PropTypes.number.isRequired,
-            presenceOnlyDetections: PropTypes.number,
-            detectionNights: PropTypes.number.isRequired,
-            detectorNights: PropTypes.number.isRequired,
-            presenceOnlyDetectorNights: PropTypes.number,
-            contributors: PropTypes.number.isRequired,
-          }).isRequired,
-        })
-      ).isRequired,
-    }).isRequired,
   }).isRequired,
 }
 
@@ -71,25 +67,9 @@ export const pageQuery = graphql`
         )
       }
     }
-
-    allSpeciesJson {
-      edges {
-        node {
-          species
-          detectors
-          presenceOnlyDetectors: poDetectors
-          detections
-          presenceOnlyDetections: poDetections
-          detectionNights
-          detectorNights
-          presenceOnlyDetectorNights: poDetectorNights
-          contributors
-        }
-      }
-    }
   }
 `
 
-export default SpeciesPage
+export default SpeciesListPage
 
 export const Head = () => <SEO title="Explore Bat Species" />

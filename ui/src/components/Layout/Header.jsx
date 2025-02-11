@@ -30,7 +30,7 @@ const Header = () => (
         sx={{
           flex: '1 1 auto',
           my: 0,
-          fontSize: ['1rem', '1.25rem', '1.75rem'],
+          fontSize: ['1rem', '1rem', '1.2rem', '1.6rem'],
           lineHeight: 1,
           color: 'primary.8',
           '& a': {

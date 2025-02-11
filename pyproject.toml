@@ -1,24 +1,41 @@
-[tool.poetry]
+[project]
 name = "batamp-viz"
-version = "0.2.0"
+version = "0.3.0"
 description = "Bat Acoustic Monitoring Visualization Tool"
-authors = ["Brendan Ward <bcward@astutespruce.com>"]
-license = "MIT"
-packages = [{ include = "analysis" }]
+readme = "README.md"
+authors = [{ name = "Brendan C. Ward", email = "bcward@astutespruce.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+requires-python = ">=3.12"
+dependencies = [
+    "geopandas",
+    "httpx[http2]",
+    "h3ronpy",
+    "numba",
+    "pandas",
+    "pyarrow",
+    "pymgl",
+    "pyogrio",
+    "python-databasin",
+    "python-dotenv",
+    "ruff",
+    "shapely",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-pyogrio = "^0.9.0"
-python-dotenv = "^1.0.1"
-pyarrow = "^16.1.0"
-python-databasin = "^0.6.1"
-pymgl = "^0.4.0"
-shapely = "^2.0.2"
-ruff = "^0.4.9"
-geopandas = "^0.14.4"
+[project.urls]
+Homepage = "https://batamp.org"
+Repository = "https://github.com/astute-spruce/batamp-viz"
 
-[tool.poetry.dev-dependencies]
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.setuptools.packages.find]
+include = ["analysis"]
+
+[tool.ruff]
+line-length = 120

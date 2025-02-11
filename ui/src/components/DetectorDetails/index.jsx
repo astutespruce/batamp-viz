@@ -1,43 +1,57 @@
-import React, { useState, useLayoutEffect, memo } from 'react'
+import React, { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
-import { dequal } from 'dequal'
-
+import { escape, op } from 'arquero'
 import { Flex } from 'theme-ui'
 
-import Details from './Details'
+import { useCrossfilter } from 'components/Crossfilter'
+import Detector from './Detector'
 import Iterator from './Iterator'
 
+// IMPORTANT: the key param is used where this is called to force a complete
+// re-mount of this component on change to siteId
 const DetectorDetails = ({
-  detectors,
-  selectedSpecies,
-  onSetDetector,
+  siteId,
+  table,
+  detectorsTable,
+  speciesID,
+  map,
   onClose,
 }) => {
+  const {
+    state: { filteredTable },
+  } = useCrossfilter()
+
   const [index, setIndex] = useState(0)
 
-  useLayoutEffect(() => {
-    // reset to first index on new set of detectors
-    setIndex(0)
-  }, [detectors, detectors.length])
-
-  const handleIteratorChange = (newIndex) => {
-    setIndex(newIndex)
-    onSetDetector(detectors[newIndex].id)
-  }
+  // filter detectors based on current state of filters
+  const detectorIds = useMemo(
+    () =>
+      filteredTable
+        .filter(escape((d) => d.siteId === siteId))
+        .rollup({ detId: op.array_agg_distinct('detId') })
+        .array('detId')[0],
+    [filteredTable, siteId]
+  )
 
   return (
     <Flex sx={{ flexDirection: 'column', height: '100%' }}>
-      {detectors.length > 1 ? (
+      {detectorIds.length > 1 ? (
         <Iterator
           index={index}
-          onChange={handleIteratorChange}
-          count={detectors.length}
+          onChange={setIndex}
+          count={detectorIds.length}
         />
       ) : null}
 
-      <Details
-        detector={detectors[index]}
-        selectedSpecies={selectedSpecies}
+      <Detector
+        detector={{
+          ...detectorsTable
+            .filter(escape((d) => d.id === detectorIds[index]))
+            .objects()[0],
+          table: table.filter(escape((d) => d.detId === detectorIds[index])),
+        }}
+        speciesID={speciesID}
+        map={map}
         onClose={onClose}
       />
     </Flex>
@@ -45,23 +59,17 @@ const DetectorDetails = ({
 }
 
 DetectorDetails.propTypes = {
-  detectors: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-    })
-  ).isRequired,
-  onSetDetector: PropTypes.func.isRequired,
+  siteId: PropTypes.number.isRequired,
+  table: PropTypes.object.isRequired, // full table including all species for all detectors
+  detectorsTable: PropTypes.object.isRequired,
   onClose: PropTypes.func.isRequired,
-  selectedSpecies: PropTypes.string,
+  speciesID: PropTypes.string,
+  map: PropTypes.object,
 }
 
 DetectorDetails.defaultProps = {
-  selectedSpecies: null,
+  speciesID: null,
+  map: null,
 }
 
-// only rerender on updates to detectors
-export default memo(
-  DetectorDetails,
-  ({ detectors: prevDetectors }, { detectors: nextDetectors }) =>
-    dequal(prevDetectors, nextDetectors)
-)
+export default DetectorDetails

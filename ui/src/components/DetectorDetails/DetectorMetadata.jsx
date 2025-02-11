@@ -1,65 +1,89 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Check, Times } from '@emotion-icons/fa-solid'
+import {
+  Check,
+  Times,
+  ExclamationTriangle,
+  ExternalLinkAlt,
+} from '@emotion-icons/fa-solid'
 import { Box, Text } from 'theme-ui'
 
 import { OutboundLink } from 'components/Link'
+import { SPECIES } from 'config'
 import { formatNumber, quantityLabel } from 'util/format'
 import Field from './Field'
-import { SPECIES } from '../../../config/constants'
 
 const DetectorMetadata = ({
+  displayField,
+  source,
+  dataset,
+  countType,
   lat,
   lon,
   micHt,
-  mfg,
-  model,
+  detType,
   micType,
   reflType,
   callId,
-  presenceOnly,
-  datasets,
+  organization,
   contributors,
   detectorNights,
   detectionNights,
-  species,
-  targetSpecies,
-  selectedSpecies,
+  speciesTotals,
+  speciesID,
 }) => {
-  const numContributors = contributors.split(', '.length)
+  let numDetected = 0
+  let hasVaryingMonitoredSpecies = false
+  const monitoredSpp = Object.entries(speciesTotals)
+    .map(
+      ([id, { [displayField]: total, detectorNights: sppDetectorNights }]) => {
+        const { commonName, sciName } = SPECIES[id]
 
-  const detectedSpp = new Set(species)
-  const monitoredSpp = targetSpecies
-    .map((spp) => {
-      const { commonName, sciName } = SPECIES[spp]
+        if (total > 0) {
+          numDetected += 1
+        }
 
-      return {
-        species: spp,
-        commonName,
-        sciName,
-        detected: detectedSpp.has(spp),
+        if (sppDetectorNights < detectorNights) {
+          hasVaryingMonitoredSpecies = true
+        }
+
+        return {
+          species: id,
+          commonName,
+          sciName,
+          detected: total > 0,
+          detectorNights: sppDetectorNights,
+        }
       }
-    })
+    )
     .sort((a, b) => (a.commonName < b.commonName ? -1 : 1))
 
   const numMonitored = monitoredSpp.length
-  const numDetected = detectedSpp.size
 
-  const datasetInfo = datasets.map((d) => {
-    const [id, name] = d.split(':')
+  const rootURL =
+    source === 'nabat'
+      ? 'https://sciencebase.usgs.gov/nabat/#/projects'
+      : 'https://batamp.databasin.org/datasets'
+  const datasetInfo = dataset.split(',').map((d) => {
+    const [name, id] = d.split('|')
 
     return {
       id,
-      url: `https://batamp.databasin.org/datasets/${id}`,
+      url: `${rootURL}/${id}`,
       name: name || `private dataset (${id})`,
     }
   })
 
   return (
     <>
-      <Field label="Detector data contributed by:">{numContributors}</Field>
+      <Field label="Detector data contributed by:">
+        {contributors.split(',').join(', ')}
+        {organization ? (
+          <Box sx={{ mt: '0.5rem' }}>Lead organization: {organization}</Box>
+        ) : null}
+      </Field>
       <Field label="Location:">
-        {formatNumber(lat, 2)}° North / {formatNumber(lon, 2)}° East
+        {formatNumber(lat, 5)}° North / {formatNumber(lon, 5)}° East
       </Field>
       <Field label="Microphone height:">{micHt} meters</Field>
       <Field label="Detector effort:">
@@ -70,7 +94,7 @@ const DetectorMetadata = ({
           : `Bats detected on ${formatNumber(detectionNights, 0)} nights.`}
         <br />
         This detector measured{' '}
-        {presenceOnly ? 'nightly presence only' : 'nightly activity'}.
+        {countType === 'p' ? 'nightly presence only' : 'nightly activity'}.
       </Field>
       <Field
         label={`${numDetected} of ${numMonitored} monitored species were detected:`}
@@ -87,12 +111,18 @@ const DetectorMetadata = ({
           }}
         >
           {monitoredSpp.map(
-            ({ species: spp, commonName, sciName, detected }) => (
+            ({
+              species: spp,
+              commonName,
+              sciName,
+              detected,
+              detectorNights: sppDetectorNights,
+            }) => (
               <Box
                 key={spp}
                 as="li"
                 sx={{
-                  color: spp === selectedSpecies ? 'highlight.5' : 'inherit',
+                  color: spp === speciesID ? 'highlight.5' : 'inherit',
                 }}
               >
                 {detected ? (
@@ -119,61 +149,139 @@ const DetectorMetadata = ({
                   sx={{
                     display: 'inline',
                     fontSize: '0.9rem',
-                    color: spp === selectedSpecies ? 'highlight.5' : 'grey.8',
+                    color: spp === speciesID ? 'highlight.5' : 'grey.8',
                   }}
                 >
                   ({sciName})
                 </Text>
+                {sppDetectorNights < detectorNights ? (
+                  <Box
+                    sx={{
+                      color: 'grey.7',
+                      mt: '-3px',
+                      display: 'inline',
+                      ml: '0.5rem',
+                    }}
+                    title={`reported on ${formatNumber(sppDetectorNights)} of ${formatNumber(detectorNights)} nights`}
+                  >
+                    <ExclamationTriangle size="0.75em" />
+                  </Box>
+                ) : null}
               </Box>
             )
           )}
         </Box>
+
+        {hasVaryingMonitoredSpecies ? (
+          <Text variant="help" sx={{ mt: '1rem' }}>
+            <ExclamationTriangle
+              size="1em"
+              style={{ marginTop: '-3px', marginRight: '0.25rem' }}
+            />
+            This species was not consistently reported for all monitored nights.
+            This may be due to unreported absences or methods that did not
+            consistently monitor for all species above.
+          </Text>
+        ) : null}
       </Field>
 
-      {mfg ? (
-        <Field label="Detector model:">
-          {mfg}
-          {model ? `(${model})` : null}
+      {detType ? (
+        <Field label="Detector model:">{detType.split(',').join(', ')}</Field>
+      ) : null}
+
+      {micType ? (
+        <Field label="Microphone:">{micType.split(',').join(', ')}</Field>
+      ) : null}
+
+      {reflType ? (
+        <Field label="Reflector type:">{reflType.split(',').join(', ')}</Field>
+      ) : null}
+
+      {callId ? (
+        <Field label="How were species identified?">
+          {callId.split(',').join(', ')}
         </Field>
       ) : null}
 
-      {micType ? <Field label="Microphone type:">{micType}</Field> : null}
-
-      {reflType ? <Field label="Reflector type:">{reflType}</Field> : null}
-
-      {callId ? (
-        <Field label="How were species identified?">{callId}</Field>
-      ) : null}
-
-      <Field
-        label={`Source ${quantityLabel('datasets', datasetInfo.length)} on BatAMP:`}
-      >
-        {datasetInfo.length === 1 ? (
-          <OutboundLink to={datasetInfo[0].url}>
-            {datasetInfo[0].name}
-          </OutboundLink>
-        ) : (
+      <Field label="Data source:">
+        <Box>
+          Source database:{' '}
           <Box
             as="ul"
             sx={{
-              pl: 0,
-              listStyle: 'none',
-              my: '0.5rem',
+              pl: '2rem',
               '& li+li': {
-                mt: '0.5rem',
+                mt: '0.25rem',
               },
             }}
           >
-            {datasetInfo.map(({ id, url, name }) => (
-              <li key={id}>
-                <OutboundLink to={url}>{name}</OutboundLink>
-              </li>
-            ))}
+            <li>
+              {source === 'nabat' ? (
+                <OutboundLink to="https://www.nabatmonitoring.org/">
+                  North American Bat Monitoring Program (NABat)
+                  <ExternalLinkAlt
+                    size="1em"
+                    style={{
+                      opacity: 0.6,
+                      marginLeft: '0.5rem',
+                      marginTop: '-4px',
+                    }}
+                  />
+                </OutboundLink>
+              ) : (
+                <OutboundLink to="https://batamp.databasin.org">
+                  Bat Acoustic Monitoring Portal (BatAMP)
+                  <ExternalLinkAlt
+                    size="1em"
+                    style={{
+                      opacity: 0.6,
+                      marginLeft: '0.5rem',
+                      marginTop: '-4px',
+                    }}
+                  />
+                </OutboundLink>
+              )}
+            </li>
           </Box>
-        )}
-        <Text variant="help" sx={{ ml: '-1rem' }}>
-          The dataset page(s) on BatAMP may contain additional information about
-          this detector and the methods used to detect species at this location.
+        </Box>
+        <Box sx={{ mt: '1rem' }}>
+          Source{' '}
+          {quantityLabel(
+            source === 'nabat' ? 'projects' : 'datasets',
+            datasetInfo.length
+          )}
+          :
+        </Box>
+        <Box
+          as="ul"
+          sx={{
+            pl: '2rem',
+            '& li+li': {
+              mt: '0.25rem',
+            },
+          }}
+        >
+          {datasetInfo.map(({ id, url, name }) => (
+            <li key={id}>
+              <OutboundLink to={url}>
+                {name}
+                <ExternalLinkAlt
+                  size="1em"
+                  style={{
+                    opacity: 0.6,
+                    marginLeft: '0.5rem',
+                    marginTop: '-4px',
+                  }}
+                />
+              </OutboundLink>
+            </li>
+          ))}
+        </Box>
+
+        <Text variant="help" sx={{ mt: '1rem' }}>
+          The dataset {quantityLabel('pages', datasetInfo.length)} above may
+          contain additional information about this detector and the methods
+          used to detect species at this location.
         </Text>
       </Field>
     </>
@@ -181,33 +289,32 @@ const DetectorMetadata = ({
 }
 
 DetectorMetadata.propTypes = {
+  displayField: PropTypes.string.isRequired,
+  source: PropTypes.string.isRequired,
+  countType: PropTypes.string.isRequired,
   lat: PropTypes.number.isRequired,
   lon: PropTypes.number.isRequired,
-  micHt: PropTypes.number.isRequired,
+  organization: PropTypes.string,
   contributors: PropTypes.string.isRequired,
-  mfg: PropTypes.string,
-  model: PropTypes.string,
+  detType: PropTypes.string,
+  micHt: PropTypes.number.isRequired,
   micType: PropTypes.string,
   reflType: PropTypes.string,
   callId: PropTypes.string,
-  presenceOnly: PropTypes.number,
-  datasets: PropTypes.arrayOf(PropTypes.string).isRequired,
+  dataset: PropTypes.string.isRequired,
   detectorNights: PropTypes.number.isRequired,
   detectionNights: PropTypes.number.isRequired,
-  species: PropTypes.arrayOf(PropTypes.string),
-  targetSpecies: PropTypes.arrayOf(PropTypes.string).isRequired,
-  selectedSpecies: PropTypes.string,
+  speciesTotals: PropTypes.object.isRequired,
+  speciesID: PropTypes.string,
 }
 
 DetectorMetadata.defaultProps = {
-  mfg: null,
-  model: null,
+  organization: null,
+  detType: null,
   micType: null,
   reflType: null,
   callId: null,
-  presenceOnly: 0,
-  species: [],
-  selectedSpecies: null,
+  speciesID: null,
 }
 
 export default DetectorMetadata

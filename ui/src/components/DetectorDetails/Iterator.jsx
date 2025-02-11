@@ -51,7 +51,7 @@ const Iterator = ({ index, count, onChange }) => {
           textAlign: 'center',
         }}
       >
-        detector {index + 1} of {count}
+        detector {index + 1} of {count} at this site
       </Box>
 
       <Flex

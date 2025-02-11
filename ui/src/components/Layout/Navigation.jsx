@@ -1,5 +1,5 @@
 import React from 'react'
-import { Flex } from 'theme-ui'
+import { Flex, Text } from 'theme-ui'
 
 import { Link } from 'components/Link'
 
@@ -29,10 +29,20 @@ const Navigation = () => (
     }}
   >
     <Link to="/presence" sx={linkCSS}>
-      Explore species occurrences
+      <Text sx={{ display: ['none', 'none', 'none', 'block'] }}>
+        Explore species occurrences
+      </Text>
+      <Text sx={{ display: ['block', 'block', 'block', 'none'] }}>
+        Explore occurrences
+      </Text>
     </Link>
     <Link to="/species" sx={linkCSS}>
-      Explore individual species
+      <Text sx={{ display: ['none', 'none', 'none', 'block'] }}>
+        Explore individual species
+      </Text>
+      <Text sx={{ display: ['block', 'block', 'block', 'none'] }}>
+        Explore species
+      </Text>
     </Link>
   </Flex>
 )
