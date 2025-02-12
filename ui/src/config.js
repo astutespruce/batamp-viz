@@ -231,6 +231,10 @@ export const SPECIES = {
   },
 }
 
+export const SPECIES_REMAP = {
+  labl: 'lafr',
+}
+
 // Important: there must be corresponding entries in the gatsby-node.js file
 export const SPECIES_ID = {
   '01': 'anpa',
