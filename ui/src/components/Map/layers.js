@@ -74,18 +74,19 @@ export const getHexRenderer = (values, valueType = 'count') => {
     const colors = hexColorScheme[numBins]
     // use match expr to match values exactly
     binColorExpr = ['match', ['feature-state', 'total']]
-    Array(numBins)
-      .keys()
-      .forEach((bin) => {
-        binColorExpr.push(bin + 1)
-        binColorExpr.push(colors[bin])
-        legendElements.unshift({
-          ...hexLegendEntryStub,
-          id: `value${bin + 1}`,
-          label: `${formatNumber(bin + 1)}`,
-          color: colors[bin],
-        })
+
+    // need to define the array in advance for Safari
+    const iter = [...Array(numBins).keys()]
+    iter.forEach((bin) => {
+      binColorExpr.push(bin + 1)
+      binColorExpr.push(colors[bin])
+      legendElements.unshift({
+        ...hexLegendEntryStub,
+        id: `value${bin + 1}`,
+        label: `${formatNumber(bin + 1)}`,
+        color: colors[bin],
       })
+    })
     binColorExpr.push(defaultHexFillColor)
   } else {
     // NOTE: 1 is always assigned to its own category and not included in
