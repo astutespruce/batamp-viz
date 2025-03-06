@@ -101,6 +101,16 @@ async def get_project_info(client, token, project_ids):
                 }
             }
         }
+
+        allPublicDataReferences(
+            filter: { projectId: { in: $projectIds } }
+            orderBy: ID_DESC
+        ) {
+            nodes {
+                projectId
+                share_coords: disclosingCoordinatesForStationaryAcousticSurveys
+            }
+        }
     }
     """
 
@@ -115,7 +125,17 @@ async def get_project_info(client, token, project_ids):
     )
     request.raise_for_status()
 
-    df = pd.DataFrame(request.json()["data"]["allProjects"]["nodes"])
+    json = request.json()
+
+    # 0=indicates sharing allowed, 1 = sharing not allowed, null = not set, assume allowed
+    share_coords = (
+        pd.DataFrame(json["data"]["allPublicDataReferences"]["nodes"]).set_index("projectId").share_coords != 1
+    )
+
+    if (~share_coords).any():
+        raise NotImplementedError("Handle projects that do not allow sharing of coordinates; need to fuzz them")
+
+    df = pd.DataFrame(json["data"]["allProjects"]["nodes"]).join(share_coords, on="id")
     df["id"] = df.id.astype("uint")
     df["name"] = df.name.fillna("").str.strip()
 

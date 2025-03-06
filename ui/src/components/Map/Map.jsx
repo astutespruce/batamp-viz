@@ -32,6 +32,31 @@ const Map = ({ onCreateMap, onBasemapChange, children }) => {
       // enable PMTiles source
       mapboxgl.Style.setSourceType(PMTilesSource.SOURCE_TYPE, PMTilesSource)
 
+      mapObj.once('style.load', () => {
+        // hide Gulf of Mexico
+        if (mapObj.style._layers['marine-label-md-pt']) {
+          mapObj.setFilter('marine-label-md-pt', [
+            'all',
+            ['==', '$type', 'Point'],
+            ['in', 'labelrank', 2, 3],
+            ['!=', 'name', 'Gulf of Mexico'],
+          ])
+        } else if (mapObj.style._layers['water-point-label']) {
+          mapObj.setFilter('water-point-label', [
+            'all',
+            [
+              'match',
+              ['get', 'class'],
+              // remove 'sea'; this category includes the gulf
+              ['ocean', 'reservoir', 'water'],
+              true,
+              false,
+            ],
+            ['==', ['geometry-type'], 'Point'],
+          ])
+        }
+      })
+
       mapObj.on('load', () => {
         // snapshot existing map config
         const { sources: styleSources, layers: styleLayers } = mapObj.getStyle()
@@ -75,6 +100,29 @@ const Map = ({ onCreateMap, onBasemapChange, children }) => {
     map.setStyle(`mapbox://styles/mapbox/${styleID}`)
 
     map.once('style.load', () => {
+      // hide Gulf of Mexico
+      if (map.style._layers['marine-label-md-pt']) {
+        map.setFilter('marine-label-md-pt', [
+          'all',
+          ['==', '$type', 'Point'],
+          ['in', 'labelrank', 2, 3],
+          ['!=', 'name', 'Gulf of Mexico'],
+        ])
+      } else if (map.style._layers['water-point-label']) {
+        map.setFilter('water-point-label', [
+          'all',
+          [
+            'match',
+            ['get', 'class'],
+            // remove 'sea'; this category includes the gulf
+            ['ocean', 'reservoir', 'water'],
+            true,
+            false,
+          ],
+          ['==', ['geometry-type'], 'Point'],
+        ])
+      }
+
       // after new style has loaded
       // save it so that we can diff with it on next change
       // and re-add the sources / layers back on it
