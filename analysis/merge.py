@@ -158,7 +158,6 @@ df = gp.GeoDataFrame(
 print(f"Dropped {orig_count - len(df):,} records that are duplicates except for varying activity levels")
 
 
-################ IN PROGRESS
 time_cols = ["night", "year", "month", "week", "dayofyear"]
 group_cols = [c for c in nonactivity_cols if c not in time_cols]
 
@@ -224,16 +223,13 @@ df = df.drop(
     + [f"{c}_annual_max" for c in activity_columns]
 )
 
-
 # count species present and surveyed
 df["spp_present"] = (df[activity_columns] > 0).sum(axis=1).astype("uint8")
 df["spp_surveyed"] = (df[activity_columns] >= 0).sum(axis=1).astype("uint8")
 df["spp_detections"] = df[activity_columns].sum(axis=1).astype("uint32")
 
-
 # save record ID to be able to remove individual records
 df["record_id"] = df.index.values.astype("uint")
-
 
 # drop records that did not survey (report as >= 0) any species; these are not useful
 df = df.loc[df.spp_surveyed > 0].reset_index(drop=True)
@@ -257,8 +253,6 @@ df = df.join(
 df["geometry"] = df.rep_point.values
 df = df.drop(columns=["rep_point"])
 
-# fix missing site_id based on location (match other records at same point)
-df.loc[df.point_id == "1044130403221820", "site_id"] = "CCLHTG"
 
 ### fix mic_ht errors
 df = fix_mic_height(df)
