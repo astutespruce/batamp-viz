@@ -242,6 +242,8 @@ def clean_batamp(df, admin_df):
         .replace("Wildlife Acoustics SMX-U1", "SMX-U1")
     )
 
+    df["refl_type"] = df.refl_type.replace("None", "none")
+
     # add other date-related columns
     df["year"] = df.night.dt.year.astype("uint16")
     df["month"] = df.night.dt.month.astype("uint8")

@@ -56,7 +56,7 @@ def extract_point_ids(df, grts):
     )
     # NOTE: the above results return symmetric pairs and self-joins, which allows
     # the directed graph to work properly in this case; we then drop any connections
-    # between points that are at GRTS cell center to prvent them from clustering together
+    # between points that are at GRTS cell center to prevent them from clustering together
     # (assume original points are best way to preserve what were separate detectors)
     pairs = pd.DataFrame(
         {
