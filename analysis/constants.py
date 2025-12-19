@@ -46,7 +46,8 @@ SPECIES = {
     "myci": {"SNAME": "Myotis ciliolabrum", "CNAME": "Western Small-footed Bat"},
     "myev": {"SNAME": "Myotis evotis", "CNAME": "Long-Eared Myotis"},
     "mygr": {"SNAME": "Myotis grisescens", "CNAME": "Gray Bat"},
-    "myke": {"SNAME": "Myotis keenii", "CNAME": "Keen's Myotis"},
+    # MYKE is lumped with MYEV; removed here per direction from Ted 12/18/2025
+    # "myke": {"SNAME": "Myotis keenii", "CNAME": "Keen's Myotis"},
     "myle": {"SNAME": "Myotis leibii", "CNAME": "Eastern Small-footed Myotis"},
     "mylu": {"SNAME": "Myotis lucifugus", "CNAME": "Little Brown Bat"},
     "myoc": {"SNAME": "Myotis occultus", "CNAME": "Arizona Myotis"},
@@ -71,7 +72,7 @@ SPECIES = {
 # per detector
 # IMPORTANT: Must have a matching inverted map in JS tier
 # {spp: f"{i+1:02d}" for i, spp in enumerate(sorted(SPECIES.keys()))}
-# invert is {v:k for k,v in SPECIES_ID.items()}
+# invert (saved to config.js) is {v:k for k,v in SPECIES_ID.items()}
 
 SPECIES_ID = {
     "anpa": "01",
@@ -104,22 +105,21 @@ SPECIES_ID = {
     "myci": "28",
     "myev": "29",
     "mygr": "30",
-    "myke": "31",
-    "myle": "32",
-    "mylu": "33",
-    "myoc": "34",
-    "myse": "35",
-    "myso": "36",
-    "myth": "37",
-    "myve": "38",
-    "myvo": "39",
-    "myyu": "40",
-    "nyfe": "41",
-    "nyhu": "42",
-    "nyma": "43",
-    "pahe": "44",
-    "pesu": "45",
-    "tabr": "46",
+    "myle": "31",
+    "mylu": "32",
+    "myoc": "33",
+    "myse": "34",
+    "myso": "35",
+    "myth": "36",
+    "myve": "37",
+    "myvo": "38",
+    "myyu": "39",
+    "nyfe": "40",
+    "nyhu": "41",
+    "nyma": "42",
+    "pahe": "43",
+    "pesu": "44",
+    "tabr": "45",
 }
 
 # Activity colum

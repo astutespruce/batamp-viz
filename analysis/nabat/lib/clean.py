@@ -30,6 +30,9 @@ def clean_nabat(df):
     if (df.species_code == "lecu").any():
         raise ValueError("Found LECU present in NABat data; this species needs to be re-aliased to LEYE")
 
+    if (df.species_code == "myke").any():
+        raise ValueError("Found MYKE present in NABat data; this species needs to be re-aliased to MYEV")
+
     # round mic_ht to 2 decimals
     df["mic_ht"] = df.mic_ht.round(2)
 

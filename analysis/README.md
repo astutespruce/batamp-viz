@@ -89,8 +89,7 @@ All boundaries above were processed using `prep_boundaries.py`.
 Vector tiles were created with `tippecanoe`, from root directory:
 
 ```
-tippecanoe -f -Z0 -z6 --no-tile-stats --visvalingam --no-simplification-of-shared-nodes -l species_r
-anges -o ui/static/tiles/species_ranges.pmtiles data/boundaries/species_ranges.fgb
+tippecanoe -f -Z0 -z6 --no-tile-stats --visvalingam --no-simplification-of-shared-nodes -l species_ranges -o ui/static/tiles/species_ranges.pmtiles data/boundaries/species_ranges.fgb
 ```
 
 ## Bat Presence and Activity

@@ -266,6 +266,10 @@ def clean_batamp(df, admin_df):
     if "lecu" in df.columns:
         df["leye"] = df[["leye", "lecu"]].max(axis=1)
 
+    # lump any incoming MYKE records to MYEV
+    if "myke" in df.columns:
+        df["myev"] = df[["myev", "myke"]].max(axis=1)
+
     # mark any bat detections in Hawaii as HABA (only species present)
     ix = df.index.isin(
         shapely.STRtree(df.geometry.values).query(
