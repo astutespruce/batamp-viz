@@ -37,7 +37,7 @@ const Search = () => {
         display: ['none', 'none', 'none', 'unset'],
         width: ['200px', 'auto'],
         position: 'relative',
-        zIndex: 1,
+        zIndex: 10000,
       }}
     >
       <SearchField value={query} onChange={handleChange} />

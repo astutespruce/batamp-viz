@@ -105,90 +105,96 @@ const ListItem = ({
           )}
         </Box>
 
-        <Box
-          as="ul"
-          sx={{
-            fontSize: [2, 2, 3],
-            mt: '0.5rem',
-            pl: 0,
-            listStyle: 'none',
-            '& li': { mb: '0.25rem' },
-            '& li+li': {
-              mt: '0.75rem',
-            },
-          }}
-        >
-          <li>
-            {detectionNights > 0 ? (
-              <>
-                detected on{' '}
+        {detectorNights > 0 ? (
+          <Box
+            as="ul"
+            sx={{
+              fontSize: [2, 2, 3],
+              mt: '0.5rem',
+              pl: 0,
+              listStyle: 'none',
+              '& li': { mb: '0.25rem' },
+              '& li+li': {
+                mt: '0.75rem',
+              },
+            }}
+          >
+            <li>
+              {detectionNights > 0 ? (
+                <>
+                  detected on{' '}
+                  <Text
+                    sx={{
+                      display: 'inline',
+                      fontWeight:
+                        metric === 'nights detected' ? 'bold' : 'normal',
+                      color:
+                        metric === 'nights detected'
+                          ? 'highlight.5'
+                          : 'inherit',
+                    }}
+                  >
+                    {formatNumber(detectionNights, 0)}
+                  </Text>{' '}
+                </>
+              ) : (
+                'not detected on any '
+              )}
+              of {formatNumber(detectorNights, 0)} nights monitored
+            </li>
+
+            {detections > 0 ? (
+              <li>
                 <Text
                   sx={{
                     display: 'inline',
-                    fontWeight:
-                      metric === 'nights detected' ? 'bold' : 'normal',
-                    color:
-                      metric === 'nights detected' ? 'highlight.5' : 'inherit',
+                    fontWeight: metric === 'detections' ? 'bold' : 'normal',
+                    color: metric === 'detections' ? 'highlight.5' : 'inherit',
                   }}
                 >
-                  {formatNumber(detectionNights, 0)}
+                  {formatNumber(detections, 0)}
                 </Text>{' '}
-              </>
-            ) : (
-              'not detected on any '
-            )}
-            of {formatNumber(detectorNights, 0)} nights monitored
-          </li>
+                total detections
+              </li>
+            ) : null}
 
-          {detections > 0 ? (
             <li>
               <Text
                 sx={{
                   display: 'inline',
-                  fontWeight: metric === 'detections' ? 'bold' : 'normal',
-                  color: metric === 'detections' ? 'highlight.5' : 'inherit',
+                  fontWeight: metric === 'detectors' ? 'bold' : 'normal',
+                  color: metric === 'detectors' ? 'highlight.5' : 'inherit',
                 }}
               >
-                {formatNumber(detections, 0)}
+                {formatNumber(detectors, 0)}
               </Text>{' '}
-              total detections
+              detectors monitored by{' '}
+              <Text
+                sx={{
+                  display: 'inline',
+                  fontWeight: metric === 'contributors' ? 'bold' : 'normal',
+                  color: metric === 'contributors' ? 'highlight.5' : 'inherit',
+                }}
+              >
+                {contributors}
+              </Text>{' '}
+              {quantityLabel('contributors', contributors)}
             </li>
-          ) : null}
 
-          <li>
-            <Text
-              sx={{
-                display: 'inline',
-                fontWeight: metric === 'detectors' ? 'bold' : 'normal',
-                color: metric === 'detectors' ? 'highlight.5' : 'inherit',
-              }}
-            >
-              {formatNumber(detectors, 0)}
-            </Text>{' '}
-            detectors monitored by{' '}
-            <Text
-              sx={{
-                display: 'inline',
-                fontWeight: metric === 'contributors' ? 'bold' : 'normal',
-                color: metric === 'contributors' ? 'highlight.5' : 'inherit',
-              }}
-            >
-              {contributors}
-            </Text>{' '}
-            {quantityLabel('contributors', contributors)}
-          </li>
-
-          {!!presenceOnlyDetectors && (
-            <li>
-              <Text variant="help" sx={{ fontSize: 1 }}>
-                Note: {formatNumber(presenceOnlyDetections, 0)} detections on
-                the {formatNumber(presenceOnlyDetectorNights, 0)} nights
-                monitored at {formatNumber(presenceOnlyDetectors, 0)} detectors
-                only recorded species presence, not activity.
-              </Text>
-            </li>
-          )}
-        </Box>
+            {!!presenceOnlyDetectors && (
+              <li>
+                <Text variant="help" sx={{ fontSize: 1 }}>
+                  Note: {formatNumber(presenceOnlyDetections, 0)} detections on
+                  the {formatNumber(presenceOnlyDetectorNights, 0)} nights
+                  monitored at {formatNumber(presenceOnlyDetectors, 0)}{' '}
+                  detectors only recorded species presence, not activity.
+                </Text>
+              </li>
+            )}
+          </Box>
+        ) : (
+          'Not currently monitored at any locations uploaded to BatAMP'
+        )}
 
         <Box>
           <GatsbyImage

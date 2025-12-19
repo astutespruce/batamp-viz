@@ -809,11 +809,13 @@ spp_stats = (
     .join(spp_contributors)
     .join(spp_detectors)
     .join(spp_po_detectors)
-    .fillna(0)
-    .astype("uint")
-    .reset_index()
-    .rename(columns={"index": "species"})
 )
+
+# add any missing species we want listed but haven't yet been monitored
+missing_spps = pd.DataFrame([], index=[spp for spp in SPECIES_ID if spp not in spp_stats.index])
+spp_stats = pd.concat([spp_stats, missing_spps], ignore_index=False)
+
+spp_stats = spp_stats.fillna(0).astype("uint").reset_index().rename(columns={"index": "species"}).sort_values("species")
 
 ################################################################################
 ### Calculate high-level summary statistics

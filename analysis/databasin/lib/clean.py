@@ -262,6 +262,10 @@ def clean_batamp(df, admin_df):
     else:
         df["lafr"] = df.labl.values
 
+    # reassign any incoming LECU records to LEYE
+    if "lecu" in df.columns:
+        df["leye"] = df[["leye", "lecu"]].max(axis=1)
+
     # mark any bat detections in Hawaii as HABA (only species present)
     ix = df.index.isin(
         shapely.STRtree(df.geometry.values).query(
@@ -308,6 +312,11 @@ def clean_batamp(df, admin_df):
     df.loc[(df.dataset == "bb31cf5cfed7486bb1fb855bf8d4c29f") & (df.det_id == "5622_24S07_two"), "mic_ht"] = np.float32(
         1.8
     )
+
+    for col in ACTIVITY_COLUMNS:
+        if col not in df.columns:
+            df[col] = np.nan
+        df[col] = df[col].astype("Int32")
 
     # select out the columns used in this pipeline
     df = df[

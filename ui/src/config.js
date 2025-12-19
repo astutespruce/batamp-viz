@@ -112,10 +112,6 @@ export const SPECIES = {
     sciName: 'Lasiurus xanthinus',
     commonName: 'Western Yellow Bat',
   },
-  lecu: {
-    sciName: 'Leptonycteris yerbabuenae',
-    commonName: 'Lesser Long-nosed Bat',
-  },
   leni: {
     sciName: 'Leptonycteris nivalis',
     commonName: 'Greater Long-nosed Bat',
@@ -133,6 +129,12 @@ export const SPECIES = {
   mome: {
     sciName: 'Mormoops megalophylla',
     commonName: 'Ghost-faced Bat',
+  },
+  momo: {
+    sciName: 'Molossus molossus',
+    commonName: 'Velvety free-tailed bat',
+    imageCredits: 'J. Scott Altenbach (BCI)',
+    profileId: 'molossus-molossus-2',
   },
   myar: {
     sciName: 'Myotis auriculus',
@@ -235,7 +237,6 @@ export const SPECIES_REMAP = {
   labl: 'lafr',
 }
 
-// Important: there must be corresponding entries in the gatsby-node.js file
 export const SPECIES_ID = {
   '01': 'anpa',
   '02': 'chme',
@@ -256,11 +257,11 @@ export const SPECIES_ID = {
   17: 'lano',
   18: 'lase',
   19: 'laxa',
-  20: 'lecu',
-  21: 'leni',
-  22: 'leye',
-  23: 'maca',
-  24: 'mome',
+  20: 'leni',
+  21: 'leye',
+  22: 'maca',
+  23: 'mome',
+  24: 'momo',
   25: 'myar',
   26: 'myau',
   27: 'myca',

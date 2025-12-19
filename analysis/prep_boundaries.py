@@ -27,9 +27,7 @@ src_dir = boundaries_dir / "source"
 ### Process admin boundaries
 print("Extracting admin boundaries...")
 us_df = (
-    read_dataframe(
-        src_dir / "tl_2023_us_state.zip", columns=["NAME", "STUSPS"], use_arrow=True
-    )
+    read_dataframe(src_dir / "tl_2023_us_state.zip", columns=["NAME", "STUSPS"], use_arrow=True)
     .to_crs(GEO_CRS)
     .rename(columns={"NAME": "admin1_name"})
 )
@@ -38,13 +36,11 @@ us_df["country"] = "US"
 
 
 ca_df = (
-    read_dataframe(
-        src_dir / "canada_province.gdb", columns=["PRENAME", "PREABBR"], use_arrow=True
-    )
+    read_dataframe(src_dir / "canada_province.gdb", columns=["PRENAME", "PREABBR"], use_arrow=True)
     .to_crs(GEO_CRS)
     .rename(columns={"PRENAME": "admin1_name"})
 )
-ca_df["admin1"] = "CA-" + ca_df.PREABBR.str.replace("\.", "")
+ca_df["admin1"] = "CA-" + ca_df.PREABBR.str.replace(r"\.", "")
 ca_df["country"] = "CA"
 
 mx_df = (
@@ -97,9 +93,7 @@ haba.COMMON_NAM = SPECIES["haba"]["CNAME"]
 range_df = pd.concat([range_df, haba], ignore_index=True, sort=False)
 
 # clip out Hawaii from laci
-range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus", "geometry"] = shapely.difference(
-    laci.geometry.values, Hawaii
-)
+range_df.loc[range_df.SCI_NAME == "Lasiurus cinereus", "geometry"] = shapely.difference(laci.geometry.values, Hawaii)
 
 # add in alias of Myotis melanorhinus to Myotis ciliolabrum
 sci_name_lut["Myotis melanorhinus"] = "myci"
