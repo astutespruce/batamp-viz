@@ -15,6 +15,8 @@ def fix_mic_height(df):
         record-level data
     """
 
+    # TODO: can auto-vet these when at_grts_center is true
+
     vetted = [
         # FITR uses 2 detector models at different heights
         "1396800005952000",
@@ -94,6 +96,21 @@ def fix_mic_height(df):
         "1194703004211867",
         "1200027604220355",
         "1213293604407917",
+        "1227534404697622",
+        "1095834804110054",
+        "1212488204867697",
+        "1217636803685403",
+        "1204668003472899",
+        "1201588604051242",
+        "1200063803971241",
+        "1168113103297179",
+        "1165606503494196",
+        "1173694803580320",
+        "1173694803580320",
+        "1182641603572757",
+        "1188930603440905",
+        "1178955203368525",
+        "1159691203312440",
     ]
 
     # Foorp1 varies slightly in NABat (likely data entry issue); standardize and update BatAMP nearby point to match
@@ -163,6 +180,15 @@ def fix_mic_height(df):
         "mic_ht",
     ] = np.float32(3.25)
 
+    # Packard Ranch values vary slightly, use approximate mean
+    df.loc[df.point_id == "1120749003486412", "mic_ht"] = 7.3
+
+    # Coconino National Forest vary somewhat, use even value
+    df.loc[df.point_id == "1116354803439293", "mic_ht"] = 7.0
+
+    # Ozark-St. Francis National Forest seems to have duplicate points at lower height
+    df.loc[df.point_id.isin({"0935404003586455", "0935199803590779"}), "mic_ht"] = 6.0
+
     # find any instances of points where mic_ht varies by location / night
     s = pd.DataFrame(
         df.loc[~df.point_id.isin(vetted)]
@@ -197,7 +223,7 @@ def fix_mic_height(df):
     df.loc[ix, "mic_ht"] = df.loc[ix].nabat_ht.values.astype("float32")
     df = df.drop(columns=["nabat_ht"]).reset_index()
 
-    s = s.loc[~s.index.isin(fixes.index)]
+    s = s.loc[~s.index.isin(fixes.index) & ~s.index.get_level_values(0).isin(vetted)]
 
     if len(s):
         # DEBUG: these were manually identified and reviewed by using the following
