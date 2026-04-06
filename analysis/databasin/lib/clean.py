@@ -344,6 +344,6 @@ def clean_batamp(df, admin_df):
             "geometry",
         ]
         + ACTIVITY_COLUMNS
-    ]
+    ].copy()
 
     return df

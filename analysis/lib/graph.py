@@ -9,7 +9,7 @@ from numba.typed import List
 import numpy as np
 
 
-@njit("(i8[:],i8[:])", cache=True)
+@njit((types.Array(types.int64, 1, "C", readonly=True), types.Array(types.int64, 1, "C", readonly=True)), cache=True)
 def make_adj_matrix(source, target):
     # NOTE: drop dups first before calling this!
     out = dict()

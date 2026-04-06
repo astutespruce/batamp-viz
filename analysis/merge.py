@@ -2,14 +2,13 @@ import json
 from pathlib import Path
 import warnings
 
-from h3ronpy.arrow.vector import coordinates_to_cells, cells_to_wkb_polygons
+from h3ronpy.vector import coordinates_to_cells, cells_to_wkb_polygons
 import pandas as pd
 import pyarrow as pa
 from pyarrow.feather import write_feather
 import geopandas as gp
 import numpy as np
 import shapely
-
 
 from analysis.constants import ACTIVITY_COLUMNS, NABAT_TOLERANCE, SPECIES_ID
 from analysis.lib.height import fix_mic_height
@@ -19,8 +18,6 @@ from analysis.lib.util import camelcase, get_min_uint_dtype
 from analysis.databasin.lib.clean import clean_batamp
 from analysis.nabat.lib.clean import clean_nabat
 
-
-pd.set_option("future.no_silent_downcasting", True)
 
 data_dir = Path("data")
 src_dir = data_dir / "source"
@@ -321,15 +318,17 @@ pairs["dist"] = shapely.distance(pairs.batamp_pt_proj.values, pairs.nabat_pt_pro
 pairs["ht_diff"] = (pairs.batamp_ht - pairs.nabat_ht).abs()
 
 if (pairs.dist == 0).any():
+    pairs.loc[pairs.dist == 0].to_csv("/tmp/height_check1.csv")
     warnings.warn(
-        "WARNING: found unexpected varying height for points that were clustered together; these need manual review"
+        "WARNING: found unexpected varying height for points that were clustered together; these need manual review; see /tmp/height_check1.csv"
     )
 
 pairs = pairs.loc[pairs.dist > 0].sort_values(["batamp_pt_id", "ht_diff", "dist"])
 
 if (pairs.ht_diff > 0).any():
+    pairs.loc[pairs.ht_diff > 0].to_csv("/tmp/height_check2.csv")
     warnings.warn(
-        "WARNING: found similar but non-identical heights for BatAMP points near NABat points; these need manual review"
+        "WARNING: found similar but non-identical heights for BatAMP points near NABat points; these need manual review; see /tmp/height_check2.csv"
     )
 
 # for those with exactly same height, update the BatAMP coordinate to match NABat
@@ -480,8 +479,8 @@ for col in activity_columns:
 
 # clip presence-only activity values to a max of 1
 ix = df.count_type == "p"
-df.loc[ix, activity_columns] = df.loc[ix, activity_columns].clip(0, 1, axis=1)
-
+for col in activity_columns:
+    df.loc[ix, col] = df.loc[ix, col].clip(0, 1)
 
 ################################################################################
 ### Extract point geometries and do spatial joins

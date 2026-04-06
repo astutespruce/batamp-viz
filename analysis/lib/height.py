@@ -111,6 +111,8 @@ def fix_mic_height(df):
         "1188930603440905",
         "1178955203368525",
         "1159691203312440",
+        # these appear to be different sites that are clustered together
+        "1110415903224389",
     ]
 
     # Foorp1 varies slightly in NABat (likely data entry issue); standardize and update BatAMP nearby point to match

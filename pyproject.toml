@@ -33,9 +33,12 @@ dependencies = [
 Homepage = "https://batamp.org"
 Repository = "https://github.com/astute-spruce/batamp-viz"
 
-
 [tool.setuptools.packages.find]
 include = ["analysis"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 line-length = 120
