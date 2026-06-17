@@ -2,7 +2,7 @@
 /* eslint-disable max-len,no-underscore-dangle,camelcase */
 import React, { useRef, useState, useCallback, useEffect } from 'react'
 import PropTypes from 'prop-types'
-
+import mapboxgl from 'mapbox-gl'
 import { useCrossfilter } from 'components/Crossfilter'
 import { H3_COLS, SPECIES } from 'config'
 import { isEqual } from 'util/data'
@@ -13,7 +13,6 @@ import {
   speciesLayers,
   getHexRenderer,
   Map,
-  mapboxgl,
   setFeatureHighlight,
   Legend,
 } from 'components/Map'

@@ -1,13 +1,13 @@
 import React, { useRef, useState, useLayoutEffect } from 'react'
 import PropTypes from 'prop-types'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 import { Box } from 'theme-ui'
 
 import { config, sources } from './config'
-import { mapboxgl } from './mapbox'
-import { PMTilesSource } from './pmtiles'
 import StyleSelector from './StyleSelector'
 
-const { center, zoom, styles } = config
+const { accessToken, center, zoom, styles } = config
 
 const Map = ({ onCreateMap, onBasemapChange, children }) => {
   const mapNode = useRef(null)
@@ -18,6 +18,7 @@ const Map = ({ onCreateMap, onBasemapChange, children }) => {
     () => {
       const mapObj = new mapboxgl.Map({
         container: mapNode.current,
+        accessToken,
         style: `mapbox://styles/mapbox/${styles[0]}`,
         center,
         zoom,
@@ -28,9 +29,6 @@ const Map = ({ onCreateMap, onBasemapChange, children }) => {
 
       mapObj.addControl(new mapboxgl.NavigationControl(), 'top-right')
       mapObj.dragRotate.disable()
-
-      // enable PMTiles source
-      mapboxgl.Style.setSourceType(PMTilesSource.SOURCE_TYPE, PMTilesSource)
 
       mapObj.once('style.load', () => {
         // hide Gulf of Mexico

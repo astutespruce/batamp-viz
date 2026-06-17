@@ -1,3 +1,4 @@
+import { hasWindow } from 'util/dom'
 import { siteMetadata } from '../../../gatsby-config'
 
 export const MINRADIUS = 4
@@ -15,22 +16,25 @@ export const config = {
   padding: 0.1, // padding around bounds as a proportion
 }
 
+// mapbox requires full URLs or it tries to load as JSON and fails
+const hostURL = hasWindow ? window.location.origin : ''
+
 export const sources = {
   species: {
-    type: 'pmtiles',
-    url: '/tiles/species_ranges.pmtiles',
+    type: 'vector',
+    url: `${hostURL}/tiles/species_ranges.pmtiles`,
     minzoom: 0,
     maxzoom: 6,
   },
   sites: {
-    type: 'pmtiles',
-    url: '/tiles/sites.pmtiles',
+    type: 'vector',
+    url: `${hostURL}/tiles/sites.pmtiles`,
     minzoom: 0,
     maxzoom: 12,
   },
   h3: {
-    type: 'pmtiles',
-    url: '/tiles/h3.pmtiles',
+    type: 'vector',
+    url: `${hostURL}/tiles/h3.pmtiles`,
     minzoom: 0,
     maxzoom: 12,
   },
